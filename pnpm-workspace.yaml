@@ -7,4 +7,5 @@ allowBuilds:
   '@prisma/engines': false
   electron: true
   esbuild: false
+  fsuipc: true
   prisma: false
