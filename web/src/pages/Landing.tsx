@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { MapContainer, TileLayer, Marker, Tooltip } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Download, Zap, Shield, Navigation, Activity, List, Plane, ExternalLink, Radio } from 'lucide-react'
+import { Download, Zap, Shield, Navigation, Activity, List, Plane, ExternalLink, Radio, BookOpen, Trophy, Users, BarChart3, ChevronRight } from 'lucide-react'
 
 // Fix Leaflet icon
 delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -23,65 +24,90 @@ const API = 'https://kingfisher-api.onrender.com/api/v1'
 
 export default function Landing() {
   const navigate = useNavigate()
+  const [stats, setStats] = useState({ pilots: 0, routes: 0, flights: 0 })
+  const [fleet, setFleet] = useState<any[]>([])
+  const [pilots, setPilots] = useState<any[]>([])
   const [liveFlights, setLiveFlights] = useState<any[]>([])
 
   useEffect(() => {
-    fetch(`${API}/public/live-flights`).then(r => r.json()).then(setLiveFlights).catch(() => {})
+    Promise.all([
+        fetch(`${API}/public/stats`).then(r => r.json()).catch(() => ({})),
+        fetch(`${API}/public/fleet`).then(r => r.json()).catch(() => []),
+        fetch(`${API}/public/pilots`).then(r => r.json()).catch(() => []),
+        fetch(`${API}/public/live-flights`).then(r => r.json()).catch(() => []),
+    ]).then(([s, f, p, l]) => {
+        setStats(s)
+        setFleet(f)
+        setPilots(p.slice(0, 5))
+        setLiveFlights(l)
+    })
   }, [])
 
   return (
-    <div className="bg-white text-black min-h-screen font-sans">
+    <div className="bg-[#0a0a0a] text-white min-h-screen font-sans">
       {/* Header */}
-      <nav className="p-6 flex justify-between items-center max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="Logo" className="w-8 h-8" />
-            <span className="font-black italic text-lg tracking-tighter">KINGFISHER</span>
+      <nav className="p-8 flex justify-between items-center max-w-7xl mx-auto border-b border-white/10">
+        <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="Logo" className="w-10 h-10" />
+            <div className="font-black italic text-xl tracking-tighter uppercase">Kingfisher VA</div>
         </div>
-        <div className="flex gap-4">
-            <button onClick={() => navigate('/login')} className="text-xs font-bold uppercase tracking-widest text-zinc-500 hover:text-black">Sign In</button>
-            <button onClick={() => navigate('/register')} className="bg-red-600 text-white px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest hover:bg-red-700">Join</button>
+        <div className="flex gap-6 items-center">
+            {['About', 'Fleet', 'Network', 'Leaderboard'].map(i => <a key={i} href={`#${i.toLowerCase()}`} className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white">{i}</a>)}
+            <button onClick={() => navigate('/login')} className="text-[10px] font-black uppercase tracking-widest border border-white/20 px-6 py-2 rounded-full hover:bg-white/10">Sign In</button>
+            <button onClick={() => navigate('/register')} className="bg-red-600 text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest">Join Crew</button>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="py-24 max-w-7xl mx-auto px-6">
-        <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter mb-8 leading-[0.9]">
-          FLY BEYOND <br/> THE HORIZON.
-        </h1>
-        <p className="text-lg text-zinc-600 max-w-xl mb-12">
-          India's premier virtual airline. Founded 2026. Custom ACARS telemetry, 
-          real-world operations, and a community built by virtual pilots.
-        </p>
-        <button onClick={() => navigate('/register')} className="bg-black text-white px-10 py-4 rounded-full text-sm font-black uppercase tracking-widest hover:bg-zinc-800">
-          Start Your Career
-        </button>
+      <section className="py-24 max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+        <div>
+            <h1 className="text-7xl font-black italic tracking-tighter mb-8 leading-[0.9]">BEYOND THE <br/><span className="text-red-600">HORIZON.</span></h1>
+            <p className="text-zinc-400 mb-10 text-lg">India's premier virtual airline. Bespoke ACARS technology, realistic operations, and a dedicated pilot community.</p>
+            <div className="flex gap-4">
+                <button onClick={() => navigate('/register')} className="bg-red-600 px-8 py-4 rounded-xl text-xs font-black uppercase tracking-widest">Register Free</button>
+                <button onClick={() => document.getElementById('acars')?.scrollIntoView()} className="bg-zinc-900 px-8 py-4 rounded-xl text-xs font-black uppercase tracking-widest">Download ACARS</button>
+            </div>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+            {[{l:'Pilots', v: stats.pilots}, {l:'Routes', v: stats.routes}, {l:'Flights', v: stats.flights}].map(s => (
+                <div key={s.l} className="bg-zinc-900 p-6 rounded-2xl">
+                    <div className="text-3xl font-black italic">{s.v}</div>
+                    <div className="text-[9px] font-bold uppercase tracking-widest text-zinc-500">{s.l}</div>
+                </div>
+            ))}
+        </div>
       </section>
 
-      {/* ACARS Download */}
-      <section id="acars" className="py-24 bg-zinc-950 text-white">
-        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
-          <div>
-            <h2 className="text-4xl font-black italic tracking-tighter mb-6 uppercase">Kingfisher Custom ACARS</h2>
-            <p className="text-zinc-400 mb-8">Download our custom software for real-time telemetry, auto-pirep filing, and mission dispatching.</p>
-            <a href="#" className="bg-red-600 text-white px-8 py-4 rounded-xl text-sm font-black uppercase tracking-widest inline-flex items-center gap-2 hover:bg-red-700">
-              <Download size={16} /> Download Windows Setup
-            </a>
-          </div>
-          <div className="bg-zinc-900 p-8 rounded-3xl border border-white/10">
-            <div className="text-xs font-black text-red-500 uppercase tracking-widest mb-2">LiveTelemetry Core</div>
-            <div className="text-2xl font-black italic mb-4">SYSTEMS ONLINE</div>
-            <div className="space-y-2">
-                <div className="h-1 bg-white/10 rounded-full"><div className="w-1/2 h-full bg-red-600"></div></div>
-                <div className="text-[10px] text-zinc-500 font-bold">VAMSYS TYPE EXPERIENCE</div>
+      {/* Leaderboard & Fleet */}
+      <section className="py-24 max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16">
+        <div id="leaderboard">
+            <h3 className="text-2xl font-black italic uppercase mb-8 flex items-center gap-3"><Trophy className="text-red-600" /> Pilot Leaderboard</h3>
+            <div className="space-y-4">
+                {pilots.map((p, i) => (
+                    <div key={p.pilotId} className="flex justify-between p-4 bg-zinc-900 rounded-xl items-center">
+                        <span className="font-bold">{i+1}. {p.firstName} {p.lastName}</span>
+                        <span className="text-red-600 font-mono text-sm">{p.totalHours} hrs</span>
+                    </div>
+                ))}
             </div>
-          </div>
+        </div>
+        <div id="fleet">
+            <h3 className="text-2xl font-black italic uppercase mb-8 flex items-center gap-3"><Plane className="text-red-600" /> Our Metal</h3>
+            <div className="grid grid-cols-2 gap-4">
+                {fleet.map(a => (
+                    <div key={a.id} className="bg-zinc-900 p-4 rounded-xl text-center">
+                        <div className="font-black italic text-lg">{a.name}</div>
+                        <div className="text-[10px] text-zinc-500 uppercase tracking-widest">{a.registration}</div>
+                    </div>
+                ))}
+            </div>
         </div>
       </section>
 
       {/* Live Map */}
       <section id="network" className="py-24 max-w-7xl mx-auto px-6">
-        <h2 className="text-3xl font-black italic tracking-tighter mb-12 uppercase">Live Operational Map</h2>
-        <div className="h-[500px] w-full bg-zinc-100 rounded-3xl overflow-hidden border border-zinc-200">
+        <h3 className="text-2xl font-black italic uppercase mb-8 flex items-center gap-3"><Activity className="text-red-600" /> Live Network</h3>
+        <div className="h-[500px] w-full rounded-3xl overflow-hidden border border-zinc-800">
           <MapContainer center={[20, 77]} zoom={4} style={{ height: '100%', width: '100%' }}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             {liveFlights.map(f => (
@@ -96,11 +122,8 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-zinc-200 mt-12">
-         <div className="max-w-7xl mx-auto px-6 text-[10px] font-black uppercase tracking-widest text-zinc-500 flex justify-between">
-            <div>© 2026 KINGFISHER VA</div>
-            <div>BUILT BY VIRTUAL PILOTS</div>
-         </div>
+      <footer className="py-12 border-t border-zinc-900 text-center text-zinc-600 text-[10px] uppercase font-bold tracking-widest">
+        © 2026 KINGFISHER VA · BUILT BY VIRTUAL PILOTS
       </footer>
     </div>
   )
