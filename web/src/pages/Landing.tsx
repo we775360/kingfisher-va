@@ -65,15 +65,14 @@ export default function Landing() {
   }
 
   return (
-    <div className="bg-[#050505] text-white min-h-screen selection:bg-red-600 selection:text-white font-sans">
+    <div className="bg-white text-zinc-900 min-h-screen selection:bg-red-600 selection:text-white font-sans">
       
       {/* ── NAVIGATION ── */}
-      <nav className={`fixed top-0 left-0 right-0 z-[1000] transition-all duration-500 ${scrolled ? 'bg-black/80 backdrop-blur-2xl py-3 border-b border-white/5' : 'bg-transparent py-6'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-[1000] transition-all duration-500 ${scrolled ? 'bg-white/90 backdrop-blur-2xl py-3 border-b border-zinc-100' : 'bg-transparent py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-4 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <div className="relative">
               <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain group-hover:rotate-12 transition-transform duration-500" />
-              <div className="absolute inset-0 bg-red-600/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
             <div className="hidden sm:block">
               <div className="font-black italic tracking-tighter text-xl leading-none">KINGFISHER</div>
@@ -86,7 +85,7 @@ export default function Landing() {
               <button 
                 key={item}
                 onClick={() => document.getElementById(item.toLowerCase())?.scrollIntoView({ behavior: 'smooth' })}
-                className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-white hover:tracking-[0.3em] transition-all"
+                className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-black hover:tracking-[0.3em] transition-all"
               >
                 {item}
               </button>
@@ -96,7 +95,7 @@ export default function Landing() {
           <div className="flex items-center gap-4">
             <button 
               onClick={() => navigate('/login')}
-              className="hidden sm:block text-xs font-black uppercase tracking-widest px-6 py-2 hover:bg-white/5 transition-colors rounded-full"
+              className="hidden sm:block text-xs font-black uppercase tracking-widest px-6 py-2 hover:bg-zinc-100 transition-colors rounded-full"
             >
               Sign In
             </button>
@@ -107,7 +106,7 @@ export default function Landing() {
               Join the Crew
             </button>
             <button className="lg:hidden p-2" onClick={() => setMenuOpen(!menuOpen)}>
-               <List className="w-6 h-6" />
+               <List className="w-6 h-6 text-black" />
             </button>
           </div>
         </div>
@@ -117,13 +116,8 @@ export default function Landing() {
       <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
         {/* Background Grid & FX */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(185,28,28,0.1),_transparent_70%)]" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-          <motion.div 
-            animate={{ rotate: 360 }}
-            transition={{ duration: 100, repeat: Infinity, ease: 'linear' }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] border-[1px] border-white/5 rounded-full"
-          />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(185,28,28,0.05),_transparent_70%)]" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
         </div>
 
         <div className="max-w-7xl mx-auto px-6 relative z-10 w-full">
@@ -138,12 +132,12 @@ export default function Landing() {
                 <span className="text-xs font-black uppercase tracking-[0.4em] text-red-600">Established 2026</span>
               </div>
               
-              <h1 className="text-6xl md:text-8xl lg:text-[110px] font-black italic tracking-tighter leading-[0.85] mb-10 text-white drop-shadow-2xl">
+              <h1 className="text-6xl md:text-8xl lg:text-[110px] font-black italic tracking-tighter leading-[0.85] mb-10 text-black drop-shadow-sm">
                 FLY BEYOND <br />
-                <span className="text-transparent stroke-text" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.3)' }}>THE HORIZON.</span>
+                <span className="text-transparent stroke-text" style={{ WebkitTextStroke: '1px rgba(0,0,0,0.3)' }}>THE HORIZON.</span>
               </h1>
 
-              <p className="text-xl md:text-2xl text-zinc-400 font-medium max-w-2xl leading-relaxed mb-12">
+              <p className="text-xl md:text-2xl text-zinc-600 font-medium max-w-2xl leading-relaxed mb-12">
                 The most advanced Virtual Airline ecosystem in India. Custom tracking, 
                 real-world operations, and a community built by virtual pilots, for virtual pilots.
               </p>
@@ -151,25 +145,15 @@ export default function Landing() {
               <div className="flex flex-wrap gap-6">
                 <button 
                   onClick={() => navigate('/register')}
-                  className="bg-white text-black px-12 py-5 rounded-full text-sm font-black uppercase tracking-widest hover:bg-zinc-200 transition-all flex items-center gap-3 group"
+                  className="bg-black text-white px-12 py-5 rounded-full text-sm font-black uppercase tracking-widest hover:bg-zinc-800 transition-all flex items-center gap-3 group"
                 >
                   Start Your Career <ArrowRight className="group-hover:translate-x-2 transition-transform" />
                 </button>
-                <div className="flex -space-x-4 items-center">
-                  {[1,2,3,4].map(i => (
-                    <div key={i} className="w-12 h-12 rounded-full border-4 border-black bg-zinc-800 flex items-center justify-center overflow-hidden">
-                       <img src={`https://i.pravatar.cc/100?img=${i+10}`} className="w-full h-full object-cover" alt="pilot" />
-                    </div>
-                  ))}
-                  <div className="pl-8">
-                    <div className="font-black italic leading-none">{stats.pilots}+ PILOTS</div>
-                    <div className="text-[10px] uppercase font-bold text-zinc-500 tracking-widest">Active Worldwide</div>
-                  </div>
-                </div>
               </div>
             </motion.div>
           </div>
         </div>
+      </section>
 
         {/* Hero Bottom Stats */}
         <div className="absolute bottom-12 left-0 right-0 z-10 border-y border-white/5 bg-black/40 backdrop-blur-md">
