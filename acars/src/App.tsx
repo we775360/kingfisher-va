@@ -351,7 +351,7 @@ function App() {
             />
           )}
           {activeTab === 'bookings' && <BookingsView token={token} onSelect={fetchSimBrief} />}
-          {activeTab === 'map' && <MapView flightData={flightData} history={flightHistory} ofp={ofp} />}
+          {activeTab === 'map' && <MapView flightData={flightData} history={flightHistory} ofp={ofp} setActiveTab={setActiveTab} />}
           {activeTab === 'settings' && <SettingsView />}
         </main>
 
@@ -793,7 +793,7 @@ function TelemetryBox({ label, value, unit, color }: { label: string, value: any
   )
 }
 
-function MapView({ flightData, history, ofp }: { flightData: FlightData | null, history: [number, number][], ofp: OFP | null }) {
+function MapView({ flightData, history, ofp, setActiveTab }: { flightData: FlightData | null, history: [number, number][], ofp: OFP | null, setActiveTab: (t: string) => void }) {
   const RecenterMap = ({ position }: { position: [number, number] }) => {
     const map = useMap()
     useEffect(() => {
@@ -804,6 +804,26 @@ function MapView({ flightData, history, ofp }: { flightData: FlightData | null, 
     return null
   }
   
+  if (!ofp) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center bg-kf-black text-white space-y-6">
+        <div className="w-24 h-24 bg-neutral-900 rounded-full flex items-center justify-center border border-neutral-800 shadow-2xl">
+          <MapIcon className="w-10 h-10 text-neutral-700" />
+        </div>
+        <div className="text-center space-y-2">
+          <h3 className="text-2xl font-black italic uppercase tracking-tighter">No Mission Active</h3>
+          <p className="text-neutral-500 text-xs font-bold uppercase tracking-[0.2em]">Map systems offline until flight initialization.</p>
+        </div>
+        <button 
+          onClick={() => setActiveTab('dashboard')}
+          className="px-8 py-3 bg-kf-red hover:bg-kf-red-dark text-white text-[10px] font-black uppercase italic rounded-xl transition-all shadow-xl shadow-kf-red/20"
+        >
+          Return to Mission Control
+        </button>
+      </div>
+    )
+  }
+
   const pos: [number, number] = flightData && flightData.lat !== 0 ? [flightData.lat, flightData.lng] : [20.5937, 78.9629]
   
   return (
