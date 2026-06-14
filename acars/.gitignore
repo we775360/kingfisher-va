@@ -1,0 +1,21 @@
+# Node dependencies
+node_modules/
+**/node_modules/
+
+# Build artifacts
+dist/
+dist-electron/
+release/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+
+# Editor
+.vscode/
+.idea/

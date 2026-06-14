@@ -1,0 +1,46 @@
+@import "@fontsource/inter";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --kf-red: #c0121e;
+  --kf-red-dark: #8b0000;
+  --kf-gold: #d4af37;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #0a0a0a;
+  color: #ffffff;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c0121e;
+  border-radius: 3px;
+}
+
+::selection {
+  background: #c0121e;
+  color: white;
+}
+
