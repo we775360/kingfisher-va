@@ -94,6 +94,11 @@ function startPolling() {
   simHandle.addToDataDefinition(DEFINITION_ID, 'VERTICAL SPEED', 'feet per minute', SimConnect.SimConnectDataType.FLOAT64)
   simHandle.addToDataDefinition(DEFINITION_ID, 'FUEL TOTAL QUANTITY', 'gallons', SimConnect.SimConnectDataType.FLOAT64)
   simHandle.addToDataDefinition(DEFINITION_ID, 'ENG COMBUSTION:1', 'bool', SimConnect.SimConnectDataType.FLOAT64)
+  simHandle.addToDataDefinition(DEFINITION_ID, 'AIRSPEED INDICATED', 'knots', SimConnect.SimConnectDataType.FLOAT64)
+  simHandle.addToDataDefinition(DEFINITION_ID, 'AIRSPEED MACH', 'mach', SimConnect.SimConnectDataType.FLOAT64)
+  simHandle.addToDataDefinition(DEFINITION_ID, 'TRANSPONDER CODE:1', 'number', SimConnect.SimConnectDataType.FLOAT64)
+  simHandle.addToDataDefinition(DEFINITION_ID, 'PLANE PITCH DEGREES', 'degrees', SimConnect.SimConnectDataType.FLOAT64)
+  simHandle.addToDataDefinition(DEFINITION_ID, 'PLANE BANK DEGREES', 'degrees', SimConnect.SimConnectDataType.FLOAT64)
 
   pollInterval = setInterval(() => {
     if (simHandle && win) {
@@ -103,21 +108,28 @@ function startPolling() {
 
   simHandle.on('simObjectData', (data: any) => {
     if (data.defineId === DEFINITION_ID && win) {
-      // Basic extraction - this depends on the buffer format of simObjectData
-      // node-simconnect returns a buffer in simObjectData.data
-      const flightData = {
-        lat: data.data.readDoubleLE(0),
-        lng: data.data.readDoubleLE(8),
-        alt: data.data.readDoubleLE(16),
-        heading: data.data.readDoubleLE(24),
-        gs: data.data.readDoubleLE(32),
-        onGround: data.data.readDoubleLE(40) === 1,
-        vs: data.data.readDoubleLE(48),
-        fuel: data.data.readDoubleLE(56),
-        engineOn: data.data.readDoubleLE(64) === 1,
-        timestamp: Date.now()
+      try {
+        const flightData = {
+          lat: data.data.readDoubleLE(0),
+          lng: data.data.readDoubleLE(8),
+          alt: data.data.readDoubleLE(16),
+          heading: data.data.readDoubleLE(24),
+          gs: data.data.readDoubleLE(32),
+          onGround: data.data.readDoubleLE(40) === 1,
+          vs: data.data.readDoubleLE(48),
+          fuel: data.data.readDoubleLE(56),
+          engineOn: data.data.readDoubleLE(64) === 1,
+          ias: data.data.readDoubleLE(72),
+          mach: data.data.readDoubleLE(80),
+          squawk: data.data.readDoubleLE(88).toString().padStart(4, '0'),
+          pitch: data.data.readDoubleLE(96) * (180 / Math.PI), // Convert to degrees if raw rad
+          bank: data.data.readDoubleLE(104) * (180 / Math.PI),
+          timestamp: Date.now()
+        }
+        win.webContents.send('flight-data', flightData)
+      } catch (e) {
+        console.error('Error parsing sim data:', e)
       }
-      win.webContents.send('flight-data', flightData)
     }
   })
 }
