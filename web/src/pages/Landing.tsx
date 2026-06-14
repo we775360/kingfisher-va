@@ -155,24 +155,23 @@ export default function Landing() {
         </div>
       </section>
 
-        {/* Hero Bottom Stats */}
-        <div className="absolute bottom-12 left-0 right-0 z-10 border-y border-white/5 bg-black/40 backdrop-blur-md">
-          <div className="max-w-7xl mx-auto px-6 py-8 flex flex-wrap justify-between gap-8 md:gap-0">
-             {[
-               { label: 'ICAO', value: 'KFR' },
-               { label: 'CALLSIGN', value: 'KINGFISHER' },
-               { label: 'BASE', value: 'INDIA' },
-               { label: 'SALARY', value: '$500/HR' },
-               { label: 'STATUS', value: 'OPERATIONAL' },
-             ].map(stat => (
-               <div key={stat.label}>
-                 <div className="text-[9px] font-black text-zinc-500 tracking-[0.3em] uppercase mb-1">{stat.label}</div>
-                 <div className="text-xl font-black italic tracking-tighter text-white">{stat.value}</div>
-               </div>
-             ))}
-          </div>
+      {/* Hero Bottom Stats */}
+      <div className="absolute bottom-12 left-0 right-0 z-10 border-y border-white/5 bg-black/40 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-6 py-8 flex flex-wrap justify-between gap-8 md:gap-0">
+            {[
+              { label: 'ICAO', value: 'KFR' },
+              { label: 'CALLSIGN', value: 'KINGFISHER' },
+              { label: 'BASE', value: 'INDIA' },
+              { label: 'SALARY', value: '$500/HR' },
+              { label: 'STATUS', value: 'OPERATIONAL' },
+            ].map(stat => (
+              <div key={stat.label}>
+                <div className="text-[9px] font-black text-zinc-500 tracking-[0.3em] uppercase mb-1">{stat.label}</div>
+                <div className="text-xl font-black italic tracking-tighter text-white">{stat.value}</div>
+              </div>
+            ))}
         </div>
-      </section>
+      </div>
 
       {/* ── ACARS DOWNLOAD HERO ── */}
       <section id="acars" className="py-32 bg-zinc-950 relative overflow-hidden">
