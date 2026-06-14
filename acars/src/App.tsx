@@ -103,7 +103,7 @@ const useAuthStore = create<AuthStore>((set) => ({
 
 // --- COMPONENTS ---
 
-const API_URL = 'https://kingfisher-va-api.onrender.com/api/v1'
+const API_URL = 'https://kingfisher-api.onrender.com/api/v1'
 
 function App() {
   const { isAuthenticated, logout, user, token, setAuth } = useAuthStore()
