@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plane, Activity, Map as MapIcon, Settings, LogOut, Import, Radio, Wifi, Briefcase, Navigation } from 'lucide-react'
+import { Plane, Activity, Map as MapIcon, Settings, LogOut, Import, Briefcase, Navigation, List, ExternalLink, ShieldCheck } from 'lucide-react'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import axios from 'axios'
@@ -115,12 +115,11 @@ interface AuthStore {
   setAuth: (user: User, token: string) => void
   logout: () => void
 }
-
 // --- STORE ---
 const useAuthStore = create<AuthStore>((set) => ({
   user: null,
-  token: localStorage.getItem('kf_token'),
-  isAuthenticated: !!localStorage.getItem('kf_token'),
+  token: null,
+  isAuthenticated: false,
   setAuth: (user, token) => {
     localStorage.setItem('kf_token', token)
     set({ user, token, isAuthenticated: true })
@@ -131,7 +130,9 @@ const useAuthStore = create<AuthStore>((set) => ({
   },
 }))
 
-// --- COMPONENTS ---
+// Force sign-out on app start to ensure fresh session data
+localStorage.removeItem('kf_token');
+
 
 const API_URL = 'https://kingfisher-api.onrender.com/api/v1'
 
@@ -164,7 +165,7 @@ function App() {
 
       const removeDataListener = (window as any).ipcRenderer.on('flight-data', (_event: any, data: FlightData) => {
         setFlightData(data)
-        if (data.lat && data.lng) {
+        if (data.lat && data.lng && data.lat !== 0) {
           setFlightHistory(prev => [...prev.slice(-1000), [data.lat, data.lng]])
         }
       })
@@ -258,7 +259,7 @@ function App() {
           </form>
         </div>
         <div className="text-center text-[10px] font-bold text-neutral-600 uppercase tracking-[0.3em]">
-          Kingfisher Operations Control v1.0
+          Kingfisher Operations Control v1.1.0
         </div>
       </div>
     )
@@ -329,7 +330,7 @@ function App() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto relative p-6">
+        <main className={cn("flex-1 relative flex flex-col min-h-0", activeTab !== 'map' && 'p-6 overflow-y-auto')}>
           {activeTab === 'dashboard' && (
             <Dashboard 
               token={token} 
@@ -342,6 +343,11 @@ function App() {
               setOfp={setOfp}
               fetchSimBrief={fetchSimBrief}
               loading={loading}
+              setLoading={setLoading}
+              flightLog={flightLog}
+              sbUsername={sbUsername}
+              setSbUsername={setSbUsername}
+              addLog={addLog}
             />
           )}
           {activeTab === 'bookings' && <BookingsView token={token} onSelect={fetchSimBrief} />}
@@ -350,9 +356,9 @@ function App() {
         </main>
 
         <footer className="h-8 bg-kf-black border-t border-neutral-800/30 px-6 flex items-center justify-between text-[9px] font-bold text-neutral-600 uppercase tracking-[0.2em] z-20">
-          <span>Kingfisher Operations Protocol v1.1.0</span>
+          <span>Kingfisher Custom ACARS · Founded 2026</span>
           <div className="flex items-center space-x-4">
-            <span>Server: <span className="text-green-500">Online</span></span>
+            <span>Server: <span className="text-green-500">Live</span></span>
             <span>Lat: {flightData?.lat.toFixed(4) || '0.0000'}</span>
             <span>Lng: {flightData?.lng.toFixed(4) || '0.0000'}</span>
           </div>
@@ -384,13 +390,13 @@ function NavItem({ active, onClick, icon, label }: { active: boolean, onClick: (
 }
 
 function Dashboard({ 
-  token, flightData, ofp, isTracking, setIsTracking, phase, setPhase, setOfp, fetchSimBrief, loading 
+  token, flightData, ofp, isTracking, setIsTracking, phase, setPhase, setOfp, fetchSimBrief, loading, setLoading, flightLog, sbUsername, setSbUsername, addLog 
 }: { 
   token: string | null, flightData: FlightData | null, ofp: OFP | null, isTracking: boolean, 
   setIsTracking: (v: boolean) => void, phase: FlightPhase, setPhase: (p: FlightPhase) => void,
-  setOfp: (o: OFP | null) => void, fetchSimBrief: (u: string) => void, loading: boolean
+  setOfp: (o: OFP | null) => void, fetchSimBrief: (u: string) => void, loading: boolean, setLoading: (v: boolean) => void,
+  flightLog: {time: string, event: string}[], sbUsername: string, setSbUsername: (u: string) => void, addLog: (e: string) => void
 }) {
-  const [sbUsername, setSbUsername] = useState('')
   const [fuelAtStart, setFuelAtStart] = useState<number>(0)
   const [maxLandingRate, setMaxLandingRate] = useState<number>(0)
   const [takeoffTime, setTakeoffTime] = useState<number | null>(null)
@@ -400,7 +406,6 @@ function Dashboard({
 
   useEffect(() => {
     if (isTracking && flightData) {
-      // Advanced phase detection
       const gs = flightData.gs
       const alt = flightData.alt
       const vs = flightData.vs
@@ -411,37 +416,46 @@ function Dashboard({
 
       if (onGround) {
         if (gs < 2 && currentPhase === 'PRE-FLIGHT' && flightData.engineOn) {
-          // Stay in pre-flight or wait for pushback
+          // pre-flight
         } else if (gs > 2 && gs < 30 && currentPhase === 'PRE-FLIGHT') {
           nextPhase = 'TAXI'
+          addLog('COMMENCING TAXI')
         } else if (gs > 40 && (currentPhase === 'TAXI' || currentPhase === 'PRE-FLIGHT')) {
           nextPhase = 'TAKEOFF'
+          addLog('V1 - ROTATE - AIRBORNE')
           if (!takeoffTime) setTakeoffTime(Date.now())
         } else if (gs < 30 && (currentPhase === 'LANDED')) {
           nextPhase = 'TAXI-IN'
+          addLog('VACATED RUNWAY - TAXIING TO GATE')
         } else if (gs < 5 && currentPhase === 'TAXI-IN' && !flightData.engineOn) {
           nextPhase = 'ARRIVED'
+          addLog('ENGINES SHUTDOWN - MISSION COMPLETE')
         }
       } else {
         if (alt < 2500 && vs > 500 && (currentPhase === 'TAKEOFF')) {
           nextPhase = 'INITIAL CLIMB'
-        } else if (alt >= 2500 && vs > 500) {
+        } else if (alt >= 2500 && vs > 500 && currentPhase !== 'CLIMB') {
           nextPhase = 'CLIMB'
-        } else if (Math.abs(vs) < 500 && alt > 5000) {
+          addLog(`CLIMBING TO FL${Math.round(alt/100)}`)
+        } else if (Math.abs(vs) < 500 && alt > 5000 && currentPhase !== 'CRUISE') {
           nextPhase = 'CRUISE'
-        } else if (vs < -500 && alt > 5000) {
+          addLog(`LEVEL AT CRUISE ALTITUDE`)
+        } else if (vs < -500 && alt > 5000 && currentPhase !== 'DESCENT') {
           nextPhase = 'DESCENT'
-        } else if (alt <= 5000 && alt > 1500 && vs < -200) {
+          addLog('TOP OF DESCENT REACHED')
+        } else if (alt <= 5000 && alt > 1500 && vs < -200 && currentPhase !== 'APPROACH') {
           nextPhase = 'APPROACH'
-        } else if (alt <= 1500 && vs < -100) {
+          addLog('ESTABLISHED ON APPROACH')
+        } else if (alt <= 1500 && vs < -100 && currentPhase !== 'FINAL') {
           nextPhase = 'FINAL'
+          addLog('FINAL APPROACH')
         }
       }
 
-      // Transition to LANDED
-      if (onGround && (currentPhase === 'FINAL' || currentPhase === 'APPROACH' || !onGround)) {
+      if (onGround && (currentPhase === 'FINAL' || currentPhase === 'APPROACH')) {
         if (gs > 30) {
           nextPhase = 'LANDED'
+          addLog(`TOUCHDOWN: ${Math.round(vs)} FPM`)
           if (Math.abs(vs) > maxLandingRate) setMaxLandingRate(Math.abs(vs))
         }
       }
@@ -450,7 +464,6 @@ function Dashboard({
         setPhase(nextPhase)
       }
 
-      // Send update to backend every 30 seconds
       if (Date.now() - lastUpdateRef.current > 30000) {
         sendUpdate(flightData, nextPhase)
         lastUpdateRef.current = Date.now()
@@ -490,10 +503,10 @@ function Dashboard({
       setIsTracking(true)
       setPhase('PRE-FLIGHT')
       setFuelAtStart(flightData.fuel)
+      addLog('FLIGHT TRACKING ENGAGED')
     } catch (err) {
       console.error(err)
     } finally {
-      // @ts-ignore
       setLoading(false)
     }
   }
@@ -516,7 +529,7 @@ function Dashboard({
         fuelUsed: Math.max(0, fuelAtStart - flightData.fuel),
         distance: 0,
         flightTime: flightTime,
-        comments: 'Kingfisher ACARS Auto-Filing v1.1'
+        comments: 'Kingfisher Custom ACARS Auto-Filing'
       }, {
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -533,14 +546,13 @@ function Dashboard({
       console.error(err)
       alert('Critical: PIREP filing failed. Check connection.')
     } finally {
-      // @ts-ignore
       setLoading(false)
     }
   }
 
   if (!ofp) {
     return (
-      <div className="h-full flex flex-col items-center justify-center space-y-10 max-w-2xl mx-auto">
+      <div className="h-full flex flex-col items-center justify-center space-y-10 max-w-2xl mx-auto p-10">
         <div className="bg-neutral-900/40 border border-neutral-800/50 rounded-[3rem] p-16 text-center space-y-8 shadow-2xl backdrop-blur-3xl w-full">
           <div className="w-28 h-28 bg-gradient-to-br from-kf-red/20 to-kf-red/5 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-kf-red/20 shadow-2xl shadow-kf-red/10 rotate-3">
             <Import className="w-12 h-12 text-kf-red" />
@@ -548,7 +560,7 @@ function Dashboard({
           <div className="space-y-3">
             <h3 className="text-3xl font-black italic uppercase tracking-tighter leading-none">Initialize Dispatch</h3>
             <p className="text-neutral-500 text-sm font-bold uppercase tracking-widest leading-relaxed">
-              Import your SimBrief flight plan to enable telemetry and mission tracking.
+              Import your SimBrief flight plan or go to Tasks to select a booked mission.
             </p>
           </div>
           <div className="flex space-x-3 bg-kf-black/80 p-3 rounded-2xl border border-neutral-800/50 shadow-inner">
@@ -568,7 +580,6 @@ function Dashboard({
             </button>
           </div>
         </div>
-        <p className="text-[10px] font-black text-neutral-700 uppercase tracking-[0.4em]">Ready for assignment</p>
       </div>
     )
   }
@@ -576,10 +587,8 @@ function Dashboard({
   return (
     <div className="h-full flex flex-col space-y-6">
       <div className="grid grid-cols-12 gap-6">
-        {/* Mission Card */}
         <div className="col-span-8 bg-gradient-to-br from-neutral-900 to-kf-black border border-neutral-800/50 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-96 h-96 bg-kf-red/5 rounded-full -mr-48 -mt-48 blur-[120px]" />
-          
           <div className="flex justify-between items-end mb-12 relative z-10">
             <div className="space-y-1">
               <span className="text-[10px] font-black text-kf-red uppercase tracking-[0.4em]">Flight Profile</span>
@@ -597,7 +606,6 @@ function Dashboard({
               </div>
             </div>
           </div>
-
           <div className="grid grid-cols-4 gap-8 relative z-10">
             <Detail label="ALTITUDE" value={flightData?.alt ? Math.round(flightData.alt).toLocaleString() : '0'} unit="FT" />
             <Detail label="GROUND SPEED" value={flightData?.gs ? Math.round(flightData.gs).toString() : '0'} unit="KTS" />
@@ -606,7 +614,6 @@ function Dashboard({
           </div>
         </div>
 
-        {/* Secondary Stats */}
         <div className="col-span-4 grid grid-rows-2 gap-6">
           <div className="bg-neutral-900/40 border border-neutral-800/50 rounded-[2rem] p-6 flex flex-col justify-center shadow-xl backdrop-blur-xl">
              <span className="text-[9px] font-black text-neutral-500 uppercase tracking-[0.3em] mb-4">Vertical Telemetry</span>
@@ -632,16 +639,28 @@ function Dashboard({
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-6 flex-1">
-        {/* Telemetry Panel */}
+      <div className="grid grid-cols-12 gap-6 flex-1 overflow-hidden min-h-0">
         <div className="col-span-3 space-y-6 overflow-y-auto pr-2 custom-scrollbar">
-           <TelemetryBox label="IAS" value={flightData?.ias || 0} unit="KTS" />
+           <TelemetryBox label="IAS" value={flightData?.ias ? Math.round(flightData.ias) : 0} unit="KTS" />
            <TelemetryBox label="MACH" value={flightData?.mach?.toFixed(3) || '0.000'} unit="M" />
            <TelemetryBox label="PITCH" value={flightData?.pitch?.toFixed(1) || '0.0'} unit="°" color={(v) => Number(v) > 15 ? 'text-kf-red' : 'text-white'} />
            <TelemetryBox label="BANK" value={flightData?.bank?.toFixed(1) || '0.0'} unit="°" color={(v) => Math.abs(Number(v)) > 30 ? 'text-kf-red' : 'text-white'} />
+           <div className="bg-neutral-900/40 border border-neutral-800/50 rounded-2xl p-5 shadow-lg">
+              <div className="flex items-center space-x-2 mb-4">
+                <List className="w-4 h-4 text-kf-red" />
+                <span className="text-[9px] font-black text-neutral-500 uppercase tracking-[0.3em]">Flight Log</span>
+              </div>
+              <div className="space-y-3 max-h-48 overflow-y-auto custom-scrollbar">
+                {flightLog.map((log, i) => (
+                  <div key={i} className="text-[10px] flex space-x-2 border-l border-neutral-800 pl-3 py-1">
+                    <span className="text-neutral-500 font-mono">{log.time}</span>
+                    <span className="text-neutral-300 font-bold uppercase">{log.event}</span>
+                  </div>
+                ))}
+              </div>
+           </div>
         </div>
 
-        {/* Action Center */}
         <div className="col-span-9 bg-neutral-900/20 border border-neutral-800/30 rounded-[2.5rem] p-10 flex flex-col shadow-inner relative overflow-hidden">
           <div className="flex-1 flex flex-col items-center justify-center space-y-12">
             {!isTracking ? (
@@ -676,9 +695,7 @@ function Dashboard({
                     <span className="text-3xl font-mono font-black italic">{Math.max(0, Math.round(fuelAtStart - (flightData?.fuel || 0))).toLocaleString()} <span className="text-xs text-neutral-600 uppercase">GAL</span></span>
                   </div>
                 </div>
-
                 <div className="h-[1px] bg-neutral-800/50" />
-
                 <div className="flex justify-center space-x-6">
                   <button 
                     onClick={handleEndFlight}
@@ -690,7 +707,6 @@ function Dashboard({
               </div>
             )}
           </div>
-          
           <button 
             onClick={() => setOfp(null)}
             className="absolute bottom-6 right-10 text-[9px] font-black text-neutral-700 hover:text-kf-red uppercase tracking-[0.3em] transition-colors"
@@ -698,6 +714,51 @@ function Dashboard({
             Reset Systems & Purge OFP
           </button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function SettingsView() {
+  return (
+    <div className="p-8 space-y-10 max-w-4xl mx-auto h-full overflow-y-auto custom-scrollbar">
+      <div className="space-y-2">
+        <h3 className="text-4xl font-black italic uppercase tracking-tighter">System Data</h3>
+        <p className="text-neutral-500 text-xs font-bold uppercase tracking-[0.3em]">Hardware & software synchronization parameters</p>
+      </div>
+      <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-[2.5rem] divide-y divide-neutral-800/50 overflow-hidden shadow-2xl">
+        <SettingsRow label="Automatic PIREP Submission" description="Files your flight immediately upon engine shutdown at destination." enabled={true} />
+        <SettingsRow label="High-Frequency Telemetry" description="Samples simulator data every 500ms for smoother tracking." enabled={true} />
+        <SettingsRow label="Discord Rich Presence" description="Broadcast your current flight status to the Kingfisher Discord." enabled={true} />
+        <div className="p-8 bg-kf-red/5 flex items-center justify-between">
+           <div>
+              <h4 className="font-black italic uppercase text-lg tracking-tighter text-kf-red">Operational Mode</h4>
+              <p className="text-xs text-neutral-500 font-medium mt-1">System is currently operating in PRODUCTION environment.</p>
+           </div>
+           <div className="px-4 py-2 bg-kf-red/10 border border-kf-red/20 rounded-xl text-kf-red text-[10px] font-black uppercase tracking-widest">
+              Live Link
+           </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SettingsRow({ label, description, enabled }: { label: string, description: string, enabled: boolean }) {
+  return (
+    <div className="p-8 flex items-center justify-between group hover:bg-neutral-800/20 transition-all">
+      <div className="space-y-1">
+        <h4 className="font-black italic uppercase tracking-tight text-neutral-200">{label}</h4>
+        <p className="text-xs text-neutral-500 font-medium">{description}</p>
+      </div>
+      <div className={cn(
+        "w-14 h-7 rounded-full relative p-1 transition-all cursor-pointer shadow-inner",
+        enabled ? "bg-kf-red" : "bg-neutral-800"
+      )}>
+        <div className={cn(
+          "w-5 h-5 bg-white rounded-full shadow-lg transition-all transform",
+          enabled ? "translate-x-7" : "translate-x-0"
+        )} />
       </div>
     </div>
   )
@@ -736,36 +797,27 @@ function MapView({ flightData, history, ofp }: { flightData: FlightData | null, 
   const RecenterMap = ({ position }: { position: [number, number] }) => {
     const map = useMap()
     useEffect(() => {
-      if (position[0] !== 0) map.setView(position, map.getZoom())
+      if (position[0] !== 0 && position[0] !== 20.5937) {
+        map.setView(position, map.getZoom())
+      }
     }, [position, map])
     return null
   }
-
-  const pos: [number, number] = flightData ? [flightData.lat, flightData.lng] : [20.5937, 78.9629]
-
+  
+  const pos: [number, number] = flightData && flightData.lat !== 0 ? [flightData.lat, flightData.lng] : [20.5937, 78.9629]
+  
   return (
-    <div className="h-full w-full bg-neutral-950 rounded-[2.5rem] overflow-hidden border border-neutral-800/50 relative shadow-2xl">
-      <MapContainer 
-        center={pos} 
-        zoom={5} 
-        style={{ height: '100%', width: '100%' }}
-        zoomControl={false}
-      >
-        <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-        />
+    <div className="flex-1 w-full bg-neutral-950 overflow-hidden relative shadow-2xl min-h-0">
+      <MapContainer center={pos} zoom={5} style={{ height: '100%', width: '100%', minHeight: '400px' }} zoomControl={false}>
+        <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution='&copy; OSM' />
         {flightData && flightData.lat !== 0 && (
           <>
-            {/* @ts-ignore */}
             <Marker position={pos} icon={planeIcon} />
             <Polyline positions={history} color="#D61C22" weight={3} opacity={0.8} />
             <RecenterMap position={pos} />
           </>
         )}
       </MapContainer>
-      
-      {/* Overlay Data */}
       <div className="absolute top-8 left-8 z-[1000] space-y-4 pointer-events-none">
         <div className="bg-kf-black/80 backdrop-blur-2xl p-6 rounded-3xl border border-neutral-800/50 shadow-2xl pointer-events-auto">
           <div className="space-y-6">
@@ -806,17 +858,23 @@ function MapView({ flightData, history, ofp }: { flightData: FlightData | null, 
 function BookingsView({ token, onSelect }: { token: string | null, onSelect: (u: string) => void }) {
   const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-
   useEffect(() => {
-    axios.get(`${API_URL}/bookings/my`, {
-      headers: { Authorization: `Bearer ${token}` }
-    }).then(res => {
-      // Filter for UPCOMING bookings
+    axios.get(`${API_URL}/bookings/my`, { headers: { Authorization: `Bearer ${token}` } }).then(res => {
       const upcoming = res.data.filter((b: any) => b.status === 'UPCOMING')
       setBookings(upcoming)
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [token])
+
+  const handleDispatch = (b: any) => {
+    const dep = b.route.depIcao
+    const arr = b.route.arrIcao
+    const type = b.aircraft.icaocode || 'A320'
+    const reg = b.aircraft.registration
+    const flt = b.route.flightNumber.replace(/\D/g, '')
+    const url = `https://www.simbrief.com/system/dispatch.php?type=generate&orig=${dep}&dest=${arr}&fltnum=${flt}&type=${type}&reg=${reg}&airline=KFR&auto=1`
+    window.open(url, '_blank')
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-10 py-10">
@@ -825,14 +883,10 @@ function BookingsView({ token, onSelect }: { token: string | null, onSelect: (u:
           <h3 className="text-4xl font-black italic uppercase tracking-tighter">Mission Assignments</h3>
           <p className="text-neutral-500 text-xs font-bold uppercase tracking-[0.3em]">Pending operational tasks requiring dispatch</p>
         </div>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="p-4 bg-neutral-900/50 hover:bg-kf-red/10 border border-neutral-800 rounded-2xl transition-all group"
-        >
+        <button onClick={() => window.location.reload()} className="p-4 bg-neutral-900/50 hover:bg-kf-red/10 border border-neutral-800 rounded-2xl transition-all group">
           <Activity className="w-6 h-6 text-neutral-700 group-hover:text-kf-red transition-colors" />
         </button>
       </div>
-
       {loading ? (
         <div className="grid grid-cols-1 gap-6 animate-pulse">
           {[1,2,3].map(i => <div key={i} className="h-32 bg-neutral-900/40 rounded-[2rem]" />)}
@@ -843,15 +897,11 @@ function BookingsView({ token, onSelect }: { token: string | null, onSelect: (u:
             <Briefcase className="w-10 h-10 text-neutral-800" />
           </div>
           <p className="text-neutral-500 font-black italic uppercase tracking-[0.3em] text-sm">No operational assignments booked</p>
-          <p className="text-neutral-700 text-[10px] font-bold uppercase tracking-widest mt-4">Secure a route via the crew portal to begin</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6">
           {bookings.map(b => (
-            <div 
-              key={b.id} 
-              className="group bg-neutral-900/30 border border-neutral-800/50 p-8 rounded-[2.5rem] flex items-center justify-between hover:border-kf-red/50 hover:bg-kf-red/5 transition-all shadow-xl"
-            >
+            <div key={b.id} className="group bg-neutral-900/30 border border-neutral-800/50 p-8 rounded-[2.5rem] flex items-center justify-between hover:border-kf-red/50 hover:bg-kf-red/5 transition-all shadow-xl">
               <div className="flex items-center space-x-10">
                 <div className="flex items-center space-x-6">
                   <div className="text-center">
@@ -874,15 +924,25 @@ function BookingsView({ token, onSelect }: { token: string | null, onSelect: (u:
                   <p className="text-[10px] font-bold text-neutral-600 tracking-widest">{b.aircraft.registration}</p>
                 </div>
               </div>
-              <button 
-                onClick={() => {
-                  const userSb = prompt('Enter SimBrief Username to initialize this mission:')
-                  if (userSb) onSelect(userSb)
-                }}
-                className="bg-neutral-900 group-hover:bg-kf-red text-white p-5 rounded-2xl transition-all shadow-xl shadow-black/50 group-hover:shadow-kf-red/20 transform group-hover:scale-105"
-              >
-                <Import className="w-6 h-6" />
-              </button>
+              <div className="flex items-center space-x-3">
+                <button 
+                  onClick={() => handleDispatch(b)}
+                  title="Dispatch in SimBrief"
+                  className="bg-neutral-900 hover:bg-neutral-800 text-white p-5 rounded-2xl transition-all shadow-xl shadow-black/50 border border-neutral-800"
+                >
+                  <ExternalLink className="w-6 h-6" />
+                </button>
+                <button 
+                  onClick={() => {
+                    const userSb = prompt('Confirm SimBrief Username to link this mission:', localStorage.getItem('kf_sb_user') || '')
+                    if (userSb) onSelect(userSb)
+                  }}
+                  title="Link and Start"
+                  className="bg-kf-red text-white p-5 rounded-2xl transition-all shadow-xl shadow-kf-red/20 transform group-hover:scale-105"
+                >
+                  <ShieldCheck className="w-6 h-6" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -890,3 +950,5 @@ function BookingsView({ token, onSelect }: { token: string | null, onSelect: (u:
     </div>
   )
 }
+
+export default App

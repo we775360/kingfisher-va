@@ -64,4 +64,19 @@ export const publicRoutes = async (app: FastifyInstance) => {
       }
     })
   })
+
+  app.get('/public/live-flights', async () => {
+    return prisma.liveFlight.findMany({
+      include: {
+        pilot: {
+          select: {
+            pilotId: true,
+            firstName: true,
+            lastName: true,
+            rank: true
+          }
+        }
+      }
+    })
+  })
 }
