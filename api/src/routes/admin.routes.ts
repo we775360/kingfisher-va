@@ -38,4 +38,5 @@ export const adminRoutes = async (app: FastifyInstance) => {
 
   // Announcements
   app.post('/admin/announcements', { preHandler: requireAdmin }, createAnnouncement)
+  app.delete('/admin/announcements/:id', { preHandler: requireAdmin }, deleteAnnouncement)
 }

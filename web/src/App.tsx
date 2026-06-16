@@ -20,6 +20,7 @@ import ATCVSO from './pages/ATCVSO'
 import SettingsPage from './pages/Settings'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import Handbook from './pages/Handbook'
+import LiveMap from './pages/LiveMap'
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/handbook" element={<Handbook />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/live-map" element={<LiveMap />} />
       <Route path="/flights" element={<Flights />} />
       <Route path="/pirep" element={<PIREP />} />
       <Route path="/logbook" element={<Logbook />} />

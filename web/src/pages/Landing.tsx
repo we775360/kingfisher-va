@@ -42,6 +42,14 @@ const AIRPORT_COORDS: Record<string, [number, number]> = {
     'OTHH': [25.2731, 51.6081], // Doha
     'EGLL': [51.4700, -0.4543], // London
     'KJFK': [40.6413, -73.7781], // New York
+    'WSSS': [1.3502, 103.9945], // Singapore
+    'VHHH': [22.3080, 113.9185], // Hong Kong
+    'VTBS': [13.6900, 100.7501], // Bangkok
+    'VILH': [34.1359, 77.5855],  // Leh
+    'VIAR': [31.7096, 74.7973],  // Amritsar
+    'VAAU': [19.8631, 75.3986],  // Aurangabad
+    'VABP': [23.2875, 77.3375],  // Bhopal
+    'VARK': [17.7214, 83.2244],  // Visakhapatnam
 }
 
 export default function Landing() {
@@ -96,7 +104,7 @@ export default function Landing() {
         endLng: end[1],
         color: isDark ? ['#c0121e', '#ff8c00'] : ['#c0121e', '#000000']
       }
-    }).slice(0, 50)
+    }).slice(0, 100) // Show more routes
   }, [routes, isDark])
 
   const planeIcon = new L.DivIcon({
@@ -563,10 +571,7 @@ export default function Landing() {
                     </h2>
                     <div className={`${theme.textMuted} space-y-8 text-lg leading-relaxed font-medium`}>
                         <p>
-                            Guneet Singh founded Kingfisher Virtual Airline with a focus on simplicity and realism. Based in India, he built this platform from the ground up to provide a professional home for flight simulation enthusiasts.
-                        </p>
-                        <p>
-                            With a hands-on approach to every technical detail, Guneet continues to innovate and expand the Kingfisher network, ensuring a world-class experience for every pilot.
+                            Hi, I'm Guneet Singh. I have founded this Virtual Airline - Kingfisher Virtual Airline which is no where in relation with the real world airline that used to exist. Do feel free to join the KFR VA!
                         </p>
                     </div>
                     

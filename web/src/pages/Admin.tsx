@@ -96,7 +96,7 @@ export default function Admin() {
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
-      const [s, p, pi, a, r, h, e] = await Promise.all([
+      const [s, p, pi, a, r, h, e, an] = await Promise.all([
         api.get('/admin/stats'),
         api.get('/admin/pilots'),
         api.get('/admin/pireps'),
@@ -104,6 +104,7 @@ export default function Admin() {
         api.get('/admin/routes'),
         api.get('/admin/hubs'),
         api.get('/events'),
+        fetch('https://kingfisher-api.onrender.com/api/v1/public/announcements').then(r => r.json()).catch(() => [])
       ])
       setStats(s.data)
       setPilots(p.data)
@@ -112,12 +113,15 @@ export default function Admin() {
       setRoutes(r.data)
       setHubs(h.data)
       setEvents(e.data)
+      setAnnouncements(Array.isArray(an) ? an : [])
     } catch (err) {
       console.error(err)
     } finally {
       setLoading(false)
     }
   }, [])
+
+  const [announcements, setAnnouncements] = useState<any[]>([])
 
   useEffect(() => {
     fetchAll()
@@ -1145,6 +1149,36 @@ export default function Admin() {
               style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
               Post Announcement
             </button>
+
+            <div className="mt-8 pt-8" style={{ borderTop: `1px solid ${t.border}` }}>
+              <div className="flex items-center gap-2.5 mb-5">
+                <Filter size={15} style={{ color: '#c0121e' }} />
+                <span className="text-sm font-semibold" style={{ color: t.text }}>Manage Announcements</span>
+              </div>
+              <div className="space-y-4">
+                {announcements.length === 0 ? (
+                  <div className="text-sm italic py-4 text-center" style={{ color: t.textMuted }}>No announcements found</div>
+                ) : (
+                  announcements.map((a: any) => (
+                    <div key={a.id} className="p-4 rounded-2xl flex items-center justify-between gap-4"
+                      style={{ background: t.badge, border: `1px solid ${t.border}` }}>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          {a.isPinned && <Shield size={12} className="text-red-600" />}
+                          <span className="text-sm font-bold" style={{ color: t.text }}>{a.title}</span>
+                        </div>
+                        <p className="text-xs line-clamp-1" style={{ color: t.textSub }}>{a.content}</p>
+                      </div>
+                      <button onClick={() => deleteItem(`/admin/announcements/${a.id}`)}
+                        className="p-2 rounded-xl flex-shrink-0"
+                        style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )
 

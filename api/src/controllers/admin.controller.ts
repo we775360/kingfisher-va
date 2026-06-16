@@ -277,6 +277,18 @@ export const createAnnouncement = async (req: FastifyRequest, reply: FastifyRepl
   }
 }
 
+// ── DELETE ANNOUNCEMENT ──
+export const deleteAnnouncement = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { id } = req.params as { id: string }
+    await prisma.announcement.delete({ where: { id } })
+    return reply.send({ message: 'Announcement deleted' })
+  } catch (err) {
+    console.error(err)
+    return reply.status(500).send({ error: 'Internal server error' })
+  }
+}
+
 // ── GET STATS ──
 export const getStats = async (req: FastifyRequest, reply: FastifyReply) => {
   try {

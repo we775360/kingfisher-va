@@ -233,7 +233,8 @@ export default function Dashboard() {
                     <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${isDark ? 'from-zinc-800 to-black' : 'from-slate-100 to-slate-200'} border ${theme.border} flex items-center justify-center font-black italic text-red-600 text-lg shadow-inner cursor-pointer`}>
                         {pilot?.firstName?.[0]}{pilot?.lastName?.[0]}
                     </div>
-                    <div className="absolute top-full right-0 mt-4 opacity-0 group-hover/user:opacity-100 pointer-events-none group-hover/user:pointer-events-auto transition-all translate-y-2 group-hover/user:translate-y-0 z-50">
+                    {/* Increased height of the invisible bridge to prevent dropdown from disappearing */}
+                    <div className="absolute top-10 right-0 pt-6 opacity-0 group-hover/user:opacity-100 pointer-events-none group-hover/user:pointer-events-auto transition-all translate-y-2 group-hover/user:translate-y-0 z-50">
                         <div className={`${theme.card} p-2 rounded-2xl min-w-[180px] shadow-2xl`}>
                             <button onClick={handleLogout} className="w-full flex items-center gap-3 p-4 rounded-xl text-red-600 hover:bg-red-600/10 transition-all font-black uppercase text-[10px] tracking-widest">
                                 <LogOut size={16} /> Terminate Session
