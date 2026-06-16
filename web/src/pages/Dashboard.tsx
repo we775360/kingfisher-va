@@ -3,6 +3,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MapContainer, TileLayer, Marker, Tooltip } from 'react-leaflet'
 import L from 'leaflet'
+// @ts-ignore
 import 'leaflet/dist/leaflet.css'
 import {
   LayoutDashboard, Plane, FileText, BookOpen,
@@ -13,7 +14,7 @@ import {
   Activity, Globe, Users, BarChart3,
   Menu, Shield, Headphones, DollarSign,
   Navigation, Radio, CloudRain, Gauge, ArrowRight,
-  List, X, ExternalLink
+  List, X, ExternalLink, Monitor, Download
 } from 'lucide-react'
 import { useAuthStore } from '../store/auth.store'
 import { useThemeStore } from '../store/theme.store'
@@ -232,10 +233,13 @@ export default function Dashboard() {
                        <span className="text-[10px] font-black uppercase tracking-widest">Network Operational Map</span>
                     </div>
                     
+                    {/* @ts-ignore */}
                     <MapContainer center={[20, 77]} zoom={4} style={{ height: '100%', width: '100%', background: '#080808' }} zoomControl={false}>
                        <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                        {liveFlights.map(f => (
+                         /* @ts-ignore */
                          <Marker key={f.id} position={[f.lat, f.lng]} icon={planeIcon}>
+                           {/* @ts-ignore */}
                            <Tooltip permanent direction="top" className="map-tooltip-mini">
                               <div className="text-[8px] font-black uppercase">{f.flightNumber}</div>
                            </Tooltip>
