@@ -18,6 +18,8 @@ import RoutesPage from './pages/RoutesPage'
 import Community from './pages/Community'
 import ATCVSO from './pages/ATCVSO'
 import SettingsPage from './pages/Settings'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import Handbook from './pages/Handbook'
 
 function App() {
   return (
@@ -25,6 +27,8 @@ function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/handbook" element={<Handbook />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/flights" element={<Flights />} />
       <Route path="/pirep" element={<PIREP />} />

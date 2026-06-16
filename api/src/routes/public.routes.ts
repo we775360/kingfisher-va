@@ -79,4 +79,11 @@ export const publicRoutes = async (app: FastifyInstance) => {
       }
     })
   })
+
+  app.get('/public/announcements', async () => {
+    return prisma.announcement.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 5
+    })
+  })
 }

@@ -41,8 +41,8 @@ const NAV_SECTIONS = [
     title: 'Operations',
     items: [
       { icon: LayoutDashboard, label: 'Control Center', path: '/dashboard' },
-      { icon: MapIcon, label: 'Live Network', path: '/live-map' },
-      { icon: Activity, label: 'Radar Scope', path: '/live-flights' },
+      { icon: MapIcon, label: 'Live Network', path: '/routes' },
+      { icon: Activity, label: 'Radar Scope', path: '/live-map' },
     ]
   },
   {
@@ -74,6 +74,7 @@ export default function Dashboard() {
   const [bookings, setBookings] = useState<any[]>([])
   const [pireps, setPireps] = useState<any[]>([])
   const [liveFlights, setLiveFlights] = useState<any[]>([])
+  const [announcements, setAnnouncements] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [collapsed, setCollapsed] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
@@ -117,20 +118,27 @@ export default function Dashboard() {
 
   const fetchAll = async () => {
     try {
-      const [me, b, p] = await Promise.all([
+      const [me, b, p, a] = await Promise.all([
         api.get('/auth/me'),
         api.get('/bookings/my'),
         api.get('/pireps/my'),
+        fetch('https://kingfisher-api.onrender.com/api/v1/public/announcements').then(r => r.json()).catch(() => [])
       ])
       setPilotData(me.data)
       setBookings(b.data)
       setPireps(p.data)
+      setAnnouncements(Array.isArray(a) ? a : [])
       fetchLive()
     } catch {
-      logout(); navigate('/login')
+      handleLogout()
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleLogout = () => {
+    logout()
+    navigate('/')
   }
 
   if (loading) return (
@@ -153,8 +161,8 @@ export default function Dashboard() {
            <img src="/logo.png" className="w-10 h-10 object-contain" />
            {!collapsed && (
              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="ml-4">
-                <div className="font-black italic tracking-tighter leading-none text-xl">KINGFISHER</div>
-                <div className="text-[8px] font-black text-red-600 tracking-[0.4em] uppercase mt-1">Flight Operations</div>
+                <div className="font-black italic tracking-tighter leading-none text-xl text-red-600">KINGFISHER</div>
+                <div className={`text-[8px] font-black ${theme.textMuted} tracking-[0.4em] uppercase mt-1`}>Flight Operations</div>
              </motion.div>
            )}
         </div>
@@ -221,8 +229,17 @@ export default function Dashboard() {
                        {pilot?.walletBalance?.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })} SALARY
                     </div>
                  </div>
-                 <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${isDark ? 'from-zinc-800 to-black' : 'from-slate-100 to-slate-200'} border ${theme.border} flex items-center justify-center font-black italic text-red-600 text-lg shadow-inner`}>
-                    {pilot?.firstName?.[0]}{pilot?.lastName?.[0]}
+                 <div className="relative group/user">
+                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${isDark ? 'from-zinc-800 to-black' : 'from-slate-100 to-slate-200'} border ${theme.border} flex items-center justify-center font-black italic text-red-600 text-lg shadow-inner cursor-pointer`}>
+                        {pilot?.firstName?.[0]}{pilot?.lastName?.[0]}
+                    </div>
+                    <div className="absolute top-full right-0 mt-4 opacity-0 group-hover/user:opacity-100 pointer-events-none group-hover/user:pointer-events-auto transition-all translate-y-2 group-hover/user:translate-y-0 z-50">
+                        <div className={`${theme.card} p-2 rounded-2xl min-w-[180px] shadow-2xl`}>
+                            <button onClick={handleLogout} className="w-full flex items-center gap-3 p-4 rounded-xl text-red-600 hover:bg-red-600/10 transition-all font-black uppercase text-[10px] tracking-widest">
+                                <LogOut size={16} /> Terminate Session
+                            </button>
+                        </div>
+                    </div>
                  </div>
               </div>
            </div>
@@ -230,30 +247,41 @@ export default function Dashboard() {
 
         <div className="flex-1 overflow-y-auto p-10 space-y-10 scrollbar-hide">
            
-           {/* NOTAMS Banner */}
-           <motion.div 
-             initial={{ opacity: 0, y: -20 }}
-             animate={{ opacity: 1, y: 0 }}
-             className={`p-6 rounded-[2.5rem] border ${isDark ? 'bg-red-600/5 border-red-600/20' : 'bg-red-50 border-red-100'} flex items-center justify-between gap-6 group`}
-           >
-              <div className="flex items-center gap-6">
-                 <div className={`w-12 h-12 rounded-2xl ${isDark ? 'bg-red-600/20' : 'bg-red-500'} flex items-center justify-center text-white`}>
-                    <AlertTriangle size={24} className="animate-pulse" />
-                 </div>
-                 <div>
-                    <h4 className="text-sm font-black uppercase tracking-[0.2em] text-red-600">Active NOTAM</h4>
-                    <p className={`text-xs font-bold ${isDark ? 'text-zinc-400' : 'text-slate-600'} mt-1`}>Mumbai Hub Expansion Phase 2 is now operational. All pilots are requested to review updated route charts.</p>
-                 </div>
-              </div>
-              <button className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest ${isDark ? 'bg-red-600 text-white' : 'bg-white text-red-600 shadow-sm'} group-hover:scale-105 transition-all`}>Details</button>
-           </motion.div>
+           {/* Dynamic NOTAMS */}
+           {announcements.length > 0 ? announcements.map((a, i) => (
+             <motion.div 
+               key={a.id}
+               initial={{ opacity: 0, y: -20 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ delay: i * 0.1 }}
+               className={`p-6 rounded-[2.5rem] border ${isDark ? 'bg-red-600/5 border-red-600/20' : 'bg-red-50 border-red-100'} flex items-center justify-between gap-6 group`}
+             >
+                <div className="flex items-center gap-6">
+                   <div className={`w-12 h-12 rounded-2xl ${isDark ? 'bg-red-600/20' : 'bg-red-500'} flex items-center justify-center text-white`}>
+                      <AlertTriangle size={24} className={a.isPinned ? "animate-pulse" : ""} />
+                   </div>
+                   <div>
+                      <h4 className="text-sm font-black uppercase tracking-[0.2em] text-red-600">{a.title}</h4>
+                      <p className={`text-xs font-bold ${isDark ? 'text-zinc-400' : 'text-slate-600'} mt-1`}>{a.content}</p>
+                   </div>
+                </div>
+                <div className={`px-4 py-2 rounded-lg ${isDark ? 'bg-white/5' : 'bg-white shadow-sm'} text-[8px] font-black uppercase tracking-widest text-zinc-500`}>
+                   {new Date(a.createdAt).toLocaleDateString()}
+                </div>
+             </motion.div>
+           )) : (
+            <div className={`p-6 rounded-[2.5rem] border ${theme.border} flex items-center gap-6 opacity-40`}>
+                <Info size={20} className="text-zinc-500" />
+                <span className="text-xs font-black uppercase tracking-widest">No active NOTAMS at this frequency</span>
+            </div>
+           )}
 
            {/* Primary Stats Grid */}
            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
               <StatCard label="Air Time" value={`${pilot?.totalHours?.toFixed(1) || '0.0'} HRS`} icon={<Clock />} color="text-red-600" isDark={isDark} />
               <StatCard label="Missions" value={pilot?.totalFlights || '0'} icon={<Navigation />} color="text-blue-500" isDark={isDark} />
               <StatCard label="Performance" value={pilot?.points || '0'} icon={<Trophy />} color="text-amber-500" isDark={isDark} />
-              <StatCard label="Status" value="OPERATIONAL" icon={<Shield />} color="text-green-500" isDark={isDark} />
+              <StatCard label="Status" value="ACTIVE" icon={<Shield />} color="text-green-500" isDark={isDark} />
            </div>
 
            <div className="grid lg:grid-cols-3 gap-10">
@@ -353,7 +381,7 @@ export default function Dashboard() {
                     </div>
                     <h4 className="text-2xl font-black italic tracking-tighter uppercase mb-3">Next-Gen ACARS</h4>
                     <p className={`${theme.textMuted} text-xs font-bold leading-relaxed mb-10 uppercase tracking-widest`}>v1.1.0 STABLE · LIVE TELEMETRY · GLOBAL DISPATCH</p>
-                    <a href="#" className={`flex items-center justify-between p-5 ${isDark ? 'bg-white/5' : 'bg-slate-50'} rounded-2xl border ${theme.border} hover:bg-red-600 hover:text-white transition-all group/link`}>
+                    <a href="https://github.com/we775360/kingfisher-va/releases/latest" target="_blank" rel="noreferrer" className={`flex items-center justify-between p-5 ${isDark ? 'bg-white/5' : 'bg-slate-50'} rounded-2xl border ${theme.border} hover:bg-red-600 hover:text-white transition-all group/link`}>
                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Download Hub</span>
                        <Download size={18} className="group-hover/link:translate-y-1 transition-transform" />
                     </a>
@@ -378,8 +406,8 @@ export default function Dashboard() {
         <footer className={`h-20 flex items-center justify-between px-10 border-t ${theme.border} opacity-40 transition-colors duration-500`}>
            <div className={`text-[10px] font-black uppercase tracking-[0.4em] ${theme.textMuted}`}>Kingfisher ACARS Engine · Enterprise Edition · v1.1.0</div>
            <div className="flex gap-10">
-              <button className={`text-[10px] font-black ${theme.textMuted} hover:text-red-600 uppercase tracking-widest transition-colors`}>Operational Policy</button>
-              <button className={`text-[10px] font-black ${theme.textMuted} hover:text-red-600 uppercase tracking-widest transition-colors`}>System Status</button>
+              <Link to="/privacy" className={`text-[10px] font-black ${theme.textMuted} hover:text-red-600 uppercase tracking-widest transition-colors`}>Privacy Policy</Link>
+              <Link to="/handbook" className={`text-[10px] font-black ${theme.textMuted} hover:text-red-600 uppercase tracking-widest transition-colors`}>Handbook</Link>
            </div>
         </footer>
       </main>
@@ -393,7 +421,7 @@ export default function Dashboard() {
                <div className="flex items-center justify-between mb-16">
                   <div className="flex items-center gap-4">
                      <img src="/logo.png" className="w-12 h-12" />
-                     <div className="font-black italic tracking-tighter uppercase text-xl">Kingfisher</div>
+                     <div className="font-black italic tracking-tighter uppercase text-xl text-red-600">Kingfisher</div>
                   </div>
                   <button onClick={() => setMobileSidebarOpen(false)} className={`p-2 ${theme.textMuted}`}><X size={32} /></button>
                </div>
@@ -405,7 +433,7 @@ export default function Dashboard() {
                     </Link>
                   ))}
                </div>
-               <button onClick={() => { logout(); navigate('/') }} className="flex items-center gap-6 text-red-600 font-black uppercase tracking-[0.3em] text-sm pt-12 border-t border-current/10">
+               <button onClick={handleLogout} className="flex items-center gap-6 text-red-600 font-black uppercase tracking-[0.3em] text-sm pt-12 border-t border-current/10">
                   <LogOut size={24} /> Terminate
                </button>
             </motion.div>

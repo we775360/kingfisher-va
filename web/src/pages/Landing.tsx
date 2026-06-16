@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MapContainer, TileLayer, Marker, Tooltip } from 'react-leaflet'
 import Globe from 'react-globe.gl'
@@ -25,6 +25,24 @@ L.Icon.Default.mergeOptions({
 })
 
 const API = 'https://kingfisher-api.onrender.com/api/v1'
+
+const AIRPORT_COORDS: Record<string, [number, number]> = {
+    'VIDP': [28.5665, 77.1031], // Delhi
+    'VABB': [19.0896, 72.8656], // Mumbai
+    'VOBL': [13.1986, 77.7066], // Bangalore
+    'VOMM': [12.9941, 80.1708], // Chennai
+    'VECC': [22.6547, 88.4467], // Kolkata
+    'VOHS': [17.2403, 78.4297], // Hyderabad
+    'VAAH': [23.0734, 72.6347], // Ahmedabad
+    'VOGO': [15.3808, 73.8314], // Goa
+    'VOTV': [8.4821, 76.9200],  // Thiruvananthapuram
+    'VOCI': [10.1520, 76.4019], // Cochin
+    'OPKC': [24.9065, 67.1608], // Karachi
+    'OMDB': [25.2532, 55.3657], // Dubai
+    'OTHH': [25.2731, 51.6081], // Doha
+    'EGLL': [51.4700, -0.4543], // London
+    'KJFK': [40.6413, -73.7781], // New York
+}
 
 export default function Landing() {
   const navigate = useNavigate()
@@ -68,13 +86,17 @@ export default function Landing() {
   }, [fetchData])
 
   const globeData = useMemo(() => {
-    return routes.filter(r => r.depIcao && r.arrIcao).map(r => ({
-      startLat: 20, 
-      startLng: 77,
-      endLat: 28,
-      endLng: 77,
-      color: isDark ? ['#c0121e', '#ff8c00'] : ['#c0121e', '#000000']
-    })).slice(0, 50)
+    return routes.map(r => {
+      const start = AIRPORT_COORDS[r.depIcao] || [20, 77]
+      const end = AIRPORT_COORDS[r.arrIcao] || [28, 77]
+      return {
+        startLat: start[0],
+        startLng: start[1],
+        endLat: end[0],
+        endLng: end[1],
+        color: isDark ? ['#c0121e', '#ff8c00'] : ['#c0121e', '#000000']
+      }
+    }).slice(0, 50)
   }, [routes, isDark])
 
   const planeIcon = new L.DivIcon({
@@ -397,7 +419,7 @@ export default function Landing() {
             <div className={`h-[500px] md:h-[700px] w-full rounded-[60px] overflow-hidden border ${theme.border} shadow-2xl relative`}>
                 {/* @ts-expect-error - Leaflet props types */}
                 <MapContainer center={[20, 77]} zoom={4} style={{ height: '100%', width: '100%', filter: isDark ? 'invert(100%) hue-rotate(180deg) brightness(0.9) contrast(1.1)' : 'none' }} zoomControl={false}>
-                    <TileLayer url={isDark ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"} />
+                    <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
                     {liveFlights.map(f => (
                         /* @ts-ignore */
                         <Marker 
@@ -462,7 +484,7 @@ export default function Landing() {
                     <div className="text-red-600 font-black uppercase tracking-[0.5em] text-[10px] mb-6">Elite Aviators</div>
                     <h2 className={`text-5xl md:text-7xl font-black italic tracking-tighter uppercase leading-none ${!isDark && 'text-slate-900'}`}>CREW <span className="text-red-600 text-glow-red">LEADERBOARD.</span></h2>
                 </div>
-                <button className={`${isDark ? 'bg-white/5' : 'bg-white shadow-sm'} border ${theme.border} px-10 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-red-600 hover:text-white transition-all`}>View All Pilots</button>
+                <button onClick={() => navigate('/roster')} className={`${isDark ? 'bg-white/5' : 'bg-white shadow-sm'} border ${theme.border} px-10 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-red-600 hover:text-white transition-all`}>View All Pilots</button>
             </div>
 
             <div className="grid gap-4">
@@ -615,18 +637,20 @@ export default function Landing() {
                 <div>
                     <h5 className={`font-black uppercase tracking-[0.4em] text-[10px] mb-10 ${!isDark && 'text-slate-900'}`}>Operations</h5>
                     <ul className={`space-y-6 text-[10px] font-black uppercase tracking-widest ${theme.textMuted}`}>
-                        {['Dispatch Hub', 'Leaderboard', 'Fleet', 'Network Map'].map(i => (
-                            <li key={i} className="hover:text-red-600 cursor-pointer transition-colors">{i}</li>
-                        ))}
+                        <li onClick={() => navigate('/dashboard')} className="hover:text-red-600 cursor-pointer transition-colors">Control Center</li>
+                        <li onClick={() => navigate('/roster')} className="hover:text-red-600 cursor-pointer transition-colors">Pilot Roster</li>
+                        <li onClick={() => navigate('/routes')} className="hover:text-red-600 cursor-pointer transition-colors">Route Network</li>
+                        <li onClick={() => navigate('/events')} className="hover:text-red-600 cursor-pointer transition-colors">Live Events</li>
                     </ul>
                 </div>
 
                 <div>
                     <h5 className={`font-black uppercase tracking-[0.4em] text-[10px] mb-10 ${!isDark && 'text-slate-900'}`}>Information</h5>
                     <ul className={`space-y-6 text-[10px] font-black uppercase tracking-widest ${theme.textMuted}`}>
-                        {['About Founder', 'Privacy Policy', 'System Status', 'Support'].map(i => (
-                            <li key={i} className="hover:text-red-600 cursor-pointer transition-colors">{i}</li>
-                        ))}
+                        <li><Link to="/privacy" className="hover:text-red-600 transition-colors">Privacy Policy</Link></li>
+                        <li><Link to="/handbook" className="hover:text-red-600 transition-colors">Pilot Handbook</Link></li>
+                        <li onClick={() => navigate('/atc')} className="hover:text-red-600 cursor-pointer transition-colors">ATC Services</li>
+                        <li onClick={() => navigate('/forums')} className="hover:text-red-600 cursor-pointer transition-colors">Community</li>
                     </ul>
                 </div>
             </div>
@@ -637,7 +661,7 @@ export default function Landing() {
                 </div>
                 <div className="flex gap-10">
                     <span className={`text-[9px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-zinc-700' : 'text-slate-400'} hover:text-red-600 cursor-pointer transition-all`}>Support Center</span>
-                    <span className={`text-[9px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-zinc-700' : 'text-slate-400'} hover:text-red-600 cursor-pointer transition-all`}>Pilot Handbook</span>
+                    <span className={`text-[9px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-zinc-700' : 'text-slate-400'} hover:text-red-600 cursor-pointer transition-all`}>Operations Core v1.1.0</span>
                 </div>
             </div>
         </div>
