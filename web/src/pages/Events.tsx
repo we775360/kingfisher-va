@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Calendar, Plane, Users, Clock,
   DollarSign, Radio, Check, X,
-  MapPin, Info
+  MapPin, Info, ArrowLeft, Zap, Shield,
+  Trophy, Navigation, ArrowRight
 } from 'lucide-react'
 import { useThemeStore } from '../store/theme.store'
 import { useAuthStore } from '../store/auth.store'
@@ -20,22 +21,20 @@ export default function Events() {
   const [loading, setLoading] = useState(true)
   const [joining, setJoining] = useState<string | null>(null)
 
-  const t = {
-    bg: isDark ? '#0f0f0f' : '#f0f2f5',
-    card: isDark ? '#141414' : '#ffffff',
-    border: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)',
-    text: isDark ? '#ffffff' : '#0a0a0a',
-    textSub: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
-    textMuted: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.3)',
-    navActive: isDark ? 'rgba(192,18,30,0.15)' : 'rgba(192,18,30,0.08)',
-    navHover: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
-    input: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-  }
+  const t = useMemo(() => ({
+    bg: isDark ? 'bg-[#050505]' : 'bg-[#f0f2f5]',
+    card: isDark ? 'bg-[#0c0c0c] border-white/5 shadow-2xl' : 'bg-white border-slate-200 shadow-sm',
+    header: isDark ? 'bg-[#050505]/80' : 'bg-white/80',
+    border: isDark ? 'border-white/5' : 'border-slate-200',
+    text: isDark ? 'text-white' : 'text-slate-900',
+    textMuted: isDark ? 'text-zinc-500' : 'text-slate-400',
+    accent: 'text-red-600',
+  }), [isDark])
 
   useEffect(() => {
     if (!isAuthenticated) { navigate('/login'); return }
     fetchData()
-  }, [])
+  }, [isAuthenticated])
 
   const fetchData = async () => {
     try {
@@ -78,212 +77,198 @@ export default function Events() {
   const past = events.filter(e => new Date(e.date) <= new Date())
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: t.bg }}>
-      <div className="w-8 h-8 rounded-full border-2 animate-spin"
-        style={{ borderColor: '#c0121e', borderTopColor: 'transparent' }} />
+    <div className={`h-screen flex items-center justify-center ${t.bg}`}>
+       <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
     </div>
   )
 
   return (
-    <div className="min-h-screen" style={{ background: t.bg, color: t.text }}>
-
-      {/* Header */}
-      <div className="sticky top-0 z-30 px-6 py-4"
-        style={{
-          background: isDark ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.92)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: `1px solid ${t.border}`,
-        }}>
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/dashboard" className="text-sm" style={{ color: t.textSub, textDecoration: 'none' }}>
-              ← Dashboard
-            </Link>
-            <div className="w-px h-4" style={{ background: t.border }} />
-            <div className="flex items-center gap-2">
-              <Calendar size={16} style={{ color: '#c0121e' }} />
-              <span className="font-bold text-base" style={{ color: t.text }}>Events</span>
+    <div className={`min-h-screen ${t.bg} ${t.text} font-sans transition-colors duration-500 overflow-x-hidden`}>
+      
+      {/* ── HEADER ── */}
+      <header className={`h-24 sticky top-0 z-50 backdrop-blur-xl border-b ${t.header} ${t.border} flex items-center px-6 md:px-10`}>
+        <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <button onClick={() => navigate('/dashboard')} className={`p-3 rounded-2xl border ${t.border} ${isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'} transition-all`}>
+              <ArrowLeft size={20} className="text-red-600" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-black italic tracking-tighter uppercase leading-none">Flight Events</h1>
+              <div className="flex items-center gap-2 mt-2">
+                <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+                <span className={`text-[10px] font-black uppercase tracking-widest ${t.textMuted}`}>Network Operations</span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl"
-            style={{ background: 'rgba(192,18,30,0.1)', border: '1px solid rgba(192,18,30,0.2)' }}>
-            <Calendar size={13} style={{ color: '#c0121e' }} />
-            <span className="text-xs font-bold" style={{ color: '#c0121e' }}>
-              {upcoming.length} Upcoming
-            </span>
+          
+          <div className={`hidden md:flex items-center gap-4 px-6 py-3 rounded-2xl border ${isDark ? 'bg-white/5' : 'bg-slate-50'} ${t.border}`}>
+            <Calendar size={16} className="text-red-600" />
+            <span className="text-sm font-black tracking-widest uppercase">{upcoming.length} Upcoming Missions</span>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
-
-        {/* Upcoming events */}
-        <div>
-          <div className="text-xs font-semibold tracking-widest uppercase mb-4" style={{ color: t.textMuted }}>
-            Upcoming Events
+      <main className="max-w-7xl mx-auto px-6 md:px-10 py-12 md:py-16">
+        
+        {/* Cinematic Hero for Events */}
+        <section className="mb-20">
+          <div className="relative h-[350px] rounded-[3rem] overflow-hidden border border-white/5 shadow-2xl group">
+             <img 
+               src="https://images.unsplash.com/photo-1542296332-2e4473faf563?auto=format&fit=crop&q=80&w=2000" 
+               className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000"
+               alt="Event Hero"
+             />
+             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+             <div className="absolute bottom-12 left-12 right-12 flex flex-col md:flex-row md:items-end justify-between gap-8">
+               <div>
+                 <div className="text-red-600 font-black uppercase tracking-[0.4em] text-[10px] mb-4">Elite Operations</div>
+                 <h2 className="text-4xl md:text-6xl font-black italic tracking-tighter uppercase leading-none text-white">GROUP <br /> <span className="text-red-600">MISSIONS.</span></h2>
+               </div>
+               <div className="p-8 glass-dark rounded-[2.5rem] border border-white/10 hidden lg:block">
+                 <div className="flex items-center gap-4 mb-4">
+                   <Shield className="text-red-600" size={24} />
+                   <h4 className="text-sm font-black uppercase tracking-widest text-white">Pilot Requirements</h4>
+                 </div>
+                 <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-relaxed">
+                   Active flight status · Valid ACARS license · <br /> Professional conduct on VATSIM/IVAO
+                 </p>
+               </div>
+             </div>
           </div>
+        </section>
+
+        {/* Upcoming Section */}
+        <section className="space-y-10">
+          <div className="flex items-center justify-between">
+             <h3 className="text-sm font-black uppercase tracking-[0.5em] text-red-600">Active Schedules</h3>
+             <div className="w-px h-10 bg-current opacity-10" />
+          </div>
+
           {upcoming.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 rounded-2xl"
-              style={{ background: t.card, border: `1px solid ${t.border}` }}>
-              <Calendar size={36} style={{ color: t.textMuted, marginBottom: '12px' }} strokeWidth={1.5} />
-              <div className="text-sm font-medium mb-1" style={{ color: t.textSub }}>No upcoming events</div>
-              <div className="text-xs" style={{ color: t.textMuted }}>Check back soon — events are posted regularly</div>
+            <div className={`py-24 text-center rounded-[3rem] border-2 border-dashed ${t.border} ${isDark ? 'bg-white/2' : 'bg-white'}`}>
+               <Calendar size={48} className="text-zinc-700 mx-auto mb-6" />
+               <h4 className={`text-xl font-black italic uppercase ${t.textMuted}`}>Airspace Clear</h4>
+               <p className={`text-xs font-bold ${t.textMuted} uppercase tracking-widest mt-2`}>New events are scheduled weekly by dispatch</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="grid lg:grid-cols-2 gap-8">
               {upcoming.map((event, i) => {
                 const joined = isJoined(event)
                 const full = isFull(event)
                 const fillPct = (event.attendees?.length / event.slots) * 100
                 return (
-                  <motion.div key={event.id}
-                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.07 }}
-                    className="rounded-2xl overflow-hidden"
-                    style={{ background: t.card, border: `1px solid ${joined ? 'rgba(192,18,30,0.3)' : t.border}` }}>
-
-                    {/* Event header */}
-                    <div className="px-6 py-4 flex items-start justify-between gap-4"
-                      style={{ borderBottom: `1px solid ${t.border}` }}>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-1 flex-wrap">
-                          <h3 className="text-base font-bold" style={{ color: t.text }}>{event.title}</h3>
-                          {joined && (
-                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold"
-                              style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
-                              ✓ Registered
-                            </span>
-                          )}
-                          {full && !joined && (
-                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold"
-                              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
-                              Full
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm leading-relaxed" style={{ color: t.textSub }}>{event.description}</p>
-                      </div>
-                      <div className="flex-shrink-0 text-right">
-                        <div className="text-sm font-bold" style={{ color: '#c0121e' }}>
-                          {new Date(event.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </div>
-                        <div className="text-xs mt-0.5" style={{ color: t.textMuted }}>
-                          {new Date(event.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })} local
-                        </div>
-                      </div>
+                  <motion.div 
+                    key={event.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    viewport={{ once: true }}
+                    className={`${t.card} rounded-[3rem] p-10 flex flex-col justify-between gap-10 hover:border-red-600/30 transition-all group`}
+                  >
+                    <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+                       <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-4">
+                             <div className="px-3 py-1 bg-red-600 text-white text-[8px] font-black uppercase tracking-widest rounded-full italic">Operational</div>
+                             <div className={`px-3 py-1 ${isDark ? 'bg-white/5' : 'bg-slate-100'} text-[8px] font-black uppercase tracking-widest rounded-full`}>{event.network}</div>
+                          </div>
+                          <h4 className="text-3xl font-black italic tracking-tighter uppercase mb-4">{event.title}</h4>
+                          <p className={`text-sm font-bold ${t.textMuted} leading-relaxed uppercase tracking-wide`}>{event.description}</p>
+                       </div>
+                       <div className="text-right flex-shrink-0">
+                          <div className="text-2xl font-black italic tracking-tighter text-red-600 leading-none">
+                             {new Date(event.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}
+                          </div>
+                          <div className={`text-[10px] font-black ${t.textMuted} uppercase tracking-widest mt-2`}>
+                             {new Date(event.date).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })} Z
+                          </div>
+                       </div>
                     </div>
 
-                    {/* Event details */}
-                    <div className="px-6 py-4">
-                      <div className="flex items-center gap-6 flex-wrap mb-4">
-                        <div className="flex items-center gap-2">
-                          <Plane size={14} style={{ color: t.textMuted }} />
-                          <span className="text-sm font-semibold" style={{ color: t.text }}>
-                            {event.depIcao} → {event.arrIcao}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Radio size={14} style={{ color: t.textMuted }} />
-                          <span className="text-sm" style={{ color: t.textSub }}>{event.network}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <DollarSign size={14} style={{ color: '#10b981' }} />
-                          <span className="text-sm font-semibold" style={{ color: '#10b981' }}>
-                            +${event.earnings} bonus
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Users size={14} style={{ color: t.textMuted }} />
-                          <span className="text-sm" style={{ color: t.textSub }}>
-                            {event.attendees?.length}/{event.slots} pilots
-                          </span>
-                        </div>
-                      </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-8 border-y border-current/5">
+                       <div className="flex flex-col">
+                          <span className={`text-[8px] font-black ${t.textMuted} uppercase tracking-widest mb-1`}>Route</span>
+                          <span className="text-xs font-black uppercase italic">{event.depIcao} → {event.arrIcao}</span>
+                       </div>
+                       <div className="flex flex-col">
+                          <span className={`text-[8px] font-black ${t.textMuted} uppercase tracking-widest mb-1`}>Network</span>
+                          <span className="text-xs font-black uppercase">{event.network}</span>
+                       </div>
+                       <div className="flex flex-col text-red-600">
+                          <span className={`text-[8px] font-black uppercase tracking-widest mb-1`}>Reward</span>
+                          <span className="text-xs font-black uppercase">+${event.earnings}</span>
+                       </div>
+                       <div className="flex flex-col">
+                          <span className={`text-[8px] font-black ${t.textMuted} uppercase tracking-widest mb-1`}>Slots</span>
+                          <span className="text-xs font-black uppercase">{event.attendees?.length} / {event.slots}</span>
+                       </div>
+                    </div>
 
-                      {/* Slot progress */}
-                      <div className="mb-4">
-                        <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: t.border }}>
-                          <div className="h-full rounded-full transition-all"
-                            style={{
-                              width: `${fillPct}%`,
-                              background: fillPct > 80 ? '#ef4444' : fillPct > 50 ? '#f59e0b' : '#10b981'
-                            }} />
-                        </div>
-                        <div className="flex justify-between mt-1">
-                          <span className="text-xs" style={{ color: t.textMuted }}>
-                            {event.attendees?.length} registered
-                          </span>
-                          <span className="text-xs" style={{ color: t.textMuted }}>
-                            {event.slots - event.attendees?.length} slots left
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Join/Leave button */}
-                      <div className="flex items-center gap-3">
-                        {joined ? (
-                          <button
-                            onClick={() => handleLeave(event.id)}
-                            disabled={joining === event.id}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                            style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
-                            <X size={14} />
-                            {joining === event.id ? 'Leaving...' : 'Leave Event'}
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleJoin(event.id)}
-                            disabled={joining === event.id || full}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:scale-[1.02]"
-                            style={{
-                              background: full ? 'rgba(107,114,128,0.3)' : 'linear-gradient(135deg, #c0121e, #8b0000)',
-                              boxShadow: full ? 'none' : '0 0 15px rgba(192,18,30,0.3)',
-                            }}>
-                            <Check size={14} />
-                            {joining === event.id ? 'Joining...' : full ? 'Event Full' : 'Join Event'}
-                          </button>
-                        )}
-                        <div className="flex items-center gap-1.5 text-xs" style={{ color: t.textMuted }}>
-                          <Info size={12} />
-                          Bonus earnings credited after PIREP approval
-                        </div>
-                      </div>
+                    <div className="space-y-6">
+                       <div className="w-full h-1.5 bg-current/5 rounded-full overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${fillPct}%` }}
+                            className="h-full bg-red-600 rounded-full" 
+                          />
+                       </div>
+                       
+                       <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                          <div className="flex items-center gap-2">
+                             <Info size={14} className="text-red-600" />
+                             <span className={`text-[9px] font-bold ${t.textMuted} uppercase tracking-widest`}>Assigned to current hub duty roster</span>
+                          </div>
+                          {joined ? (
+                             <button 
+                               onClick={() => handleLeave(event.id)}
+                               disabled={joining === event.id}
+                               className="w-full md:w-auto px-10 py-4 rounded-2xl border border-red-600/30 text-red-600 text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all"
+                             >
+                               {joining === event.id ? 'Processing...' : 'Abort Mission'}
+                             </button>
+                          ) : (
+                             <button 
+                               onClick={() => handleJoin(event.id)}
+                               disabled={joining === event.id || full}
+                               className={`w-full md:w-auto px-10 py-4 rounded-2xl ${full ? 'bg-zinc-800' : 'bg-red-600'} text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-600/20 hover:scale-105 transition-all`}
+                             >
+                               {joining === event.id ? 'Syncing...' : full ? 'Squadron Full' : 'Secure Slot'}
+                             </button>
+                          )}
+                       </div>
                     </div>
                   </motion.div>
                 )
               })}
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Past events */}
+        {/* Past Events */}
         {past.length > 0 && (
-          <div>
-            <div className="text-xs font-semibold tracking-widest uppercase mb-4" style={{ color: t.textMuted }}>
-              Past Events
-            </div>
-            <div className="space-y-3">
-              {past.map((event, i) => (
-                <motion.div key={event.id}
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="flex items-center justify-between px-5 py-4 rounded-2xl"
-                  style={{ background: t.card, border: `1px solid ${t.border}`, opacity: 0.6 }}>
-                  <div>
-                    <div className="text-sm font-semibold" style={{ color: t.text }}>{event.title}</div>
-                    <div className="text-xs mt-0.5" style={{ color: t.textSub }}>
-                      {event.depIcao} → {event.arrIcao} · {event.attendees?.length} attended
-                    </div>
+          <section className="mt-32 space-y-10">
+             <div className="flex items-center justify-between">
+                <h3 className={`text-sm font-black uppercase tracking-[0.5em] ${t.textMuted}`}>Historical Logs</h3>
+                <div className="w-px h-10 bg-current opacity-10" />
+             </div>
+             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {past.map((event, i) => (
+                  <div key={event.id} className={`${t.card} p-8 rounded-[2.5rem] opacity-50 grayscale hover:opacity-100 hover:grayscale-0 transition-all`}>
+                     <h5 className="font-black italic text-lg uppercase mb-2">{event.title}</h5>
+                     <div className="flex justify-between items-center text-[10px] font-black text-red-600 uppercase tracking-widest">
+                        <span>{event.depIcao} → {event.arrIcao}</span>
+                        <span>{new Date(event.date).toLocaleDateString()}</span>
+                     </div>
                   </div>
-                  <div className="text-xs" style={{ color: t.textMuted }}>
-                    {new Date(event.date).toLocaleDateString()}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
+                ))}
+             </div>
+          </section>
         )}
-      </div>
+
+      </main>
+
+      <footer className={`py-12 border-t ${t.border} text-center ${t.textMuted} text-[10px] font-black uppercase tracking-[0.4em]`}>
+        © 2026 Kingfisher VA · Squad Ops Division
+      </footer>
     </div>
   )
 }
