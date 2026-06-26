@@ -41,6 +41,10 @@ export class XPUIPCAdapter implements SimulatorAdapter {
   private rrefIndex = 1
   private simVersion: SimulatorType = SimulatorType.XP12
 
+  private lastDataTimestamp = 0
+  private watchdogTimer: NodeJS.Timeout | null = null
+  private readonly WATCHDOG_TIMEOUT_MS = 10000
+
   private readonly RREF_HEADER = Buffer.from('RREF\x00')
 
   setXPlaneVersion(version: SimulatorType) {
@@ -55,12 +59,25 @@ export class XPUIPCAdapter implements SimulatorAdapter {
     try {
       this.socket = dgram.createSocket('udp4')
 
+      let connectResolve: ((ok: boolean) => void) | null = null
+      const connectPromise = new Promise<boolean>((resolve) => {
+        connectResolve = resolve
+      })
+
       this.socket.on('message', (msg) => {
         this.handleMessage(msg)
+        if (connectResolve) {
+          connectResolve(true)
+          connectResolve = null
+        }
       })
 
       this.socket.on('error', (err) => {
         console.error('XPUIPC socket error:', err)
+        if (connectResolve) {
+          connectResolve(false)
+          connectResolve = null
+        }
         this.connected = false
         this.notifyStatus(false)
       })
@@ -71,8 +88,26 @@ export class XPUIPCAdapter implements SimulatorAdapter {
         setTimeout(() => reject(new Error('X-Plane UDP bind timeout')), 2000)
       })
 
+      this.requestAllDataRefs()
+
+      const timeout = setTimeout(() => {
+        if (connectResolve) {
+          connectResolve(false)
+          connectResolve = null
+        }
+      }, 3000)
+
+      const xplaneResponded = await connectPromise
+      clearTimeout(timeout)
+
+      if (!xplaneResponded) {
+        this.cleanup()
+        return false
+      }
+
       this.connected = true
       this.notifyStatus(true)
+      this.startDataWatchdog()
       return true
     } catch (err) {
       console.error('XPUIPC connection failed:', err)
@@ -110,10 +145,30 @@ export class XPUIPCAdapter implements SimulatorAdapter {
     this.emitDataIfComplete()
   }
 
+  private startDataWatchdog() {
+    this.lastDataTimestamp = Date.now()
+    this.stopDataWatchdog()
+    this.watchdogTimer = setInterval(() => {
+      if (Date.now() - this.lastDataTimestamp > this.WATCHDOG_TIMEOUT_MS) {
+        console.warn('XPUIPC watchdog: no data for', this.WATCHDOG_TIMEOUT_MS, 'ms, disconnecting')
+        this.disconnect()
+      }
+    }, 2000)
+  }
+
+  private stopDataWatchdog() {
+    if (this.watchdogTimer) {
+      clearInterval(this.watchdogTimer)
+      this.watchdogTimer = null
+    }
+  }
+
   private emitDataIfComplete() {
     const lat = this.dataValues.get('lat')
     const lng = this.dataValues.get('lng')
     if (lat === undefined || lng === undefined) return
+
+    this.lastDataTimestamp = Date.now()
 
     const simData: SimData = {
       lat,
@@ -177,6 +232,7 @@ export class XPUIPCAdapter implements SimulatorAdapter {
 
   disconnect(): void {
     this.stopPolling()
+    this.stopDataWatchdog()
     this.cleanup()
     this.connected = false
     this.notifyStatus(false)
