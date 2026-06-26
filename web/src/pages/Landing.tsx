@@ -57,6 +57,7 @@ export default function Landing() {
   const navigate = useNavigate()
   const { isDark, toggle: toggleTheme } = useThemeStore()
   const [stats, setStats] = useState({ pilots: 0, routes: 0, flights: 0 })
+  const [statsLoading, setStatsLoading] = useState(true)
   const [fleet, setFleet] = useState<any[]>([])
   const [pilots, setPilots] = useState<any[]>([])
   const [liveFlights, setLiveFlights] = useState<any[]>([])
@@ -80,6 +81,8 @@ export default function Landing() {
       setRoutes(rt)
     } catch (error) {
       console.error('Data Fetch Error:', error)
+    } finally {
+      setStatsLoading(false)
     }
   }, [])
 
@@ -295,7 +298,13 @@ export default function Landing() {
                         className={`${theme.card} p-6 rounded-3xl border hover:border-red-600/30 transition-all flex flex-col items-center justify-center text-center`}
                     >
                         <s.icon className={`w-5 h-5 mb-4 ${s.color}`} />
-                        <div className={`text-3xl font-black italic tracking-tighter mb-1 ${!isDark && 'text-slate-900'}`}>{s.value}</div>
+                        {statsLoading ? (
+                            <div className="flex items-center justify-center h-[44px] mb-1">
+                                <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                            </div>
+                        ) : (
+                            <div className={`text-3xl font-black italic tracking-tighter mb-1 ${!isDark && 'text-slate-900'}`}>{s.value}</div>
+                        )}
                         <div className={`text-[8px] font-black uppercase tracking-widest ${theme.textMuted}`}>{s.label}</div>
                     </motion.div>
                 ))}
@@ -436,7 +445,6 @@ export default function Landing() {
             </div>
 
             <div className={`h-[500px] md:h-[700px] w-full rounded-[60px] overflow-hidden border ${theme.border} shadow-2xl relative`}>
-                {/* @ts-expect-error - Leaflet props types */}
                 <MapContainer center={[20, 77]} zoom={4} style={{ height: '100%', width: '100%', filter: isDark ? 'invert(100%) hue-rotate(180deg) brightness(0.9) contrast(1.1)' : 'none' }} zoomControl={false}>
                     <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
                     {liveFlights.map(f => (
@@ -535,8 +543,8 @@ export default function Landing() {
                                 <span className={`text-2xl font-black italic ${!isDark && 'text-slate-700'}`}>{p.totalFlights}</span>
                             </div>
                             <div className="flex flex-col items-center md:items-start">
-                                <span className={`text-[8px] font-black ${theme.textMuted} uppercase tracking-widest mb-2`}>Points</span>
-                                <span className="text-2xl font-black italic text-red-600">{p.points}</span>
+                                <span className={`text-[8px] font-black ${theme.textMuted} uppercase tracking-widest mb-2`}>Wallet</span>
+                                <span className="text-2xl font-black italic text-red-600">${Number(p.walletBalance || 0).toLocaleString()}</span>
                             </div>
                         </div>
                     </motion.div>

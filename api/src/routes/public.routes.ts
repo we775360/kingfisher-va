@@ -57,7 +57,8 @@ export const publicRoutes = async (app: FastifyInstance) => {
         rank: true,
         totalHours: true,
         totalFlights: true,
-        points: true
+        points: true,
+        walletBalance: true
       },
       orderBy: {
         totalHours: 'desc'
