@@ -1,44 +1,35 @@
 import { useState } from 'react'
-import { Import } from 'lucide-react'
+import { Import, Navigation, Plane as PlaneIcon } from 'lucide-react'
 import { useFlightStore } from '../stores/flightStore'
 import { useSimulator } from '../hooks/useSimulator'
-import { cn } from '../lib/utils'
 import { FlightTracker } from './FlightTracker'
 import { PIREPModal } from './PIREPModal'
 
 export function Dashboard() {
   const {
-    ofp, flightData, isTracking, flightLog,
-    setSbUsername, sbUsername, handleSimBriefFetch,
-    startFlight
+    ofp, flightData, isTracking, setSbUsername, sbUsername,
+    handleSimBriefFetch, startFlight
   } = useFlightStore()
-  const { simConnected, isDemo, connectDemo, autoConnect, startDemoFlight } = useSimulator()
+  const { simConnected, isDemo, autoConnect } = useSimulator()
   const [loading, setLoading] = useState(false)
   const [showPIREP, setShowPIREP] = useState(false)
   const [pirepResult, setPirepResult] = useState<{ success: boolean; message: string } | null>(null)
 
   const handleConnect = async () => {
     setLoading(true)
-    const ok = await autoConnect()
+    await autoConnect()
     setLoading(false)
-    if (!ok) alert('No simulator detected. Try demo mode.')
   }
 
   const handleStart = async () => {
     setLoading(true)
-    if (!simConnected) {
-      await autoConnect()
-    }
-    let sim = 'UNKNOWN'
-    if (simConnected) {
-      sim = useFlightStore.getState().flightData?.simulator || (isDemo ? 'SIMULATION' : 'UNKNOWN')
-    }
-    if (isDemo) {
-      await startDemoFlight()
-    }
+    if (!simConnected) await autoConnect()
+    const sim = simConnected
+      ? (isDemo ? 'SIMULATION' : (flightData?.simulator || 'UNKNOWN'))
+      : 'UNKNOWN'
     const ok = await startFlight(sim)
     setLoading(false)
-    if (!ok) alert('Failed to start tracking.')
+    if (!ok) alert('Failed to start flight tracking.')
   }
 
   const handleEnd = () => setShowPIREP(true)
@@ -49,33 +40,22 @@ export function Dashboard() {
     const ok = await useFlightStore.getState().endFlightAndSubmitPIREP()
     setLoading(false)
     setPirepResult(ok
-      ? { success: true, message: 'PIREP filed. Mission complete.' }
+      ? { success: true, message: 'PIREP filed.' }
       : { success: false, message: 'Failed to file PIREP.' }
     )
   }
 
+  // No OFP loaded
   if (!ofp) {
     return (
       <div className="h-full flex items-center justify-center">
-        <div className="glass rounded-3xl p-12 text-center max-w-lg w-full space-y-8">
-          <div className="w-20 h-20 rounded-2xl glass-red flex items-center justify-center mx-auto">
-            <Import className="w-8 h-8 text-kf-red" />
+        <div className="glass rounded-3xl p-10 text-center max-w-md w-full space-y-6">
+          <div className="w-16 h-16 rounded-2xl glass-red flex items-center justify-center mx-auto">
+            <Import className="w-6 h-6 text-kf-red" />
           </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-black italic uppercase tracking-tight">Initialize Dispatch</h2>
-            <p className="text-sm text-neutral-500 font-medium">Import SimBrief or select a booked mission from Tasks.</p>
-          </div>
-          <div className="space-y-3">
-            <button onClick={handleConnect} disabled={loading}
-              className="w-full py-3 bg-neutral-800 hover:bg-neutral-700 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Connecting...' : 'Connect Simulator'}
-            </button>
-            <button onClick={() => connectDemo()}
-              className="w-full py-3 bg-kf-red/20 hover:bg-kf-red/30 text-kf-red rounded-xl text-sm font-bold transition-colors"
-            >
-              Start Demo Mode
-            </button>
+          <div className="space-y-1">
+            <h2 className="text-xl font-black italic uppercase tracking-tight">Initialize Dispatch</h2>
+            <p className="text-xs text-neutral-500 font-medium">Load a mission from Tasks or import via SimBrief.</p>
           </div>
           <div className="flex gap-2 bg-neutral-900/80 p-2 rounded-xl border border-neutral-800/50">
             <input type="text" placeholder="SIMBRIEF USERNAME"
@@ -86,7 +66,7 @@ export function Dashboard() {
               disabled={loading || !sbUsername}
               className="px-8 py-2.5 bg-kf-red hover:bg-red-700 rounded-lg text-xs font-black uppercase tracking-widest disabled:opacity-50 transition-colors"
             >
-              {loading ? '...' : 'GO'}
+              GO
             </button>
           </div>
         </div>
@@ -94,116 +74,82 @@ export function Dashboard() {
     )
   }
 
-  const alt = flightData?.alt ?? 0
-  const gs = flightData?.gs ?? 0
-  const hdg = flightData?.heading ?? 0
-  const vs = flightData?.vs ?? 0
-  const ias = flightData?.ias ?? 0
-  const mach = flightData?.mach ?? 0
-  const fuel = flightData?.fuel ?? 0
-  const squawk = flightData?.squawk ?? '2000'
-  const pitch = flightData?.pitch ?? 0
-  const bank = flightData?.bank ?? 0
-  const fuelFlow = flightData?.fuelFlow ?? 0
-
+  // OFP loaded, sim status
   return (
-    <div className="h-full flex flex-col gap-6">
-      {/* Sim Status Bar */}
-      {!simConnected && (
-        <div className="flex items-center justify-between glass rounded-xl px-4 py-2">
-          <span className="text-xs font-bold text-red-500 uppercase tracking-wider">Simulator Disconnected</span>
+    <div className="h-full flex flex-col gap-6 max-w-4xl mx-auto">
+      {/* Flight Info Card */}
+      <div className="glass rounded-2xl p-5 flex items-center justify-between">
+        <div className="flex items-center gap-5">
+          <div className="text-center">
+            <div className="text-lg font-black italic tracking-tight">{ofp.origin.icao_code}</div>
+            <div className="text-[8px] font-bold text-neutral-500 tracking-wider uppercase">{ofp.origin.name?.split(' ')[0] || ''}</div>
+          </div>
+          <div className="flex items-center gap-2 text-neutral-700">
+            <Navigation className="w-3 h-3 rotate-90" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">{Math.round(useFlightStore.getState().takeoffTime ? ((Date.now() - useFlightStore.getState().takeoffTime!) / 3600000) * 100 : 0)}%</span>
+            <Navigation className="w-3 h-3" />
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-black italic tracking-tight">{ofp.destination.icao_code}</div>
+            <div className="text-[8px] font-bold text-neutral-500 tracking-wider uppercase">{ofp.destination.name?.split(' ')[0] || ''}</div>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-xs font-black italic">{ofp.general.icao_airline}{ofp.general.flight_number}</div>
+          <div className="text-[9px] font-bold text-neutral-500">{ofp.aircraft.icaocode}</div>
+        </div>
+      </div>
+
+      {/* Sim Connected: Telemetry + Controls */}
+      {simConnected ? (
+        <div className="space-y-5">
+          {/* Telemetry Grid */}
+          <div className="grid grid-cols-4 gap-3">
+            <TelemetryCard label="Altitude" value={Math.round(flightData?.alt ?? 0).toLocaleString()} unit="FT" />
+            <TelemetryCard label="Ground Speed" value={Math.round(flightData?.gs ?? 0).toString()} unit="KT" />
+            <TelemetryCard label="Heading" value={Math.round(flightData?.heading ?? 0).toString().padStart(3, '0')} unit="°" />
+            <TelemetryCard label="Vertical Speed" value={Math.round(flightData?.vs ?? 0).toString()} unit="FPM"
+              color={(flightData?.vs ?? 0) > 100 ? 'text-green-500' : (flightData?.vs ?? 0) < -100 ? 'text-kf-red' : ''}
+            />
+          </div>
+
+          {/* Mini Telemetry */}
+          <div className="grid grid-cols-4 gap-3">
+            <MiniCard label="IAS" value={Math.round(flightData?.ias ?? 0).toString()} unit="KT" />
+            <MiniCard label="MACH" value={(flightData?.mach ?? 0).toFixed(3)} unit="M" />
+            <MiniCard label="FUEL" value={Math.round(flightData?.fuel ?? 0).toLocaleString()} unit={flightData?.fuelUnit || 'LBS'} />
+            <MiniCard label="SQUAWK" value={flightData?.squawk || '2000'} unit="XPDR" />
+          </div>
+
+          {/* Controls */}
+          <div className="glass rounded-2xl p-6 text-center">
+            <FlightTracker
+              isTracking={isTracking}
+              loading={loading}
+              flightData={flightData}
+              onStart={handleStart}
+              onEnd={handleEnd}
+            />
+          </div>
+        </div>
+      ) : (
+        /* Sim Disconnected: Show connect option */
+        <div className="glass rounded-2xl p-8 text-center space-y-4">
+          <PlaneIcon className="w-8 h-8 text-neutral-700 mx-auto" />
+          <div>
+            <p className="text-sm font-bold tracking-wider">Simulator Not Connected</p>
+            <p className="text-[10px] text-neutral-600 mt-1">Connect to a running simulator to view telemetry.</p>
+          </div>
           <button onClick={handleConnect} disabled={loading}
-            className="text-[9px] px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded-lg font-bold uppercase tracking-widest disabled:opacity-50"
+            className="px-8 py-3 bg-neutral-800 hover:bg-neutral-700 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
           >
-            {loading ? '...' : 'Reconnect'}
+            {loading ? 'Scanning...' : 'Connect Simulator'}
           </button>
+          <p className="text-[9px] text-neutral-700">Detects MSFS, FSX, P3D, X-Plane. No sim? Runs in simulation mode.</p>
         </div>
       )}
 
-      {/* Telemetry Grid */}
-      <div className="grid grid-cols-4 gap-4">
-        <TelemetryCard label="Altitude" value={alt.toLocaleString()} unit="FT" />
-        <TelemetryCard label="Ground Speed" value={Math.round(gs).toString()} unit="KT" />
-        <TelemetryCard label="Heading" value={Math.round(hdg).toString().padStart(3, '0')} unit="°" />
-        <TelemetryCard label="Vertical Speed" value={Math.round(vs).toString()} unit="FPM"
-          color={vs > 100 ? 'text-green-500' : vs < -100 ? 'text-kf-red' : ''}
-        />
-      </div>
-
-      <div className="grid grid-cols-5 gap-4">
-        <TelemetryMini label="IAS" value={Math.round(ias).toString()} unit="KT" />
-        <TelemetryMini label="MACH" value={mach.toFixed(3)} unit="M" />
-        <TelemetryMini label="PITCH" value={pitch.toFixed(1)} unit="°"
-          color={Math.abs(pitch) > 15 ? 'text-red-500' : ''}
-        />
-        <TelemetryMini label="BANK" value={bank.toFixed(1)} unit="°"
-          color={Math.abs(bank) > 30 ? 'text-red-500' : ''}
-        />
-        <TelemetryMini label="SQUAWK" value={squawk} unit="XPDR" />
-      </div>
-
-      {/* Bottom section */}
-      <div className="grid grid-cols-3 gap-6 flex-1 min-h-0">
-        {/* Fuel + Times */}
-        <div className="glass rounded-2xl p-5 space-y-4 overflow-y-auto custom-scrollbar">
-          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-neutral-500">
-            <span className="w-4 h-4 rounded bg-kf-red/20 flex items-center justify-center text-[8px]">F</span> Fuel
-          </div>
-          <div className="text-3xl font-['JetBrains_Mono'] font-black italic">{Math.round(fuel).toLocaleString()}</div>
-          <div className="text-[10px] font-bold text-neutral-500 uppercase">{flightData?.fuelUnit || 'GAL'}</div>
-          {fuelFlow > 0 && (
-            <div className="text-xs text-neutral-400">
-              Burn: {fuelFlow.toFixed(1)} {flightData?.fuelUnit || 'GAL'}/hr
-            </div>
-          )}
-          <div className="border-t border-neutral-800 pt-4 space-y-2">
-            <div className="flex justify-between text-xs font-medium">
-              <span className="text-neutral-500">Flight Time</span>
-              <span className="font-bold">{useFlightStore.getState().takeoffTime ? ((Date.now() - useFlightStore.getState().takeoffTime!) / 3600000).toFixed(1) : '0.0'}h</span>
-            </div>
-            <div className="flex justify-between text-xs font-medium">
-              <span className="text-neutral-500">Fuel Used</span>
-              <span className="font-bold">{Math.max(0, Math.round(useFlightStore.getState().fuelAtStart - fuel)).toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Flight Log */}
-        <div className="glass rounded-2xl p-5 space-y-3 overflow-y-auto custom-scrollbar">
-          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-neutral-500 sticky top-0 bg-[#0d0d0d] pb-2">
-            <span className="w-4 h-4 rounded bg-kf-red/20 flex items-center justify-center text-[8px]">L</span> Log
-          </div>
-          {flightLog.length === 0 ? (
-            <p className="text-xs text-neutral-600 italic">No events recorded yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {flightLog.map((log, i) => (
-                <div key={i} className="flex gap-2 text-[10px] border-l-2 border-neutral-800 pl-3 py-0.5">
-                  <span className="text-neutral-600 font-mono shrink-0 w-14">{log.time}</span>
-                  <span className="font-bold">{log.event}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Controls */}
-        <div className="glass rounded-2xl p-5 flex flex-col justify-center items-center">
-          <FlightTracker
-            isTracking={isTracking}
-            loading={loading}
-            flightData={flightData}
-            onStart={handleStart}
-            onEnd={handleEnd}
-          />
-          <button onClick={() => useFlightStore.getState().setOFP(null)}
-            className="mt-4 text-[9px] font-bold text-neutral-700 hover:text-kf-red uppercase tracking-widest transition-colors"
-          >
-            Reset
-          </button>
-        </div>
-      </div>
-
+      {/* PIREP Modal */}
       {showPIREP && (
         <PIREPModal
           onConfirm={handleConfirmEnd}
@@ -219,29 +165,27 @@ export function Dashboard() {
 
 function TelemetryCard({ label, value, unit, color }: { label: string; value: string; unit: string; color?: string }) {
   return (
-    <div className="glass rounded-2xl p-5 space-y-1 relative overflow-hidden group">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-kf-red/5 rounded-full -mr-12 -mt-12 blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity" />
-      <span className="text-[9px] font-black uppercase tracking-[0.25em] text-neutral-500 block relative">{label}</span>
-      <div className="flex items-baseline gap-2 relative">
-        <span className={cn("text-4xl font-['JetBrains_Mono'] font-black italic leading-none tracking-tight", color || 'text-white')}>
+    <div className="glass rounded-2xl p-4 space-y-1 relative overflow-hidden group">
+      <div className="absolute top-0 right-0 w-28 h-28 bg-kf-red/5 rounded-full -mr-10 -mt-10 blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity" />
+      <span className="text-[8px] font-black uppercase tracking-[0.2em] text-neutral-500 block relative">{label}</span>
+      <div className="flex items-baseline gap-1.5 relative">
+        <span className={`text-3xl font-['JetBrains_Mono'] font-black italic leading-none tracking-tight ${color || 'text-white'}`}>
           {value}
         </span>
-        <span className="text-[10px] font-bold text-neutral-600 uppercase">{unit}</span>
+        <span className="text-[9px] font-bold text-neutral-600 uppercase">{unit}</span>
       </div>
     </div>
   )
 }
 
-function TelemetryMini({ label, value, unit, color }: { label: string; value: string; unit: string; color?: string }) {
+function MiniCard({ label, value, unit }: { label: string; value: string; unit: string }) {
   return (
-    <div className="glass rounded-xl p-3 space-y-0.5">
-      <span className="text-[8px] font-black uppercase tracking-[0.2em] text-neutral-600 block">{label}</span>
-      <div className="flex items-baseline gap-1">
-        <span className={cn("text-lg font-['JetBrains_Mono'] font-black italic leading-none", color || 'text-white')}>
-          {value}
-        </span>
-        <span className="text-[8px] font-bold text-neutral-700 uppercase">{unit}</span>
+    <div className="glass rounded-xl p-3 flex items-center justify-between">
+      <div>
+        <span className="text-[8px] font-black uppercase tracking-[0.15em] text-neutral-600 block">{label}</span>
+        <span className="text-base font-['JetBrains_Mono'] font-black italic">{value}</span>
       </div>
+      <span className="text-[8px] font-bold text-neutral-700 uppercase">{unit}</span>
     </div>
   )
 }
