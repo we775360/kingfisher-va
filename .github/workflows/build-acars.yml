@@ -1,0 +1,38 @@
+name: Build ACARS Windows EXE
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'acars/**'
+      - '.github/workflows/build-acars.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+        working-directory: acars
+
+      - name: Build ACARS
+        run: pnpm build
+        working-directory: acars
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Kingfisher-ACARS-Windows
+          path: acars/release/**/*.exe
