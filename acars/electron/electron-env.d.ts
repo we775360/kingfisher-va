@@ -10,6 +10,7 @@ declare namespace NodeJS {
 interface SimStatus {
   connected: boolean
   type: string
+  demo?: boolean
 }
 
 interface Window {
@@ -19,6 +20,7 @@ interface Window {
       getStatus: () => Promise<SimStatus>
       getDetected: () => Promise<string[]>
       connect: (simType?: string) => Promise<boolean>
+      connectDemo: (origin?: { lat: number; lng: number }, dest?: { lat: number; lng: number }) => Promise<boolean>
       disconnect: () => Promise<void>
       detect: () => Promise<string>
     }

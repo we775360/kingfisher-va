@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { Import, Fuel, List } from 'lucide-react'
+import { useState } from 'react'
+import { Import } from 'lucide-react'
 import { useFlightStore } from '../stores/flightStore'
 import { useSimulator } from '../hooks/useSimulator'
 import { cn } from '../lib/utils'
@@ -12,22 +12,24 @@ export function Dashboard() {
     setSbUsername, sbUsername, handleSimBriefFetch,
     startFlight
   } = useFlightStore()
-  const { simConnected, connect } = useSimulator()
+  const { simConnected, isDemo, connectDemo, autoConnect } = useSimulator()
   const [loading, setLoading] = useState(false)
   const [showPIREP, setShowPIREP] = useState(false)
   const [pirepResult, setPirepResult] = useState<{ success: boolean; message: string } | null>(null)
-  const lastUpdateRef = useRef(0)
 
-  useEffect(() => {
-    if (isTracking && flightData && Date.now() - lastUpdateRef.current > 10000) {
-      useFlightStore.getState().sendPositionUpdate()
-      lastUpdateRef.current = Date.now()
-    }
-  }, [isTracking, flightData])
+  const handleConnect = async () => {
+    setLoading(true)
+    const ok = await autoConnect()
+    setLoading(false)
+    if (!ok) alert('No simulator detected. Try demo mode.')
+  }
 
   const handleStart = async () => {
     setLoading(true)
-    const ok = await startFlight(simConnected ? useFlightStore.getState().flightData?.simulator || 'UNKNOWN' : 'UNKNOWN')
+    if (!simConnected) {
+      await autoConnect()
+    }
+    const ok = await startFlight(simConnected ? useFlightStore.getState().flightData?.simulator || isDemo ? 'DEMO' : 'UNKNOWN' : 'UNKNOWN')
     setLoading(false)
     if (!ok) alert('Failed to start tracking.')
   }
@@ -56,13 +58,18 @@ export function Dashboard() {
             <h2 className="text-2xl font-black italic uppercase tracking-tight">Initialize Dispatch</h2>
             <p className="text-sm text-neutral-500 font-medium">Import SimBrief or select a booked mission from Tasks.</p>
           </div>
-          {!simConnected && (
-            <button onClick={() => connect()}
-              className="w-full py-3 bg-neutral-800 hover:bg-neutral-700 rounded-xl text-sm font-bold transition-colors"
+          <div className="space-y-3">
+            <button onClick={handleConnect} disabled={loading}
+              className="w-full py-3 bg-neutral-800 hover:bg-neutral-700 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
             >
-              Connect Simulator
+              {loading ? 'Connecting...' : 'Connect Simulator'}
             </button>
-          )}
+            <button onClick={() => connectDemo()}
+              className="w-full py-3 bg-kf-red/20 hover:bg-kf-red/30 text-kf-red rounded-xl text-sm font-bold transition-colors"
+            >
+              Start Demo Mode
+            </button>
+          </div>
           <div className="flex gap-2 bg-neutral-900/80 p-2 rounded-xl border border-neutral-800/50">
             <input type="text" placeholder="SIMBRIEF USERNAME"
               value={sbUsername} onChange={(e) => setSbUsername(e.target.value)}
@@ -94,6 +101,18 @@ export function Dashboard() {
 
   return (
     <div className="h-full flex flex-col gap-6">
+      {/* Sim Status Bar */}
+      {!simConnected && (
+        <div className="flex items-center justify-between glass rounded-xl px-4 py-2">
+          <span className="text-xs font-bold text-red-500 uppercase tracking-wider">Simulator Disconnected</span>
+          <button onClick={handleConnect} disabled={loading}
+            className="text-[9px] px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded-lg font-bold uppercase tracking-widest disabled:opacity-50"
+          >
+            {loading ? '...' : 'Reconnect'}
+          </button>
+        </div>
+      )}
+
       {/* Telemetry Grid */}
       <div className="grid grid-cols-4 gap-4">
         <TelemetryCard label="Altitude" value={alt.toLocaleString()} unit="FT" />
@@ -121,7 +140,7 @@ export function Dashboard() {
         {/* Fuel + Times */}
         <div className="glass rounded-2xl p-5 space-y-4 overflow-y-auto custom-scrollbar">
           <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-neutral-500">
-            <Fuel className="w-4 h-4 text-kf-red" /> Fuel
+            <span className="w-4 h-4 rounded bg-kf-red/20 flex items-center justify-center text-[8px]">F</span> Fuel
           </div>
           <div className="text-3xl font-['JetBrains_Mono'] font-black italic">{Math.round(fuel).toLocaleString()}</div>
           <div className="text-[10px] font-bold text-neutral-500 uppercase">{flightData?.fuelUnit || 'GAL'}</div>
@@ -145,7 +164,7 @@ export function Dashboard() {
         {/* Flight Log */}
         <div className="glass rounded-2xl p-5 space-y-3 overflow-y-auto custom-scrollbar">
           <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-neutral-500 sticky top-0 bg-[#0d0d0d] pb-2">
-            <List className="w-4 h-4 text-kf-red" /> Log
+            <span className="w-4 h-4 rounded bg-kf-red/20 flex items-center justify-center text-[8px]">L</span> Log
           </div>
           {flightLog.length === 0 ? (
             <p className="text-xs text-neutral-600 italic">No events recorded yet.</p>

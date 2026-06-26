@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Briefcase, ExternalLink, Navigation, RefreshCw } from 'lucide-react'
+import { Briefcase, ExternalLink, Navigation, RefreshCw, Play } from 'lucide-react'
 import { useFlightStore } from '../stores/flightStore'
+import { useSimulator } from '../hooks/useSimulator'
 import { getMyBookings } from '../lib/api'
+import { getAirportCoords } from '../lib/airports'
 
 export function BookingsView() {
-  const { handleSimBriefFetch, sbUsername } = useFlightStore()
+  const { handleSimBriefFetch, sbUsername, loadFromBooking } = useFlightStore()
+  const { connectDemo, simConnected } = useSimulator()
   const [bookings, setBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -23,6 +26,17 @@ export function BookingsView() {
     const type = b.aircraft?.icao || 'A320'
     const flt = (b.route?.flightNumber || b.flightNumber || '').replace(/\D/g, '')
     window.open(`https://www.simbrief.com/system/dispatch.php?type=generate&orig=${dep}&dest=${arr}&fltnum=${flt}&type=${type}&airline=KFR&auto=1`, '_blank')
+  }
+
+  const handleLoadMission = async (b: any) => {
+    const ofp = loadFromBooking(b)
+    const depIcao = ofp.origin.icao_code
+    const arrIcao = ofp.destination.icao_code
+    const origin = getAirportCoords(depIcao)
+    const dest = getAirportCoords(arrIcao)
+    if (!simConnected) {
+      await connectDemo(origin, dest)
+    }
   }
 
   return (
@@ -69,6 +83,12 @@ export function BookingsView() {
                 </div>
               </div>
               <div className="flex gap-2">
+                <button onClick={() => handleLoadMission(b)}
+                  className="p-3 bg-kf-red hover:bg-red-700 rounded-xl transition-colors"
+                  title="Load Mission"
+                >
+                  <Play className="w-4 h-4" />
+                </button>
                 <button onClick={() => handleDispatch(b)}
                   className="p-3 glass rounded-xl hover:bg-neutral-800 transition-colors"
                   title="Dispatch in SimBrief"
@@ -79,8 +99,8 @@ export function BookingsView() {
                   const user = prompt('SimBrief Username:', sbUsername)
                   if (user) handleSimBriefFetch(user)
                 }}
-                  className="p-3 bg-kf-red hover:bg-red-700 rounded-xl transition-colors"
-                  title="Link Mission"
+                  className="p-3 glass rounded-xl hover:bg-neutral-800 transition-colors"
+                  title="Import SimBrief OFP"
                 >
                   <Briefcase className="w-4 h-4" />
                 </button>

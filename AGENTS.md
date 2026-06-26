@@ -152,6 +152,39 @@ acars/
 - Added JetBrains Mono font for all numerical data
 - Phase pipeline progress indicator in header
 
+### ✅ COMPLETED — Session 3 (Simulator Bridge Fix + Demo Mode + Live Tracking)
+
+#### 12. DemoAdapter — Simulator-Free Flight Simulation
+- Created `acars/electron/sim-bridge/adapters/demo.ts` with full flight lifecycle simulation
+- Simulates: Ground → Taxi → Takeoff → Climb → Cruise → Descent → Approach → Landed → Arrived
+- Generates realistic telemetry: alt, GS, IAS, Mach, VS, heading, pitch, bank, fuel, fuel flow, squawk
+- Great-circle route tracking between origin/destination airports
+- Gaussian noise on all values for realism
+- Auto-connects on Linux (where native sim SDKs are unavailable); on Windows, fallback when no sim detected
+
+#### 13. SimulatorBridge Auto-Fallback Chain
+- Bridge now tries: target sim → all native adapters → DemoAdapter (always works)
+- New IPC handler: `sim:connect-demo` with optional origin/dest coords
+- `setDemoRoute()` to pre-configure demo route from OFP/booking data
+- Status now reports `demo: true` so UI can show "SIMULATION" badge
+
+#### 14. Fixed Booking → Mission Loading Flow
+- `BookingsView.tsx` — "Load Mission" button that creates OFP from booking data
+- `flightStore.loadFromBooking()` — builds OFP from Booking API response
+- Auto-connects demo mode with route coordinates when loading mission
+- Uses `airports.ts` lookup for 60+ worldwide airport coordinates
+
+#### 15. Fixed Position Updates (Reliable Telemetry)
+- `flightStore.startPositionUpdates()` — proper `setInterval`-based 10s position push
+- `App.tsx` uses `useEffect` with `startPositionUpdates` lifecycle (auto-cleanup on stop)
+- Removed fragile React effect-based position push from Dashboard
+
+#### 16. UI Enhancements
+- Dashboard: "Connect Simulator" → tries auto-detect, falls back to demo
+- Dashboard: Dedicated "Start Demo Mode" button
+- Dashboard: "Simulator Disconnected" warning bar while tracking (with Reconnect)
+- Header badge shows "SIMULATION" when in demo mode (green pulse)
+
 ### 🔴 REMAINING
 
 1. **Add .mp3 files** to `acars/public/audio/announcements/` (user provides files)

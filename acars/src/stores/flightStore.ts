@@ -41,10 +41,12 @@ interface FlightState {
   addLog: (event: string) => void
   updatePhaseFromData: (data: FlightData) => FlightPhase
 
+  loadFromBooking: (booking: Booking) => OFP
   startFlight: (simulator?: string, network?: string) => Promise<boolean>
   endFlightAndSubmitPIREP: () => Promise<boolean>
   handleSimBriefFetch: (username: string) => Promise<void>
   sendPositionUpdate: () => Promise<void>
+  startPositionUpdates: () => () => void
 
   reset: () => void
 }
@@ -143,6 +145,43 @@ export const useFlightStore = create<FlightState>((set, get) => ({
     return next
   },
 
+  loadFromBooking: (booking) => {
+    const ofp: OFP = {
+      general: {
+        icao_airline: (booking.route?.flightNumber || booking.flightNumber || 'KFR').replace(/\d/g, '').substring(0, 3) || 'KFR',
+        flight_number: (booking.route?.flightNumber || booking.flightNumber || '0001').replace(/\D/g, '') || '0001',
+      },
+      aircraft: {
+        icaocode: booking.aircraft?.icao || 'A320',
+        reg: booking.aircraft?.registration || 'N/A',
+        name: booking.aircraft?.name || 'Aircraft',
+      },
+      origin: {
+        icao_code: booking.route?.depIcao || booking.depIcao || 'KJFK',
+        iata_code: '',
+        name: booking.route?.depName || booking.depName || '',
+      },
+      destination: {
+        icao_code: booking.route?.arrIcao || booking.arrIcao || 'KLAX',
+        iata_code: '',
+        name: booking.route?.arrName || booking.arrName || '',
+      },
+      times: {
+        est_block: 0,
+        est_out: 0,
+        est_off: 0,
+        est_on: 0,
+        est_in: 0,
+      },
+      fuel: {
+        plan_ramp: 8500,
+      },
+    }
+    get().setOFP(ofp)
+    get().addLog(`MISSION LOADED: ${ofp.general.icao_airline}${ofp.general.flight_number}`)
+    return ofp
+  },
+
   startFlight: async (simulator, network) => {
     const ofp = get().ofp
     if (!ofp) return false
@@ -192,7 +231,8 @@ export const useFlightStore = create<FlightState>((set, get) => ({
         comments: 'Kingfisher ACARS - Auto-filed',
       })
       await endFlight()
-      get().reset()
+      get().addLog('PIREP FILED SUCCESSFULLY')
+      set({ isTracking: false })
       return true
     } catch (err) {
       console.error('Failed to submit PIREP:', err)
@@ -208,8 +248,8 @@ export const useFlightStore = create<FlightState>((set, get) => ({
   },
 
   sendPositionUpdate: async () => {
-    const { flightData, phase } = get()
-    if (!flightData) return
+    const { flightData, phase, isTracking } = get()
+    if (!flightData || !isTracking) return
     try {
       await updatePosition({
         lat: flightData.lat,
@@ -224,6 +264,13 @@ export const useFlightStore = create<FlightState>((set, get) => ({
     } catch (err) {
       console.error('Position update failed:', err)
     }
+  },
+
+  startPositionUpdates: () => {
+    const interval = setInterval(() => {
+      get().sendPositionUpdate()
+    }, 10000)
+    return () => clearInterval(interval)
   },
 
   reset: () => set({

@@ -4,6 +4,7 @@ import { useFlightStore, FlightData } from '../stores/flightStore'
 export function useSimulator() {
   const [simConnected, setSimConnected] = useState(false)
   const [simType, setSimType] = useState('')
+  const [isDemo, setIsDemo] = useState(false)
   const setFlightData = useFlightStore((s) => s.setFlightData)
   const updatePhaseFromData = useFlightStore((s) => s.updatePhaseFromData)
   const setPhase = useFlightStore((s) => s.setPhase)
@@ -24,6 +25,7 @@ export function useSimulator() {
       const unsub = window.electronAPI.onSimStatus((status) => {
         setSimConnected(status.connected)
         setSimType(status.type)
+        setIsDemo(status.demo === true)
       })
       cleanup.push(unsub)
     }
@@ -49,11 +51,30 @@ export function useSimulator() {
     return false
   }, [])
 
+  const connectDemo = useCallback(async (origin?: { lat: number; lng: number }, dest?: { lat: number; lng: number }) => {
+    if (window.electronAPI?.sim?.connectDemo) {
+      return window.electronAPI.sim.connectDemo(origin, dest)
+    }
+    return false
+  }, [])
+
   const disconnect = useCallback(async () => {
     if (window.electronAPI?.sim?.disconnect) {
       await window.electronAPI.sim.disconnect()
     }
   }, [])
 
-  return { simConnected, simType, connect, disconnect }
+  const autoConnect = useCallback(async () => {
+    if (window.electronAPI?.sim?.getStatus) {
+      const status = await window.electronAPI.sim.getStatus()
+      if (status.connected) return true
+    }
+    const detected = await window.electronAPI?.sim?.detect?.() ?? 'UNKNOWN'
+    if (detected !== 'UNKNOWN') {
+      return connect(detected)
+    }
+    return connectDemo()
+  }, [connect, connectDemo])
+
+  return { simConnected, simType, isDemo, connect, connectDemo, disconnect, autoConnect }
 }

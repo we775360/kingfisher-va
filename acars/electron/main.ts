@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { getBridge, SimulatorType, SimData, detectBestSimulator, detectSimulatorsRunning } from './sim-bridge/index.js'
+import { getBridge, SimulatorType, SimData, detectBestSimulator, detectSimulatorsRunning, setDemoRoute } from './sim-bridge/index.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -87,17 +87,28 @@ app.whenReady().then(() => {
 
 ipcMain.handle('sim:get-status', () => ({
   connected: simBridge.isConnected,
-  type: simBridge.activeSimulator,
+  type: simBridge.activeSimulator || (simBridge.usingDemo ? 'DEMO' : 'NONE'),
+  demo: simBridge.usingDemo,
 }))
 
 ipcMain.handle('sim:get-detected', () => detectSimulatorsRunning())
 
 ipcMain.handle('sim:connect', async (_event, simType?: string) => {
+  if (simType === 'DEMO') {
+    return simBridge.connectDemo()
+  }
   if (simType) {
     const type = simType as SimulatorType
     return simBridge.connect(type)
   }
   return simBridge.connect()
+})
+
+ipcMain.handle('sim:connect-demo', async (_event, origin?: { lat: number; lng: number }, dest?: { lat: number; lng: number }) => {
+  if (origin && dest) {
+    setDemoRoute(origin, dest)
+  }
+  return simBridge.connectDemo(origin, dest)
 })
 
 ipcMain.handle('sim:disconnect', () => {

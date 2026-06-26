@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getStatus: () => ipcRenderer.invoke('sim:get-status'),
     getDetected: () => ipcRenderer.invoke('sim:get-detected'),
     connect: (simType?: string) => ipcRenderer.invoke('sim:connect', simType),
+    connectDemo: (origin?: { lat: number; lng: number }, dest?: { lat: number; lng: number }) => ipcRenderer.invoke('sim:connect-demo', origin, dest),
     disconnect: () => ipcRenderer.invoke('sim:disconnect'),
     detect: () => ipcRenderer.invoke('sim:detect'),
   },

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { cn } from './lib/utils'
 import { useAuthStore } from './stores/authStore'
 import { useFlightStore } from './stores/flightStore'
@@ -16,10 +16,11 @@ const PHASES = ['PRE-FLIGHT', 'TAXI', 'TAKEOFF', 'CLIMB', 'CRUISE', 'DESCENT', '
 
 function App() {
   const { isAuthenticated, user, logout, checkAuth } = useAuthStore()
-  const { ofp, flightData, isTracking, phase, setFlightData, updatePhaseFromData, setPhase, addLog } = useFlightStore()
-  const { simConnected, simType } = useSimulator()
+  const { ofp, flightData, isTracking, phase, addLog, startPositionUpdates } = useFlightStore()
+  const { simConnected, simType, isDemo } = useSimulator()
   const [activeTab, setActiveTab] = useState('dashboard')
   const [authChecked, setAuthChecked] = useState(false)
+  const posUpdateCleanup = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     checkAuth().finally(() => setAuthChecked(true))
@@ -33,15 +34,20 @@ function App() {
         addLog(`SIM: ${status.type} ${status.connected ? 'CONNECTED' : 'DISCONNECTED'}`)
       }))
     }
-    if (window.electronAPI?.onFlightData) {
-      unsubs.push(window.electronAPI.onFlightData((data) => {
-        setFlightData(data)
-        const newPhase = updatePhaseFromData(data)
-        if (newPhase !== useFlightStore.getState().phase) setPhase(newPhase)
-      }))
-    }
     return () => unsubs.forEach((fn) => fn())
   }, [isAuthenticated])
+
+  useEffect(() => {
+    if (isTracking) {
+      posUpdateCleanup.current = startPositionUpdates()
+    }
+    return () => {
+      if (posUpdateCleanup.current) {
+        posUpdateCleanup.current()
+        posUpdateCleanup.current = null
+      }
+    }
+  }, [isTracking])
 
   if (!authChecked) {
     return (
@@ -60,7 +66,6 @@ function App() {
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onLogout={logout} />
 
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
         <header className="h-[60px] border-b border-neutral-800/30 flex items-center justify-between px-6 bg-[#0d0d0d] shrink-0">
           <div className="flex items-center gap-6">
             {ofp && (
@@ -115,7 +120,7 @@ function App() {
                 "w-1.5 h-1.5 rounded-full",
                 simConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
               )} />
-              {simConnected ? simType : 'NO SIM'}
+              {simConnected ? (isDemo ? 'SIMULATION' : simType) : 'NO SIM'}
             </div>
 
             {user && (
@@ -134,7 +139,6 @@ function App() {
           </div>
         </header>
 
-        {/* Main content */}
         <main className={cn(
           "flex-1 min-h-0",
           activeTab !== 'map' && 'p-6 overflow-y-auto'
@@ -147,7 +151,6 @@ function App() {
           {activeTab === 'settings' && <SettingsView />}
         </main>
 
-        {/* Footer */}
         <footer className="h-7 border-t border-neutral-800/30 px-6 flex items-center justify-between text-[8px] font-bold text-neutral-700 uppercase tracking-[0.2em] bg-[#0d0d0d] shrink-0">
           <span>KFR ACARS v2</span>
           <div className="flex items-center gap-4">
