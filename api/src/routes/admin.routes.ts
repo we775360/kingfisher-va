@@ -6,7 +6,7 @@ import {
   getAllAircraft, createAircraft, deleteAircraft,
   getAllRoutes, createRoute, deleteRoute,
   getAllHubs, createHub, deleteHub,
-  createAnnouncement, getStats
+  createAnnouncement, deleteAnnouncement, getStats
 } from '../controllers/admin.controller.js'
 
 export const adminRoutes = async (app: FastifyInstance) => {
