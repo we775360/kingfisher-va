@@ -30,7 +30,7 @@ export interface SimData {
   simOn: boolean
   timestamp: number
   squawk: string
-  simulator: SimulatorType
+  simulator: string
   nav1Freq?: number
   nav2Freq?: number
   transponder?: number

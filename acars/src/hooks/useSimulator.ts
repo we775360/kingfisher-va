@@ -51,9 +51,16 @@ export function useSimulator() {
     return false
   }, [])
 
-  const connectDemo = useCallback(async (origin?: { lat: number; lng: number }, dest?: { lat: number; lng: number }) => {
+  const connectDemo = useCallback(async (origin?: { lat: number; lng: number }, dest?: { lat: number; lng: number }, fuel?: number) => {
     if (window.electronAPI?.sim?.connectDemo) {
-      return window.electronAPI.sim.connectDemo(origin, dest)
+      return window.electronAPI.sim.connectDemo(origin, dest, fuel)
+    }
+    return false
+  }, [])
+
+  const startDemoFlight = useCallback(async () => {
+    if (window.electronAPI?.sim?.startDemoFlight) {
+      return window.electronAPI.sim.startDemoFlight()
     }
     return false
   }, [])
@@ -76,5 +83,5 @@ export function useSimulator() {
     return connectDemo()
   }, [connect, connectDemo])
 
-  return { simConnected, simType, isDemo, connect, connectDemo, disconnect, autoConnect }
+  return { simConnected, simType, isDemo, connect, connectDemo, startDemoFlight, disconnect, autoConnect }
 }

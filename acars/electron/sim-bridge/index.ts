@@ -93,7 +93,7 @@ export class SimulatorBridge {
     return this.connectDemo()
   }
 
-  async connectDemo(origin?: { lat: number; lng: number }, dest?: { lat: number; lng: number }): Promise<boolean> {
+  async connectDemo(origin?: { lat: number; lng: number }, dest?: { lat: number; lng: number }, fuel?: number): Promise<boolean> {
     this.disconnect()
     const demo = new DemoAdapter()
     if (origin && dest) {
@@ -101,6 +101,7 @@ export class SimulatorBridge {
     } else if (demoRouteOrigin && demoRouteDest) {
       demo.setRoute(demoRouteOrigin, demoRouteDest)
     }
+    if (fuel) demo.setFuel(fuel)
     this.adapters.push(demo)
     const ok = await demo.connect()
     if (ok) {
@@ -114,6 +115,14 @@ export class SimulatorBridge {
       return true
     }
     this.emitStatus(false, null, false)
+    return false
+  }
+
+  startDemoFlight(): boolean {
+    if (this.activeAdapter instanceof DemoAdapter) {
+      this.activeAdapter.startFlight()
+      return true
+    }
     return false
   }
 

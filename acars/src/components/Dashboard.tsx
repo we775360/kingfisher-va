@@ -12,7 +12,7 @@ export function Dashboard() {
     setSbUsername, sbUsername, handleSimBriefFetch,
     startFlight
   } = useFlightStore()
-  const { simConnected, isDemo, connectDemo, autoConnect } = useSimulator()
+  const { simConnected, isDemo, connectDemo, autoConnect, startDemoFlight } = useSimulator()
   const [loading, setLoading] = useState(false)
   const [showPIREP, setShowPIREP] = useState(false)
   const [pirepResult, setPirepResult] = useState<{ success: boolean; message: string } | null>(null)
@@ -32,6 +32,9 @@ export function Dashboard() {
     let sim = 'UNKNOWN'
     if (simConnected) {
       sim = useFlightStore.getState().flightData?.simulator || (isDemo ? 'SIMULATION' : 'UNKNOWN')
+    }
+    if (isDemo) {
+      await startDemoFlight()
     }
     const ok = await startFlight(sim)
     setLoading(false)

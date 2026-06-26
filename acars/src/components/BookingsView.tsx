@@ -34,8 +34,9 @@ export function BookingsView() {
     const arrIcao = ofp.destination.icao_code
     const origin = getAirportCoords(depIcao)
     const dest = getAirportCoords(arrIcao)
+    const fuel = ofp.fuel.plan_ramp || 8500
     if (!simConnected) {
-      await connectDemo(origin, dest)
+      await connectDemo(origin, dest, fuel)
     }
   }
 

@@ -105,11 +105,15 @@ ipcMain.handle('sim:connect', async (_event, simType?: string) => {
   return simBridge.connect()
 })
 
-ipcMain.handle('sim:connect-demo', async (_event, origin?: { lat: number; lng: number }, dest?: { lat: number; lng: number }) => {
+ipcMain.handle('sim:connect-demo', async (_event, origin?: { lat: number; lng: number }, dest?: { lat: number; lng: number }, fuel?: number) => {
   if (origin && dest) {
     setDemoRoute(origin, dest)
   }
-  return simBridge.connectDemo(origin, dest)
+  return simBridge.connectDemo(origin, dest, fuel)
+})
+
+ipcMain.handle('sim:start-demo-flight', () => {
+  return simBridge.startDemoFlight()
 })
 
 ipcMain.handle('sim:disconnect', () => {

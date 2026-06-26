@@ -20,7 +20,8 @@ interface Window {
       getStatus: () => Promise<SimStatus>
       getDetected: () => Promise<string[]>
       connect: (simType?: string) => Promise<boolean>
-      connectDemo: (origin?: { lat: number; lng: number }, dest?: { lat: number; lng: number }) => Promise<boolean>
+      connectDemo: (origin?: { lat: number; lng: number }, dest?: { lat: number; lng: number }, fuel?: number) => Promise<boolean>
+      startDemoFlight: () => Promise<boolean>
       disconnect: () => Promise<void>
       detect: () => Promise<string>
     }
