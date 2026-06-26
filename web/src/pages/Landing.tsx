@@ -15,6 +15,7 @@ import {
   Sun, Moon
 } from 'lucide-react'
 import { useThemeStore } from '../store/theme.store'
+import api from '../lib/axios'
 
 // Fix Leaflet icon
 // @ts-ignore
@@ -24,8 +25,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 })
-
-const API = 'https://kingfisher-api.onrender.com/api/v1'
 
 const AIRPORT_COORDS: Record<string, [number, number]> = {
     'VIDP': [28.5665, 77.1031], // Delhi
@@ -68,11 +67,11 @@ export default function Landing() {
   const fetchData = useCallback(async () => {
     try {
       const [s, f, p, l, rt] = await Promise.all([
-        fetch(`${API}/public/stats`).then(r => r.json()).catch(() => ({ pilots: 0, routes: 0, flights: 0 })),
-        fetch(`${API}/public/fleet`).then(r => r.json()).catch(() => []),
-        fetch(`${API}/public/pilots`).then(r => r.json()).catch(() => []),
-        fetch(`${API}/public/live-flights`).then(r => r.json()).catch(() => []),
-        fetch(`${API}/public/routes`).then(r => r.json()).catch(() => []),
+        api.get('/public/stats').then(r => r.data).catch(() => ({ pilots: 0, routes: 0, flights: 0 })),
+        api.get('/public/fleet').then(r => r.data).catch(() => []),
+        api.get('/public/pilots').then(r => r.data).catch(() => []),
+        api.get('/public/live-flights').then(r => r.data).catch(() => []),
+        api.get('/public/routes').then(r => r.data).catch(() => []),
       ])
       setStats(s)
       setFleet(f)

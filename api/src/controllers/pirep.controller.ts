@@ -3,8 +3,6 @@ import { z } from 'zod'
 import prisma from '../utils/prisma.js'
 import { sendPIREPSubmitted } from '../discord/discord.js'
 
-const HOURLY_RATE = 500
-
 export const createPIREP = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const { userId } = req.user as { userId: string }
@@ -31,10 +29,33 @@ export const createPIREP = async (req: FastifyRequest, reply: FastifyReply) => {
     const pilot = await prisma.pilot.findUnique({ where: { userId } })
     if (!pilot) return reply.status(404).send({ error: 'Pilot not found' })
 
+    let aircraft = await prisma.aircraft.findUnique({
+      where: { id: body.aircraftId }
+    })
+
+    if (!aircraft) {
+      aircraft = await prisma.aircraft.findFirst({
+        where: { registration: body.aircraftId }
+      })
+    }
+
+    if (!aircraft) {
+      aircraft = await prisma.aircraft.findFirst({
+        where: { icao: body.aircraftId }
+      })
+    }
+
+    if (!aircraft) {
+      return reply.status(400).send({
+        error: 'Aircraft not found',
+        detail: `No aircraft matches id/registration/icao: ${body.aircraftId}`
+      })
+    }
+
     const pirep = await prisma.pIREP.create({
       data: {
         pilotId: pilot.id,
-        aircraftId: body.aircraftId,
+        aircraftId: aircraft.id,
         flightNumber: body.flightNumber,
         depIcao: body.depIcao,
         arrIcao: body.arrIcao,
@@ -51,7 +72,6 @@ export const createPIREP = async (req: FastifyRequest, reply: FastifyReply) => {
       }
     })
 
-    // Update booking status if linked
     if (body.bookingId) {
       await prisma.booking.update({
         where: { id: body.bookingId },
@@ -59,7 +79,6 @@ export const createPIREP = async (req: FastifyRequest, reply: FastifyReply) => {
       })
     }
 
-    // Discord Notification
     await sendPIREPSubmitted(
       pilot.pilotId,
       `${pilot.firstName} ${pilot.lastName}`,

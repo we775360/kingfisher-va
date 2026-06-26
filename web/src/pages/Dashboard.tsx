@@ -111,7 +111,7 @@ export default function Dashboard() {
 
   const fetchLive = async () => {
     try {
-      const l = await fetch('https://kingfisher-api.onrender.com/api/v1/public/live-flights').then(r => r.json())
+      const l = await api.get('/public/live-flights').then(r => r.data)
       if (Array.isArray(l)) setLiveFlights(l)
     } catch (e) {}
   }
@@ -122,7 +122,7 @@ export default function Dashboard() {
         api.get('/auth/me'),
         api.get('/bookings/my'),
         api.get('/pireps/my'),
-        fetch('https://kingfisher-api.onrender.com/api/v1/public/announcements').then(r => r.json()).catch(() => [])
+        api.get('/public/announcements').then(r => r.data).catch(() => [])
       ])
       setPilotData(me.data)
       setBookings(b.data)

@@ -2,8 +2,8 @@ import { FastifyRequest, FastifyReply } from 'fastify'
 import { z } from 'zod'
 import prisma from '../utils/prisma.js'
 import axios from 'axios'
+import { positionBus } from '../utils/position-bus.js'
 
-// ── GET SIMBRIEF DATA ──
 export const getSimBriefData = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const { username } = req.query as { username: string }
@@ -17,7 +17,6 @@ export const getSimBriefData = async (req: FastifyRequest, reply: FastifyReply) 
   }
 }
 
-// ── START LIVE FLIGHT ──
 export const startLiveFlight = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const { userId } = req.user as { userId: string }
@@ -35,7 +34,6 @@ export const startLiveFlight = async (req: FastifyRequest, reply: FastifyReply) 
     const pilot = await prisma.pilot.findUnique({ where: { userId } })
     if (!pilot) return reply.status(404).send({ error: 'Pilot not found' })
 
-    // Upsert live flight (one per pilot)
     const liveFlight = await prisma.liveFlight.upsert({
       where: { pilotId: pilot.id },
       update: {
@@ -69,7 +67,6 @@ export const startLiveFlight = async (req: FastifyRequest, reply: FastifyReply) 
   }
 }
 
-// ── UPDATE POSITION ──
 export const updatePosition = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const { userId } = req.user as { userId: string }
@@ -80,6 +77,8 @@ export const updatePosition = async (req: FastifyRequest, reply: FastifyReply) =
       heading: z.number(),
       groundSpeed: z.number(),
       phase: z.string().optional(),
+      fuel: z.number().optional(),
+      vs: z.number().optional(),
     })
 
     const body = schema.parse(req.body)
@@ -94,13 +93,14 @@ export const updatePosition = async (req: FastifyRequest, reply: FastifyReply) =
         alt: body.alt,
         heading: body.heading,
         groundSpeed: body.groundSpeed,
-        phase: body.phase as any || undefined,
+        phase: (body.phase as any) || 'PREFLIGHT',
         lastUpdate: new Date(),
+      },  
+      include: {
+        pilot: { select: { pilotId: true, firstName: true, lastName: true, rank: true } }
       }
     })
 
-    // Store telemetry (optional: every X updates to save DB space)
-    // We will save every update for high-end tracking as requested
     await prisma.telemetry.create({
       data: {
         liveFlightId: liveFlight.id,
@@ -112,6 +112,20 @@ export const updatePosition = async (req: FastifyRequest, reply: FastifyReply) =
       }
     })
 
+    positionBus.emitPosition({
+      flightNumber: liveFlight.flightNumber,
+      depIcao: liveFlight.depIcao,
+      arrIcao: liveFlight.arrIcao,
+      lat: body.lat,
+      lng: body.lng,
+      alt: body.alt,
+      heading: body.heading,
+      groundSpeed: body.groundSpeed,
+      phase: body.phase || 'PREFLIGHT',
+      pilot: liveFlight.pilot,
+      timestamp: Date.now(),
+    })
+
     return reply.send({ success: true })
   } catch (err) {
     console.error(err)
@@ -119,7 +133,6 @@ export const updatePosition = async (req: FastifyRequest, reply: FastifyReply) =
   }
 }
 
-// ── END LIVE FLIGHT ──
 export const endLiveFlight = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const { userId } = req.user as { userId: string }

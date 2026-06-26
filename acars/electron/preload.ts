@@ -1,24 +1,31 @@
 import { ipcRenderer, contextBridge } from 'electron'
 
-// --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('ipcRenderer', {
-  on(...args: Parameters<typeof ipcRenderer.on>) {
-    const [channel, listener] = args
-    return ipcRenderer.on(channel, (event, ...args) => listener(event, ...args))
+  on: (channel: string, listener: (...args: any[]) => void) => {
+    const sub = (_event: any, ...args: any[]) => listener.apply(null, args)
+    ipcRenderer.on(channel, sub)
+    return () => ipcRenderer.removeListener(channel, sub)
   },
-  off(...args: Parameters<typeof ipcRenderer.off>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.off(channel, ...omit)
-  },
-  send(...args: Parameters<typeof ipcRenderer.send>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.send(channel, ...omit)
-  },
-  invoke(...args: Parameters<typeof ipcRenderer.invoke>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.invoke(channel, ...omit)
-  },
+  send: (channel: string, data?: any) => ipcRenderer.send(channel, data),
+  invoke: (channel: string, data?: any) => ipcRenderer.invoke(channel, data),
+})
 
-  // You can expose other APTs you need here.
-  // ...
+contextBridge.exposeInMainWorld('electronAPI', {
+  sim: {
+    getStatus: () => ipcRenderer.invoke('sim:get-status'),
+    getDetected: () => ipcRenderer.invoke('sim:get-detected'),
+    connect: (simType?: string) => ipcRenderer.invoke('sim:connect', simType),
+    disconnect: () => ipcRenderer.invoke('sim:disconnect'),
+    detect: () => ipcRenderer.invoke('sim:detect'),
+  },
+  onFlightData: (callback: (data: any) => void) => {
+    const sub = (_event: any, data: any) => callback(data)
+    ipcRenderer.on('flight-data', sub)
+    return () => ipcRenderer.removeListener('flight-data', sub)
+  },
+  onSimStatus: (callback: (status: any) => void) => {
+    const sub = (_event: any, status: any) => callback(status)
+    ipcRenderer.on('sim-status', sub)
+    return () => ipcRenderer.removeListener('sim-status', sub)
+  },
 })

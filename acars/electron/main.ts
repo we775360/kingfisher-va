@@ -1,11 +1,10 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import * as SimConnect from 'node-simconnect'
+import { getBridge, SimulatorType, SimData, detectBestSimulator, detectSimulatorsRunning } from './sim-bridge/index.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-// The built directory structure
 process.env.APP_ROOT = path.join(__dirname, '..')
 
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
@@ -14,16 +13,17 @@ export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
-let win: BrowserWindow | null
-let simHandle: SimConnect.SimConnectConnection | null = null
-let pollInterval: NodeJS.Timeout | null = null
+let win: BrowserWindow | null = null
+let simBridge = getBridge()
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 450,
+    width: 1280,
     height: 800,
+    minWidth: 900,
+    minHeight: 600,
     resizable: true,
-    maximizable: false,
+    maximizable: true,
     title: 'Kingfisher ACARS',
     icon: path.join(process.env.VITE_PUBLIC, 'logo.png'),
     webPreferences: {
@@ -42,103 +42,30 @@ function createWindow() {
   }
 
   win.on('closed', () => {
-    stopPolling()
-    if (simHandle) {
-      simHandle.close()
-      simHandle = null
-    }
+    simBridge.disconnect()
+    win = null
   })
 }
 
-async function initSimConnect() {
-  try {
-    if (simHandle) return
-
-    const { handle } = await SimConnect.open('KingfisherACARS', SimConnect.Protocol.KittyHawk)
-    simHandle = handle
-    
-    simHandle.on('exception', (exception: any) => {
-      console.error('SimConnect Exception:', exception)
-    })
-
-    simHandle.on('close', () => {
-      console.log('SimConnect Connection Closed')
-      win?.webContents.send('sim-status', 'disconnected')
-      stopPolling()
-      simHandle = null
-      setTimeout(initSimConnect, 5000)
-    })
-
-    console.log('SimConnect connected')
-    win?.webContents.send('sim-status', 'connected')
-
-    startPolling()
-  } catch (error) {
-    console.log('SimConnect connection failed, retrying...')
-    win?.webContents.send('sim-status', 'disconnected')
-    setTimeout(initSimConnect, 5000)
-  }
-}
-
-function startPolling() {
-  if (pollInterval || !simHandle) return
-
-  const DEFINITION_ID = 1
-
-  simHandle.addToDataDefinition(DEFINITION_ID, 'PLANE LATITUDE', 'degrees', SimConnect.SimConnectDataType.FLOAT64)
-  simHandle.addToDataDefinition(DEFINITION_ID, 'PLANE LONGITUDE', 'degrees', SimConnect.SimConnectDataType.FLOAT64)
-  simHandle.addToDataDefinition(DEFINITION_ID, 'PLANE ALTITUDE', 'feet', SimConnect.SimConnectDataType.FLOAT64)
-  simHandle.addToDataDefinition(DEFINITION_ID, 'PLANE HEADING DEGREES TRUE', 'degrees', SimConnect.SimConnectDataType.FLOAT64)
-  simHandle.addToDataDefinition(DEFINITION_ID, 'AIRSPEED TRUE', 'knots', SimConnect.SimConnectDataType.FLOAT64)
-  simHandle.addToDataDefinition(DEFINITION_ID, 'SIM ON GROUND', 'bool', SimConnect.SimConnectDataType.FLOAT64)
-  simHandle.addToDataDefinition(DEFINITION_ID, 'VERTICAL SPEED', 'feet per minute', SimConnect.SimConnectDataType.FLOAT64)
-  simHandle.addToDataDefinition(DEFINITION_ID, 'FUEL TOTAL QUANTITY', 'gallons', SimConnect.SimConnectDataType.FLOAT64)
-  simHandle.addToDataDefinition(DEFINITION_ID, 'ENG COMBUSTION:1', 'bool', SimConnect.SimConnectDataType.FLOAT64)
-  simHandle.addToDataDefinition(DEFINITION_ID, 'AIRSPEED INDICATED', 'knots', SimConnect.SimConnectDataType.FLOAT64)
-  simHandle.addToDataDefinition(DEFINITION_ID, 'AIRSPEED MACH', 'mach', SimConnect.SimConnectDataType.FLOAT64)
-  simHandle.addToDataDefinition(DEFINITION_ID, 'TRANSPONDER CODE:1', 'number', SimConnect.SimConnectDataType.FLOAT64)
-  simHandle.addToDataDefinition(DEFINITION_ID, 'PLANE PITCH DEGREES', 'degrees', SimConnect.SimConnectDataType.FLOAT64)
-  simHandle.addToDataDefinition(DEFINITION_ID, 'PLANE BANK DEGREES', 'degrees', SimConnect.SimConnectDataType.FLOAT64)
-
-  pollInterval = setInterval(() => {
-    if (simHandle && win) {
-      simHandle.requestDataOnSimObject(DEFINITION_ID, DEFINITION_ID, SimConnect.SimObjectType.USER, SimConnect.SimConnectPeriod.ONCE)
-    }
-  }, 1000)
-
-  simHandle.on('simObjectData', (data: any) => {
-    if (data.defineId === DEFINITION_ID && win) {
-      try {
-        const flightData = {
-          lat: data.data.readDoubleLE(0),
-          lng: data.data.readDoubleLE(8),
-          alt: data.data.readDoubleLE(16),
-          heading: data.data.readDoubleLE(24),
-          gs: data.data.readDoubleLE(32),
-          onGround: data.data.readDoubleLE(40) === 1,
-          vs: data.data.readDoubleLE(48),
-          fuel: data.data.readDoubleLE(56),
-          engineOn: data.data.readDoubleLE(64) === 1,
-          ias: data.data.readDoubleLE(72),
-          mach: data.data.readDoubleLE(80),
-          squawk: data.data.readDoubleLE(88).toString().padStart(4, '0'),
-          pitch: data.data.readDoubleLE(96) * (180 / Math.PI), // Convert to degrees if raw rad
-          bank: data.data.readDoubleLE(104) * (180 / Math.PI),
-          timestamp: Date.now()
-        }
-        win.webContents.send('flight-data', flightData)
-      } catch (e) {
-        console.error('Error parsing sim data:', e)
-      }
+function setupBridge() {
+  simBridge.onData((data: SimData) => {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('flight-data', {
+        ...data,
+        lat: Number(data.lat.toFixed(6)),
+        lng: Number(data.lng.toFixed(6)),
+      })
     }
   })
-}
 
-function stopPolling() {
-  if (pollInterval) {
-    clearInterval(pollInterval)
-    pollInterval = null
-  }
+  simBridge.onStatus((connected: boolean, type: SimulatorType | null) => {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('sim-status', {
+        connected,
+        type: type || 'NONE',
+      })
+    }
+  })
 }
 
 app.on('window-all-closed', () => {
@@ -155,9 +82,26 @@ app.on('activate', () => {
 
 app.whenReady().then(() => {
   createWindow()
-  initSimConnect()
+  setupBridge()
 })
 
-ipcMain.handle('get-sim-status', () => {
-  return simHandle ? 'connected' : 'disconnected'
+ipcMain.handle('sim:get-status', () => ({
+  connected: simBridge.isConnected,
+  type: simBridge.activeSimulator,
+}))
+
+ipcMain.handle('sim:get-detected', () => detectSimulatorsRunning())
+
+ipcMain.handle('sim:connect', async (_event, simType?: string) => {
+  if (simType) {
+    const type = simType as SimulatorType
+    return simBridge.connect(type)
+  }
+  return simBridge.connect()
 })
+
+ipcMain.handle('sim:disconnect', () => {
+  simBridge.disconnect()
+})
+
+ipcMain.handle('sim:detect', () => detectBestSimulator())

@@ -104,7 +104,7 @@ export default function Admin() {
         api.get('/admin/routes'),
         api.get('/admin/hubs'),
         api.get('/events'),
-        fetch('https://kingfisher-api.onrender.com/api/v1/public/announcements').then(r => r.json()).catch(() => [])
+        api.get('/public/announcements').then(r => r.data).catch(() => [])
       ])
       setStats(s.data)
       setPilots(p.data)

@@ -2,26 +2,27 @@
 
 declare namespace NodeJS {
   interface ProcessEnv {
-    /**
-     * The built directory structure
-     *
-     * ```tree
-     * ├─┬─┬ dist
-     * │ │ └── index.html
-     * │ │
-     * │ ├─┬ dist-electron
-     * │ │ ├── main.js
-     * │ │ └── preload.js
-     * │
-     * ```
-     */
     APP_ROOT: string
-    /** /dist/ or /public/ */
     VITE_PUBLIC: string
   }
 }
 
-// Used in Renderer process, expose in `preload.ts`
+interface SimStatus {
+  connected: boolean
+  type: string
+}
+
 interface Window {
   ipcRenderer: import('electron').IpcRenderer
+  electronAPI: {
+    sim: {
+      getStatus: () => Promise<SimStatus>
+      getDetected: () => Promise<string[]>
+      connect: (simType?: string) => Promise<boolean>
+      disconnect: () => Promise<void>
+      detect: () => Promise<string>
+    }
+    onFlightData: (callback: (data: any) => void) => () => void
+    onSimStatus: (callback: (status: SimStatus) => void) => () => void
+  }
 }
