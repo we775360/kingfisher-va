@@ -58,11 +58,12 @@ function setupBridge() {
     }
   })
 
-  simBridge.onStatus((connected: boolean, type: SimulatorType | null) => {
+  simBridge.onStatus((status) => {
     if (win && !win.isDestroyed()) {
       win.webContents.send('sim-status', {
-        connected,
-        type: type || 'NONE',
+        connected: status.connected,
+        type: status.demo ? 'SIMULATION' : (status.type || 'NONE'),
+        demo: status.demo,
       })
     }
   })
@@ -87,14 +88,14 @@ app.whenReady().then(() => {
 
 ipcMain.handle('sim:get-status', () => ({
   connected: simBridge.isConnected,
-  type: simBridge.activeSimulator || (simBridge.usingDemo ? 'DEMO' : 'NONE'),
+  type: simBridge.usingDemo ? 'SIMULATION' : (simBridge.activeSimulator || 'NONE'),
   demo: simBridge.usingDemo,
 }))
 
 ipcMain.handle('sim:get-detected', () => detectSimulatorsRunning())
 
 ipcMain.handle('sim:connect', async (_event, simType?: string) => {
-  if (simType === 'DEMO') {
+  if (simType === 'DEMO' || simType === 'SIMULATION') {
     return simBridge.connectDemo()
   }
   if (simType) {

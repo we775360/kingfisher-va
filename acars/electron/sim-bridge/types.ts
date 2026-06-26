@@ -39,6 +39,7 @@ export interface SimData {
 export interface SimulatorAdapter {
   readonly type: SimulatorType
   readonly name: string
+  readonly compatibleTypes: SimulatorType[]
 
   connect(): Promise<boolean>
   disconnect(): void

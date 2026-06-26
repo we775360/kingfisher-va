@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process'
-import { SimulatorType, ADAPTER_ORDER } from './types.js'
+import { SimulatorType } from './types.js'
 
 function isWindows(): boolean {
   return process.platform === 'win32'
@@ -40,11 +40,5 @@ export function detectSimulatorsRunning(): SimulatorType[] {
 export function detectBestSimulator(): SimulatorType {
   const running = detectSimulatorsRunning()
   if (running.length > 0) return running[0]
-
-  for (const sim of ADAPTER_ORDER) {
-    if (sim === SimulatorType.XP11 || sim === SimulatorType.XP12) continue
-    if (isWindows()) return SimulatorType.MSFS2020
-  }
-
   return SimulatorType.UNKNOWN
 }

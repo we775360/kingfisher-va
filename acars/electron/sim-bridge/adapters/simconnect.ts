@@ -3,6 +3,15 @@ import { SimulatorAdapter, SimData, SimulatorType } from '../types.js'
 export class SimConnectAdapter implements SimulatorAdapter {
   readonly type = SimulatorType.MSFS2020
   readonly name = 'SimConnect (MSFS/FSX/P3D)'
+  readonly compatibleTypes = [
+    SimulatorType.MSFS2020,
+    SimulatorType.MSFS2024,
+    SimulatorType.FSX,
+    SimulatorType.FSX_SE,
+    SimulatorType.P3Dv4,
+    SimulatorType.P3Dv5,
+    SimulatorType.P3Dv6,
+  ]
 
   private handle: any = null
   private simConnectModule: any = null

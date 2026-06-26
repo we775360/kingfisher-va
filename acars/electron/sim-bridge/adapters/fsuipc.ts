@@ -25,6 +25,13 @@ const OFFSETS: Record<string, FSUIPCOffset> = {
 export class FSUIPCAdapter implements SimulatorAdapter {
   readonly type = SimulatorType.FSX
   readonly name = 'FSUIPC (FSX/P3D)'
+  readonly compatibleTypes = [
+    SimulatorType.FSX,
+    SimulatorType.FSX_SE,
+    SimulatorType.P3Dv4,
+    SimulatorType.P3Dv5,
+    SimulatorType.P3Dv6,
+  ]
 
   private fsuipc: any = null
   private handle: any = null

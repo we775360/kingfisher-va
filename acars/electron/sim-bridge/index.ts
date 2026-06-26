@@ -21,7 +21,7 @@ export class SimulatorBridge {
   private adapters: SimulatorAdapter[] = []
   private activeAdapter: SimulatorAdapter | null = null
   private dataCallback: ((data: SimData) => void) | null = null
-  private statusCallback: ((connected: boolean, type: SimulatorType | null) => void) | null = null
+  private statusCallback: ((status: { connected: boolean; type: SimulatorType | null; demo: boolean }) => void) | null = null
   private isDemo = false
 
   constructor() {
@@ -48,6 +48,10 @@ export class SimulatorBridge {
     return this.activeAdapter?.name ?? null
   }
 
+  private findAdapter(type: SimulatorType): SimulatorAdapter | undefined {
+    return this.adapters.find(a => a.compatibleTypes.includes(type))
+  }
+
   async connect(simType?: SimulatorType): Promise<boolean> {
     this.disconnect()
     this.isDemo = false
@@ -55,7 +59,7 @@ export class SimulatorBridge {
     const targetType = simType || detectBestSimulator()
 
     if (targetType !== SimulatorType.UNKNOWN) {
-      const adapter = this.adapters.find(a => a.type === targetType)
+      const adapter = this.findAdapter(targetType)
       if (adapter) {
         const ok = await adapter.connect()
         if (ok) {
@@ -64,14 +68,14 @@ export class SimulatorBridge {
           if (this.dataCallback) {
             adapter.startPolling(1000, this.dataCallback)
           }
-          this.statusCallback?.(true, adapter.type)
+          this.emitStatus(true, adapter.type, false)
           return true
         }
       }
 
       for (const sim of ADAPTER_ORDER) {
         if (sim === targetType) continue
-        const fallback = this.adapters.find(a => a.type === sim)
+        const fallback = this.findAdapter(sim)
         if (!fallback) continue
         const fallbackOk = await fallback.connect()
         if (fallbackOk) {
@@ -80,7 +84,7 @@ export class SimulatorBridge {
           if (this.dataCallback) {
             fallback.startPolling(1000, this.dataCallback)
           }
-          this.statusCallback?.(true, fallback.type)
+          this.emitStatus(true, fallback.type, false)
           return true
         }
       }
@@ -106,10 +110,10 @@ export class SimulatorBridge {
       if (this.dataCallback) {
         demo.startPolling(1000, this.dataCallback)
       }
-      this.statusCallback?.(true, SimulatorType.UNKNOWN)
+      this.emitStatus(true, SimulatorType.UNKNOWN, true)
       return true
     }
-    this.statusCallback?.(false, null)
+    this.emitStatus(false, null, false)
     return false
   }
 
@@ -119,6 +123,7 @@ export class SimulatorBridge {
       this.activeAdapter.disconnect()
       this.activeAdapter = null
     }
+    this.isDemo = false
   }
 
   onData(callback: (data: SimData) => void): void {
@@ -136,15 +141,19 @@ export class SimulatorBridge {
     }
   }
 
-  onStatus(callback: (connected: boolean, type: SimulatorType | null) => void): void {
+  onStatus(callback: (status: { connected: boolean; type: SimulatorType | null; demo: boolean }) => void): void {
     this.statusCallback = callback
+  }
+
+  private emitStatus(connected: boolean, type: SimulatorType | null, demo: boolean) {
+    this.statusCallback?.({ connected, type, demo })
   }
 
   private handleStatusChange = (connected: boolean) => {
     if (!connected && this.activeAdapter) {
       this.activeAdapter = null
     }
-    this.statusCallback?.(connected, this.activeAdapter?.type ?? null)
+    this.emitStatus(connected, this.activeAdapter?.type ?? null, this.isDemo)
   }
 }
 

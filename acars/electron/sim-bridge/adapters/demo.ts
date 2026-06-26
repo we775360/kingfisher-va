@@ -25,6 +25,7 @@ function gauss(mean: number, std: number): number {
 export class DemoAdapter implements SimulatorAdapter {
   readonly type = SimulatorType.UNKNOWN
   readonly name = 'Simulation / Demo Mode'
+  readonly compatibleTypes: SimulatorType[] = []
 
   private timer: NodeJS.Timeout | null = null
   private dataCallback: ((data: SimData) => void) | null = null
@@ -284,7 +285,7 @@ export class DemoAdapter implements SimulatorAdapter {
       simOn: true,
       timestamp: Date.now(),
       squawk: this.squawk,
-      simulator: SimulatorType.UNKNOWN,
+      simulator: 'SIMULATION' as unknown as SimulatorType,
     }
   }
 

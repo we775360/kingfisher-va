@@ -27,6 +27,10 @@ const DATA_REFS: Record<string, XPlaneDataRef> = {
 export class XPUIPCAdapter implements SimulatorAdapter {
   readonly type = SimulatorType.XP12
   readonly name = 'XPUIPC / X-Plane UDP'
+  readonly compatibleTypes = [
+    SimulatorType.XP11,
+    SimulatorType.XP12,
+  ]
 
   private socket: dgram.Socket | null = null
   private pollTimer: NodeJS.Timeout | null = null

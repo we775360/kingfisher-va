@@ -29,7 +29,11 @@ export function Dashboard() {
     if (!simConnected) {
       await autoConnect()
     }
-    const ok = await startFlight(simConnected ? useFlightStore.getState().flightData?.simulator || isDemo ? 'DEMO' : 'UNKNOWN' : 'UNKNOWN')
+    let sim = 'UNKNOWN'
+    if (simConnected) {
+      sim = useFlightStore.getState().flightData?.simulator || (isDemo ? 'SIMULATION' : 'UNKNOWN')
+    }
+    const ok = await startFlight(sim)
     setLoading(false)
     if (!ok) alert('Failed to start tracking.')
   }
