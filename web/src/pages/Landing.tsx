@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MapContainer, TileLayer, Marker, Tooltip } from 'react-leaflet'
 import Globe from 'react-globe.gl'
@@ -127,6 +128,16 @@ export default function Landing() {
   }
 
   return (
+    <>
+    <Helmet>
+      <title>Kingfisher Virtual Airline | India's Premier Virtual Aviation Community | KFR VA</title>
+      <meta name="description" content="Kingfisher Virtual Airline (KFR VA) — India's most innovative virtual airline. Join hundreds of aviators flying realistic routes across India & the globe. Apply now for free!" />
+      <meta name="keywords" content="Kingfisher Virtual, Kingfisher Virtual Airline, KFR Virtual, KFR VA, Virtual Airlines India, Indian Virtual Airline, Indian VA, Virtual Aviation India, Best Virtual Airline India, Kingfisher VA, Virtual Airline Community, VATSIM India, Flight Simulator India, MSFS India, Virtual Pilot India" />
+      <meta property="og:title" content="Kingfisher Virtual Airline | India's #1 Virtual Aviation Community" />
+      <meta property="og:description" content="Experience the ultimate fusion of realism and high-energy aviation. Join India's most innovative virtual airline, built by aviators, for aviators." />
+      <meta name="twitter:title" content="Kingfisher Virtual Airline | India's #1 Virtual Aviation Community" />
+      <meta name="twitter:description" content="Join India's premier virtual airline. Fly realistic routes, build your hours, and connect with fellow aviators. Free to join!" />
+    </Helmet>
     <div className={`${theme.bg} ${theme.text} min-h-screen font-sans selection:bg-red-600 selection:text-white overflow-x-hidden transition-colors duration-500`}>
       
       {/* ── MOBILE NAVIGATION ── */}
@@ -557,7 +568,7 @@ export default function Landing() {
                             className="w-full aspect-[4/5] object-cover rounded-[45px] opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" 
                         />
                         <div className="absolute bottom-12 left-12">
-                            <h3 className={`text-4xl font-black italic tracking-tighter uppercase mb-2 ${!isDark && 'text-white'}`}>Guneet Singh</h3>
+                            <h3 className={`text-4xl font-black italic tracking-tighter uppercase mb-2 ${!isDark && 'text-white'}`}>GtechSolutions</h3>
                             <p className="text-red-600 font-black uppercase tracking-[0.5em] text-[10px]">Founder & Builder</p>
                         </div>
                     </div>
@@ -571,7 +582,7 @@ export default function Landing() {
                     </h2>
                     <div className={`${theme.textMuted} space-y-8 text-lg leading-relaxed font-medium`}>
                         <p>
-                            Hi, I'm Guneet Singh. I have founded this Virtual Airline - Kingfisher Virtual Airline which is no where in relation with the real world airline that used to exist. Do feel free to join the KFR VA!
+                            Hi, I'm GtechSolutions. I have founded this Virtual Airline - Kingfisher Virtual Airline which is no where in relation with the real world airline that used to exist. Do feel free to join the KFR VA!
                         </p>
                     </div>
                     
@@ -662,7 +673,7 @@ export default function Landing() {
 
             <div className={`flex flex-col md:flex-row justify-between items-center pt-16 border-t ${theme.border} gap-8`}>
                 <div className={`text-[9px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-zinc-700' : 'text-slate-400'}`}>
-                    © 2026 KINGFISHER VA · CRAFTED BY GUNEET SINGH · NOT A REAL AIRLINE
+                    © 2026 KINGFISHER VA · CRAFTED BY GtechSolutions · NOT A REAL AIRLINE
                 </div>
                 <div className="flex gap-10">
                     <span className={`text-[9px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-zinc-700' : 'text-slate-400'} hover:text-red-600 cursor-pointer transition-all`}>Support Center</span>
@@ -678,5 +689,6 @@ export default function Landing() {
         .glass-dark:hover { background: rgba(15, 15, 15, 0.8) !important; transform: translateY(-5px); }
       `}</style>
     </div>
+    </>
   )
 }
