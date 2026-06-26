@@ -24,6 +24,14 @@ interface Window {
       startDemoFlight: () => Promise<boolean>
       disconnect: () => Promise<void>
       detect: () => Promise<string>
+      diagnose: () => Promise<{
+        platform: string
+        simProcessesDetected: string[]
+        bestSimulator: string
+        modulesInstalled: { nodeFsuipc: boolean; nodeSimconnect: boolean }
+        bridgeConnected: boolean
+        bridgeUsingDemo: boolean
+      }>
     }
     onFlightData: (callback: (data: any) => void) => () => void
     onSimStatus: (callback: (status: SimStatus) => void) => () => void

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Import, Navigation, Plane as PlaneIcon } from 'lucide-react'
+import { Import, Navigation, Plane as PlaneIcon, Bug } from 'lucide-react'
 import { useFlightStore } from '../stores/flightStore'
 import { useSimulator } from '../hooks/useSimulator'
 import { FlightTracker } from './FlightTracker'
@@ -10,14 +10,20 @@ export function Dashboard() {
     ofp, flightData, isTracking, setSbUsername, sbUsername,
     handleSimBriefFetch, startFlight
   } = useFlightStore()
-  const { simConnected, isDemo, autoConnect } = useSimulator()
+  const { simConnected, isDemo, autoConnect, diagnose } = useSimulator()
   const [loading, setLoading] = useState(false)
   const [showPIREP, setShowPIREP] = useState(false)
   const [pirepResult, setPirepResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [diag, setDiag] = useState<any>(null)
 
   const handleConnect = async () => {
     setLoading(true)
-    await autoConnect()
+    setDiag(null)
+    const started = await autoConnect()
+    if (!started) {
+      const d = await diagnose()
+      setDiag(d)
+    }
     setLoading(false)
   }
 
@@ -145,7 +151,40 @@ export function Dashboard() {
           >
             {loading ? 'Scanning...' : 'Connect Simulator'}
           </button>
-          <p className="text-[9px] text-neutral-700">Detects MSFS, FSX, P3D, X-Plane. No sim? Runs in simulation mode.</p>
+          <p className="text-[9px] text-neutral-700">Detects MSFS, FSX, P3D, X-Plane. Falls back to simulation mode.</p>
+
+          {diag && (
+            <div className="text-left text-[10px] font-mono bg-neutral-900/80 rounded-xl p-4 space-y-1.5 border border-neutral-800">
+              <div className="flex items-center gap-2 text-neutral-500 mb-2">
+                <Bug className="w-3 h-3" /> Diagnostics
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-neutral-400">
+                <span>Platform:</span><span className="text-white font-bold">{diag.platform}</span>
+                <span>Sim Process:</span><span className={diag.simProcessesDetected?.length ? 'text-green-500 font-bold' : 'text-red-500 font-bold'}>
+                  {diag.simProcessesDetected?.length ? diag.simProcessesDetected.join(', ') : 'None detected'}
+                </span>
+                <span>Best Match:</span><span className="text-white font-bold">{diag.bestSimulator}</span>
+                <span>node-fsuipc:</span><span className={diag.modulesInstalled?.nodeFsuipc ? 'text-green-500 font-bold' : 'text-red-500 font-bold'}>
+                  {diag.modulesInstalled?.nodeFsuipc ? 'Installed' : 'Not installed'}
+                </span>
+                <span>node-simconnect:</span><span className={diag.modulesInstalled?.nodeSimconnect ? 'text-green-500 font-bold' : 'text-red-500 font-bold'}>
+                  {diag.modulesInstalled?.nodeSimconnect ? 'Installed' : 'Not installed'}
+                </span>
+              </div>
+              {diag.modulesInstalled && !diag.modulesInstalled.nodeFsuipc && !diag.modulesInstalled.nodeSimconnect && (
+                <div className="text-amber-500 text-[9px] mt-2 leading-relaxed">
+                  Native sim modules not found. Run{' '}
+                  <code className="bg-neutral-800 px-1 rounded">pnpm install --include-optional node-fsuipc node-simconnect</code>
+                  {' '}on Windows, then restart ACARS.
+                </div>
+              )}
+              {diag.platform !== 'win32' && (
+                <div className="text-amber-500 text-[9px] mt-2">
+                  Running on {diag.platform}. Simulator connection is only available on Windows. Use simulation mode for testing.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

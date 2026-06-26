@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     startDemoFlight: () => ipcRenderer.invoke('sim:start-demo-flight'),
     disconnect: () => ipcRenderer.invoke('sim:disconnect'),
     detect: () => ipcRenderer.invoke('sim:detect'),
+    diagnose: () => ipcRenderer.invoke('sim:diagnose'),
   },
   onFlightData: (callback: (data: any) => void) => {
     const sub = (_event: any, data: any) => callback(data)

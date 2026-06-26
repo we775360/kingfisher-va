@@ -1,7 +1,10 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { createRequire } from 'node:module'
 import { getBridge, SimulatorType, SimData, detectBestSimulator, detectSimulatorsRunning, setDemoRoute } from './sim-bridge/index.js'
+
+const _require = createRequire(import.meta.url)
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -121,3 +124,20 @@ ipcMain.handle('sim:disconnect', () => {
 })
 
 ipcMain.handle('sim:detect', () => detectBestSimulator())
+
+ipcMain.handle('sim:diagnose', () => {
+  const platform = process.platform
+  const running = detectSimulatorsRunning()
+  let nodeFsuipc = false
+  let nodeSimconnect = false
+  try { _require.resolve('node-fsuipc'); nodeFsuipc = true } catch {}
+  try { _require.resolve('node-simconnect'); nodeSimconnect = true } catch {}
+  return {
+    platform,
+    simProcessesDetected: running,
+    bestSimulator: detectBestSimulator(),
+    modulesInstalled: { nodeFsuipc, nodeSimconnect },
+    bridgeConnected: simBridge.isConnected,
+    bridgeUsingDemo: simBridge.usingDemo,
+  }
+})

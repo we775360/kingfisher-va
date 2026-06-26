@@ -83,5 +83,12 @@ export function useSimulator() {
     return connectDemo()
   }, [connect, connectDemo])
 
-  return { simConnected, simType, isDemo, connect, connectDemo, startDemoFlight, disconnect, autoConnect }
+  const diagnose = useCallback(async () => {
+    if (window.electronAPI?.sim?.diagnose) {
+      return window.electronAPI.sim.diagnose()
+    }
+    return null
+  }, [])
+
+  return { simConnected, simType, isDemo, connect, connectDemo, startDemoFlight, disconnect, autoConnect, diagnose }
 }
