@@ -4,14 +4,16 @@ import prisma from '../utils/prisma.js'
 import { sendPIREPApproved, sendPIREPRejected, sendAnnouncement } from '../discord/discord.js'
 const HOURLY_RATE = 500
 
-// ── GET ALL PILOTS ──
+// ── GET ALL PILOTS (all registered users with pilot data) ──
 export const getAllPilots = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
-    const pilots = await prisma.pilot.findMany({
-      include: { user: { select: { email: true, role: true, isEmailVerified: true } } },
-      orderBy: { joinedAt: 'desc' }
+    const users = await prisma.user.findMany({
+      include: {
+        pilot: true
+      },
+      orderBy: { createdAt: 'desc' }
     })
-    return reply.send(pilots)
+    return reply.send(users)
   } catch (err) {
     console.error(err)
     return reply.status(500).send({ error: 'Internal server error' })
@@ -293,7 +295,7 @@ export const deleteAnnouncement = async (req: FastifyRequest, reply: FastifyRepl
 export const getStats = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const [totalPilots, totalFlights, totalAircraft, totalRoutes, pendingPireps] = await Promise.all([
-      prisma.pilot.count(),
+      prisma.user.count(),
       prisma.pIREP.count({ where: { status: 'APPROVED' } }),
       prisma.aircraft.count(),
       prisma.route.count(),

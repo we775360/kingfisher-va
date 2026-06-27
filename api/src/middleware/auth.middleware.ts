@@ -1,4 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
+import prisma from '../utils/prisma.js'
 
 export const authenticate = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
@@ -11,8 +12,9 @@ export const authenticate = async (req: FastifyRequest, reply: FastifyReply) => 
 export const requireAdmin = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     await req.jwtVerify()
-    const { role } = req.user as { userId: string, role: string }
-    if (role !== 'ADMIN') {
+    const { userId } = req.user as { userId: string, role: string }
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } })
+    if (!user || user.role !== 'ADMIN') {
       return reply.status(403).send({ error: 'Admin access required' })
     }
   } catch {
@@ -23,8 +25,9 @@ export const requireAdmin = async (req: FastifyRequest, reply: FastifyReply) => 
 export const requireStaff = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     await req.jwtVerify()
-    const { role } = req.user as { userId: string, role: string }
-    if (role !== 'ADMIN' && role !== 'STAFF') {
+    const { userId } = req.user as { userId: string, role: string }
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } })
+    if (!user || (user.role !== 'ADMIN' && user.role !== 'STAFF')) {
       return reply.status(403).send({ error: 'Staff access required' })
     }
   } catch {

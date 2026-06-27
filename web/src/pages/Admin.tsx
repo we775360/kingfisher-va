@@ -346,9 +346,11 @@ export default function Admin() {
 
       // ── PILOTS ──
       case 'pilots':
-        const filteredPilots = pilots.filter(p =>
-          `${p.firstName} ${p.lastName} ${p.pilotId}`.toLowerCase().includes(search.toLowerCase())
-        )
+        const filteredPilots = pilots.filter((u: any) => {
+          const p = u.pilot
+          const name = p ? `${p.firstName} ${p.lastName} ${p.pilotId}` : u.email
+          return name.toLowerCase().includes(search.toLowerCase())
+        })
         return (
           <div className="rounded-2xl overflow-hidden"
             style={{ background: t.card, border: `1px solid ${t.border}` }}>
@@ -371,7 +373,7 @@ export default function Admin() {
               <table className="w-full">
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${t.border}` }}>
-                    {['Pilot ID', 'Name', 'Email', 'Rank', 'Hours', 'Flights', 'Status', 'Actions'].map(h => (
+                    {['Pilot ID', 'Name', 'Email', 'Rank', 'Hours', 'Flights', 'Status', 'Role', 'Actions'].map(h => (
                       <th key={h} className="text-left px-5 py-3 text-xs font-semibold tracking-wide"
                         style={{ color: t.textMuted }}>
                         {h}
@@ -380,69 +382,93 @@ export default function Admin() {
                   </tr>
                 </thead>
                 <tbody className="divide-y" style={{ borderColor: t.border }}>
-                  {filteredPilots.map((pilot: any) => (
-                    <tr key={pilot.id}
+                  {filteredPilots.map((user: any) => {
+                    const p = user.pilot
+                    return (
+                    <tr key={user.id}
                       onMouseEnter={e => e.currentTarget.style.background = t.navHover}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                       <td className="px-5 py-3.5">
-                        <span className="text-xs font-bold font-mono" style={{ color: '#c0121e' }}>
-                          {pilot.pilotId}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                            style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)', color: 'white' }}>
-                            {pilot.firstName?.[0]}{pilot.lastName?.[0]}
-                          </div>
-                          <span className="text-sm font-medium" style={{ color: t.text }}>
-                            {pilot.firstName} {pilot.lastName}
+                        {p ? (
+                          <span className="text-xs font-bold font-mono" style={{ color: '#c0121e' }}>
+                            {p.pilotId}
                           </span>
-                        </div>
+                        ) : (
+                          <span className="text-xs" style={{ color: t.textMuted }}>—</span>
+                        )}
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="text-xs" style={{ color: t.textSub }}>{pilot.user?.email}</span>
+                        {p ? (
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                              style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)', color: 'white' }}>
+                              {p.firstName?.[0]}{p.lastName?.[0]}
+                            </div>
+                            <span className="text-sm font-medium" style={{ color: t.text }}>
+                              {p.firstName} {p.lastName}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm" style={{ color: t.textMuted }}>Pending Setup</span>
+                        )}
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="text-xs" style={{ color: t.textSub }}>{pilot.rank}</span>
+                        <span className="text-xs" style={{ color: t.textSub }}>{user.email}</span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="text-xs" style={{ color: t.textSub }}>{p?.rank || '—'}</span>
                       </td>
                       <td className="px-5 py-3.5">
                         <span className="text-xs font-semibold" style={{ color: t.text }}>
-                          {pilot.totalHours?.toFixed(1)}h
+                          {p ? `${p.totalHours?.toFixed(1)}h` : '—'}
                         </span>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="text-xs" style={{ color: t.textSub }}>{pilot.totalFlights}</span>
+                        <span className="text-xs" style={{ color: t.textSub }}>{p?.totalFlights ?? '—'}</span>
                       </td>
                       <td className="px-5 py-3.5">
-                        <StatusBadge status={pilot.status} />
+                        {p ? <StatusBadge status={p.status} /> : <span className="text-xs" style={{ color: t.textMuted }}>No Pilot</span>}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md"
+                          style={{
+                            background: user.role === 'ADMIN' ? 'rgba(192,18,30,0.1)' : user.role === 'STAFF' ? 'rgba(37,99,235,0.1)' : 'rgba(16,185,129,0.1)',
+                            color: user.role === 'ADMIN' ? '#c0121e' : user.role === 'STAFF' ? '#2563eb' : '#10b981'
+                          }}>
+                          {user.role}
+                        </span>
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-1.5">
-                          {pilot.status === 'ACTIVE' ? (
-                            <>
-                              <button onClick={() => updatePilotStatus(pilot.id, 'SUSPENDED')}
+                          {p ? (
+                            p.status === 'ACTIVE' ? (
+                              <>
+                                <button onClick={() => updatePilotStatus(p.id, 'SUSPENDED')}
+                                  className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                                  style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>
+                                  Suspend
+                                </button>
+                                <button onClick={() => updatePilotStatus(p.id, 'BANNED')}
+                                  className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                                  style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                                  Ban
+                                </button>
+                              </>
+                            ) : (
+                              <button onClick={() => updatePilotStatus(p.id, 'ACTIVE')}
                                 className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
-                                style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>
-                                Suspend
+                                style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
+                                Reactivate
                               </button>
-                              <button onClick={() => updatePilotStatus(pilot.id, 'BANNED')}
-                                className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
-                                style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
-                                Ban
-                              </button>
-                            </>
+                            )
                           ) : (
-                            <button onClick={() => updatePilotStatus(pilot.id, 'ACTIVE')}
-                              className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
-                              style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
-                              Reactivate
-                            </button>
+                            <span className="text-xs" style={{ color: t.textMuted }}>—</span>
                           )}
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    )
+                  })}
                 </tbody>
               </table>
               {filteredPilots.length === 0 && (
