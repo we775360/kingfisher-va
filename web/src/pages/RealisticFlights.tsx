@@ -5,7 +5,7 @@ import {
   Plane, Navigation, Clock, Search, Filter,
   ChevronRight, X, Calendar, Globe, Radio,
   DollarSign, Award, Info, Check, ArrowRight,
-  MapPin, Shield, Users
+  MapPin, Shield, Users, AlertTriangle
 } from 'lucide-react'
 import { useThemeStore } from '../store/theme.store'
 import { useAuthStore } from '../store/auth.store'
@@ -28,6 +28,8 @@ export default function RealisticFlights() {
   const [bookingMsg, setBookingMsg] = useState('')
   const [bookingSuccess, setBookingSuccess] = useState(false)
   const [networkFilter, setNetworkFilter] = useState<string>('')
+  const [cancelTarget, setCancelTarget] = useState<any>(null)
+  const [cancelLoading, setCancelLoading] = useState(false)
 
   const t = {
     bg: isDark ? '#0f0f0f' : '#f0f2f5',
@@ -87,11 +89,23 @@ export default function RealisticFlights() {
   }
 
   const handleCancel = async (id: string) => {
-    if (!confirm('Cancel this booking?')) return
+    setCancelLoading(true)
     try {
       await api.patch(`/realistic-flights/${id}/cancel`)
+      setCancelTarget(null)
       fetchData()
-    } catch (err) { console.error(err) }
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Cancellation failed')
+    } finally {
+      setCancelLoading(false)
+    }
+  }
+
+  const calcEarnings = (flight: any) => {
+    const m = flight.estimatedFlightTime?.match(/(\d+)\s*h\s*(\d+)?/)
+    if (!m) return '$0'
+    const hrs = parseInt(m[1]) + (parseInt(m[2] || '0') / 60)
+    return `$${Math.round(hrs * 700).toLocaleString()}`
   }
 
   const getStatusStyle = (status: string) => {
@@ -303,7 +317,13 @@ export default function RealisticFlights() {
                           </span>
                         </div>
                         {flight.status === 'AVAILABLE' && (
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
+                              <DollarSign size={11} style={{ color: '#f59e0b' }} />
+                              <span className="text-xs font-semibold" style={{ color: '#f59e0b' }}>
+                                {calcEarnings(flight)}
+                              </span>
+                            </div>
                             <ChevronRight size={14} style={{ color: '#c0121e' }} />
                             <span className="text-xs font-semibold" style={{ color: '#c0121e' }}>Book</span>
                           </div>
@@ -384,7 +404,7 @@ export default function RealisticFlights() {
                       </div>
                       <div className="flex flex-col gap-2 flex-shrink-0">
                         {booking.status === 'BOOKED' && (
-                          <button onClick={() => handleCancel(booking.id)}
+                          <button onClick={() => setCancelTarget(booking)}
                             className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
                             style={{ background: t.error, color: '#ef4444' }}>
                             Cancel
@@ -395,7 +415,7 @@ export default function RealisticFlights() {
                             style={{ background: t.success }}>
                             <Check size={13} style={{ color: '#10b981' }} />
                             <span className="text-xs font-semibold" style={{ color: '#10b981' }}>
-                              Paid ${booking.reward}
+                              Paid {calcEarnings(booking)}
                             </span>
                           </div>
                         )}
@@ -526,9 +546,9 @@ export default function RealisticFlights() {
                     <div className="p-3 rounded-xl" style={{ background: t.input, border: `1px solid ${t.border}` }}>
                       <div className="flex items-center gap-2 mb-1">
                         <DollarSign size={12} style={{ color: '#f59e0b' }} />
-                        <span className="text-xs font-semibold" style={{ color: t.textMuted }}>Reward</span>
+                        <span className="text-xs font-semibold" style={{ color: t.textMuted }}>Reward ($700/hr)</span>
                       </div>
-                      <span className="text-sm font-bold" style={{ color: '#f59e0b' }}>${selectedFlight.reward}</span>
+                      <span className="text-sm font-bold" style={{ color: '#f59e0b' }}>{calcEarnings(selectedFlight)}</span>
                     </div>
                   </div>
 
@@ -562,6 +582,59 @@ export default function RealisticFlights() {
                   </button>
                 </div>
               )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── CANCEL CONFIRMATION MODAL ── */}
+      <AnimatePresence>
+        {cancelTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+            onClick={e => { if (e.target === e.currentTarget) setCancelTarget(null) }}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-md rounded-2xl"
+              style={{ background: isDark ? '#141414' : '#ffffff', border: `1px solid ${t.border}` }}>
+              <div className="px-6 py-5 text-center">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+                  style={{ background: 'rgba(239,68,68,0.1)' }}>
+                  <AlertTriangle size={28} style={{ color: '#ef4444' }} />
+                </div>
+                <div className="text-lg font-bold mb-2" style={{ color: t.text }}>Cancel Booking?</div>
+                <div className="text-sm mb-1" style={{ color: t.textSub }}>
+                  {cancelTarget.flightNumber} — {cancelTarget.depIcao} → {cancelTarget.arrIcao}
+                </div>
+                <div className="flex items-center justify-center gap-2 mt-4 p-4 rounded-xl"
+                  style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                  <DollarSign size={16} style={{ color: '#ef4444' }} />
+                  <span className="text-sm font-semibold" style={{ color: '#ef4444' }}>
+                    $500 cancellation penalty will be deducted from your wallet
+                  </span>
+                </div>
+                <div className="flex gap-3 mt-6">
+                  <button onClick={() => setCancelTarget(null)}
+                    className="flex-1 py-3 rounded-xl text-sm font-semibold"
+                    style={{ background: t.badge, color: t.textSub }}>
+                    Keep Booking
+                  </button>
+                  <button onClick={() => handleCancel(cancelTarget.id)}
+                    disabled={cancelLoading}
+                    className="flex-1 py-3 rounded-xl text-sm font-semibold text-white"
+                    style={{
+                      background: cancelLoading ? 'rgba(239,68,68,0.5)' : '#ef4444',
+                    }}>
+                    {cancelLoading ? 'Cancelling...' : 'Confirm Cancel'}
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         )}

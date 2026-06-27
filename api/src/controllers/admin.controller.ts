@@ -85,13 +85,34 @@ export const updatePIREPStatus = async (req: FastifyRequest, reply: FastifyReply
           data: { status: 'APPROVED', earnings }
         })
       }
+
+      // Check if this PIREP matches a realistic flight
+      const realisticFlight = await prisma.realisticFlight.findFirst({
+        where: {
+          flightNumber: pirep.flightNumber,
+          pilotId: pirep.pilotId,
+          status: 'BOOKED',
+        },
+      })
+      if (realisticFlight) {
+        await prisma.realisticFlight.update({
+          where: { id: realisticFlight.id },
+          data: { status: 'COMPLETED', depConfirmed: true, arrConfirmed: true },
+        })
+        // Add extra $200/hr for realistic flight ($700 - $500)
+        const extraEarnings = Math.round(pirep.flightTime * 200)
+        await prisma.pilot.update({
+          where: { id: pirep.pilotId },
+          data: { walletBalance: { increment: extraEarnings } },
+        })
+      }
       
       // Discord Notification
       await sendPIREPApproved(
         pirep.pilot.pilotId,
         `${pirep.pilot.firstName} ${pirep.pilot.lastName}`,
         pirep.flightNumber,
-        earnings
+        realisticFlight ? earnings + Math.round(pirep.flightTime * 200) : earnings
       ).catch(err => console.error('Discord Notify Error:', err))
 
     } else if (status === 'REJECTED') {

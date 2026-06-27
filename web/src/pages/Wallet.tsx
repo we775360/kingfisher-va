@@ -204,7 +204,7 @@ export default function Wallet() {
         <div className="p-4 rounded-xl text-center pb-8"
           style={{ background: t.navActive }}>
           <div className="text-xs" style={{ color: t.textMuted }}>
-            Kingfisher VA virtual economy · $500 per flight hour · Earnings credited on PIREP approval
+            Kingfisher VA virtual economy · $500/hr standard · $700/hr Realistic Ops (ATC-covered) · Earnings credited on PIREP approval
           </div>
         </div>
 

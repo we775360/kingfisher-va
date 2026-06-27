@@ -2,6 +2,17 @@ import { FastifyRequest, FastifyReply } from 'fastify'
 import { z } from 'zod'
 import prisma from '../utils/prisma.js'
 
+const REALISTIC_HOURLY_RATE = 700
+
+export function parseHours(timeStr: string): number {
+  let total = 0
+  const hMatch = timeStr.match(/(\d+)\s*h/)
+  const mMatch = timeStr.match(/(\d+)\s*m/)
+  if (hMatch) total += parseInt(hMatch[1])
+  if (mMatch) total += parseInt(mMatch[1]) / 60
+  return Math.max(total, 0.5)
+}
+
 // ── GET AVAILABLE FLIGHTS ──
 export const getAvailableFlights = async (_req: FastifyRequest, reply: FastifyReply) => {
   try {
@@ -96,6 +107,44 @@ export const cancelBooking = async (req: FastifyRequest, reply: FastifyReply) =>
     }
     if (flight.status !== 'BOOKED') {
       return reply.status(400).send({ error: 'Cannot cancel a non-booked flight' })
+    }
+
+    // Apply $500 cancellation penalty
+    if (pilot.walletBalance < 500) {
+      return reply.status(400).send({ error: 'Insufficient funds. Cancellation requires a $500 penalty fee.' })
+    }
+    await prisma.pilot.update({
+      where: { id: pilot.id },
+      data: { walletBalance: { decrement: 500 } },
+    })
+
+    const updated = await prisma.realisticFlight.update({
+      where: { id },
+      data: {
+        pilotId: null,
+        status: 'AVAILABLE',
+        bookedAt: null,
+        depConfirmed: false,
+        arrConfirmed: false,
+      },
+    })
+    return reply.send(updated)
+  } catch (err) {
+    console.error(err)
+    return reply.status(500).send({ error: 'Internal server error' })
+  }
+}
+
+// ── ATC CANCEL BOOKING (no penalty) ──
+export const atcCancelBooking = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { id } = req.params as { id: string }
+    const flight = await prisma.realisticFlight.findUnique({ where: { id } })
+    if (!flight) {
+      return reply.status(404).send({ error: 'Flight not found' })
+    }
+    if (flight.status !== 'BOOKED') {
+      return reply.status(400).send({ error: 'Flight is not booked' })
     }
 
     const updated = await prisma.realisticFlight.update({

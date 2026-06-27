@@ -4,6 +4,17 @@ import prisma from '../utils/prisma.js'
 import { hashPassword, verifyPassword } from '../utils/auth.js'
 import { autoGenerateFlights } from './flight-generator.js'
 
+const REALISTIC_HOURLY_RATE = 700
+
+function parseHours(timeStr: string): number {
+  let total = 0
+  const hMatch = timeStr.match(/(\d+)\s*h/)
+  const mMatch = timeStr.match(/(\d+)\s*m/)
+  if (hMatch) total += parseInt(hMatch[1])
+  if (mMatch) total += parseInt(mMatch[1]) / 60
+  return Math.max(total, 0.5)
+}
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string(),
@@ -313,6 +324,8 @@ export const toggleFlight = async (req: FastifyRequest, reply: FastifyReply) => 
     const newArr = field === 'arrConfirmed' ? !flight.arrConfirmed : flight.arrConfirmed
 
     if (newDep && newArr && flight.pilotId && flight.status === 'BOOKED') {
+      const hours = parseHours(flight.estimatedFlightTime)
+      const earnings = Math.round(hours * REALISTIC_HOURLY_RATE)
       await prisma.realisticFlight.update({
         where: { id },
         data: { status: 'COMPLETED' },
@@ -320,8 +333,9 @@ export const toggleFlight = async (req: FastifyRequest, reply: FastifyReply) => 
       await prisma.pilot.update({
         where: { id: flight.pilotId },
         data: {
-          walletBalance: { increment: flight.reward },
+          walletBalance: { increment: earnings },
           totalFlights: { increment: 1 },
+          totalHours: { increment: hours },
         },
       })
     }

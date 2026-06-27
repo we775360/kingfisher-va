@@ -49,6 +49,7 @@ const NAV_SECTIONS = [
     title: 'Flight Deck',
     items: [
       { icon: Plane, label: 'Duty Roster', path: '/flights' },
+      { icon: Shield, label: 'Realistic Ops', path: '/realistic-flights' },
       { icon: FileText, label: 'Submit PIREP', path: '/pirep' },
       { icon: BookOpen, label: 'Flight Logs', path: '/logbook' },
       { icon: DollarSign, label: 'Financials', path: '/wallet' },
