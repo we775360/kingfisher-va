@@ -80,13 +80,13 @@ export async function autoGenerateFlights(date: string, timeSlot: string) {
     where: { date, timeSlot },
   })
 
-  // Generate flights when MORE THAN 3 positions are filled at either airport
+  // Generate flights when at least 2 positions are filled (total, across both airports)
   const depBooked = new Set(schedules.filter(s => s.airport === 'DEP').map(s => s.position))
   const arrBooked = new Set(schedules.filter(s => s.airport === 'ARR').map(s => s.position))
   const filledCount = depBooked.size + arrBooked.size
 
-  if (filledCount <= 3) {
-    return { generated: 0, reason: `Only ${filledCount}/10 positions filled. Need >3.` }
+  if (filledCount < 2) {
+    return { generated: 0, reason: `Only ${filledCount}/10 positions filled. Need at least 2.` }
   }
 
   const existingFlights = await prisma.realisticFlight.count({
