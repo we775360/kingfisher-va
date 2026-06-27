@@ -2,6 +2,7 @@ import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import jwt from '@fastify/jwt'
 import cookie from '@fastify/cookie'
+import formbody from '@fastify/formbody'
 import dotenv from 'dotenv'
 import { authRoutes } from './routes/auth.routes.js'
 import { adminRoutes } from './routes/admin.routes.js'
@@ -10,6 +11,7 @@ import { pirepRoutes } from './routes/pirep.routes.js'
 import { eventRoutes } from './routes/events.routes.js'
 import { publicRoutes } from './routes/public.routes.js'
 import acarsRoutes from './routes/acars.routes.js'
+import { fsacarsRoutes } from './routes/fsacars.routes.js'
 import { atcRoutes } from './routes/atc.routes.js'
 import { realisticFlightsRoutes } from './routes/realistic-flights.routes.js'
 import { initializeDiscordBot } from './discord/discord.js'
@@ -35,6 +37,8 @@ await app.register(cookie, {
   secret: process.env.JWT_SECRET || 'kingfisher-secret',
 })
 
+await app.register(formbody)
+
 // ── ROUTES ──
 await app.register(authRoutes, { prefix: '/api/v1' })
 await app.register(adminRoutes, { prefix: '/api/v1' })
@@ -43,6 +47,7 @@ await app.register(pirepRoutes, { prefix: '/api/v1' })
 await app.register(eventRoutes, { prefix: '/api/v1' })
 await app.register(publicRoutes, { prefix: '/api/v1' })
 await app.register(acarsRoutes, { prefix: '/api/v1/acars' })
+await app.register(fsacarsRoutes, { prefix: '/api/v1' })
 await app.register(atcRoutes, { prefix: '/api/v1' })
 await app.register(realisticFlightsRoutes, { prefix: '/api/v1' })
 

@@ -537,8 +537,8 @@ export default function Flights() {
                     style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.15)' }}>
                     <Info size={14} style={{ color: '#3b82f6', flexShrink: 0, marginTop: '1px' }} />
                     <div className="text-xs leading-relaxed" style={{ color: '#3b82f6' }}>
-                      Kingfisher Custom ACARS tracks your flight automatically. 
-                      Manual PIREPs are also accepted via the My Flights portal.
+                      <a href="/fsacars" className="text-blue-500 hover:text-blue-400 underline">FSACARS</a> tracks your flight automatically.
+                       Manual PIREPs are also accepted via the My Flights portal.
                     </div>
                   </div>
 

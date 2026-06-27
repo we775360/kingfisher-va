@@ -25,6 +25,7 @@ import SettingsPage from './pages/Settings'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import Handbook from './pages/Handbook'
 import LiveMap from './pages/LiveMap'
+import FSACARS from './pages/FSACARS'
 
 function App() {
   return (
@@ -49,6 +50,7 @@ function App() {
       <Route path="/forums" element={<Community />} />
       <Route path="/atc" element={<ATCVSO />} />
       <Route path="/atc/login" element={<ATCLogin />} />
+      <Route path="/fsacars" element={<FSACARS />} />
       <Route path="/atc/dashboard" element={
         <ATCRoute>
           <ATCDashboard />

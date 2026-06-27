@@ -130,7 +130,7 @@ export default function Events() {
                    <h4 className="text-sm font-black uppercase tracking-widest text-white">Pilot Requirements</h4>
                  </div>
                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-relaxed">
-                   Active flight status · Valid ACARS license · <br /> Professional conduct on VATSIM/IVAO
+                   Active flight status · Valid FSACARS setup · <br /> Professional conduct on VATSIM/IVAO
                  </p>
                </div>
              </div>

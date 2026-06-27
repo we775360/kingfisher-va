@@ -1,0 +1,49 @@
+Version 4.2.0 - 4.2.5 Change Log
+=================================================
+Dispatch tab:
+
+Removed dispatch 'orig' and 'dest' labels.
+
+Added 3 new fields where user can communicate with server
+1. ORIG - icao code, sent in position reports (dest)
+2. DEST - icao code, sent in position reports (orig)
+3. RQST - flight number, sent in flight report (rqst)
+
+Pressing the Request button sends user, orig, dest, rqst
+
+Process the request on the server with dispatch.php and reply with
+a single message to display to the user on the Dispatch tab of fsacars.
+This way you can send different messages, dpending on the request.
+For example, if rqst was 'dest', you could send the destination weather. 
+
+=================================================
+Flight Report:
+
+A new field, fnum, is sent in the flight report; it is the value
+set by the user in the Flight # input on the Pirep tab.
+
+=================================================
+Updated org.cfg:
+
+Added a new parameter, hashalgo.
+
+Currently the following values are supported: 
+MD5, SHA1, SHA256, SHA512, BCrypt, PBKDF2, HTTPS
+
+Note: if hashalgo is set to MD5, SHA1, SHA256, or SHA512, 
+then the password will be hashed using that algorithm;
+BCrypt, PBKDF2, HTTPS all require the plain text password,
+and assume the connection to a secure https server.
+
+=================================================
+Other:
+
+Datestamp value now epoch based on UTC, rather than system time
+
+airtime - added
+
+Version label and acknowledgements moved to Settings tab.
+
+Revised terms_of_use.txt
+
+END

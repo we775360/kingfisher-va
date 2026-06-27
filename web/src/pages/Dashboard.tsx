@@ -376,18 +376,18 @@ export default function Dashboard() {
                     </Link>
                  </div>
 
-                 {/* ACARS */}
-                 <div className={`${theme.card} rounded-[3rem] p-10 group transition-all`}>
-                    <div className={`w-14 h-14 ${isDark ? 'bg-white/5' : 'bg-slate-100'} rounded-[1.5rem] flex items-center justify-center mb-8 border ${theme.border} group-hover:border-red-600/30 transition-all`}>
-                       <Monitor className="text-zinc-500 group-hover:text-red-600" size={24} />
-                    </div>
-                    <h4 className="text-2xl font-black italic tracking-tighter uppercase mb-3">Next-Gen ACARS</h4>
-                    <p className={`${theme.textMuted} text-xs font-bold leading-relaxed mb-10 uppercase tracking-widest`}>v1.1.0 STABLE · LIVE TELEMETRY · GLOBAL DISPATCH</p>
-                    <a href="https://github.com/we775360/kingfisher-va/releases/latest" target="_blank" rel="noreferrer" className={`flex items-center justify-between p-5 ${isDark ? 'bg-white/5' : 'bg-slate-50'} rounded-2xl border ${theme.border} hover:bg-red-600 hover:text-white transition-all group/link`}>
-                       <span className="text-[10px] font-black uppercase tracking-[0.2em]">Download Hub</span>
-                       <Download size={18} className="group-hover/link:translate-y-1 transition-transform" />
-                    </a>
-                 </div>
+                 {/* FSACARS */}
+                  <div className={`${theme.card} rounded-[3rem] p-10 group transition-all`}>
+                     <div className={`w-14 h-14 ${isDark ? 'bg-white/5' : 'bg-slate-100'} rounded-[1.5rem] flex items-center justify-center mb-8 border ${theme.border} group-hover:border-red-600/30 transition-all`}>
+                        <Monitor className="text-zinc-500 group-hover:text-red-600" size={24} />
+                     </div>
+                     <h4 className="text-2xl font-black italic tracking-tighter uppercase mb-3">FSACARS Tracking</h4>
+                     <p className={`${theme.textMuted} text-xs font-bold leading-relaxed mb-10 uppercase tracking-widest`}>v4.2.5 · WINDOWS CLIENT · FSACARS COMPATIBLE</p>
+                     <Link to="/fsacars" className={`flex items-center justify-between p-5 ${isDark ? 'bg-white/5' : 'bg-slate-50'} rounded-2xl border ${theme.border} hover:bg-red-600 hover:text-white transition-all group/link`}>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Download Hub</span>
+                        <Download size={18} className="group-hover/link:translate-y-1 transition-transform" />
+                     </Link>
+                  </div>
 
                  {/* Discord */}
                  <div className={`bg-[#5865F2]/5 rounded-[3rem] border border-[#5865F2]/10 p-10 group`}>
@@ -406,7 +406,7 @@ export default function Dashboard() {
         </div>
 
         <footer className={`h-20 flex items-center justify-between px-10 border-t ${theme.border} opacity-40 transition-colors duration-500`}>
-           <div className={`text-[10px] font-black uppercase tracking-[0.4em] ${theme.textMuted}`}>Kingfisher ACARS Engine · Enterprise Edition · v1.1.0</div>
+           <div className={`text-[10px] font-black uppercase tracking-[0.4em] ${theme.textMuted}`}>Kingfisher VA · FSACARS Powered · 2026</div>
            <div className="flex gap-10">
               <Link to="/privacy" className={`text-[10px] font-black ${theme.textMuted} hover:text-red-600 uppercase tracking-widest transition-colors`}>Privacy Policy</Link>
               <Link to="/handbook" className={`text-[10px] font-black ${theme.textMuted} hover:text-red-600 uppercase tracking-widest transition-colors`}>Handbook</Link>

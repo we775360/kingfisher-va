@@ -1,0 +1,28 @@
+Terms of Service for FSACARS
+
+By using FSACARS, you agree to the following terms and conditions. These terms govern your access to and use of the FSACARS application, its features, and related services.
+
+No Warranty
+FSACARS is provided "as is" without any warranties, express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement. The developers do not guarantee the accuracy, reliability, or availability of the app or its features.
+
+User Responsibility
+You use FSACARS at your own risk. The developers are not liable for any damages, losses, or issues arising from your use of the app, including but not limited to data loss, unauthorized access, or third-party content.
+
+Data Privacy & Security
+FSACARS does not guarantee the security of your data. You are responsible for protecting your account credentials and ensuring the confidentiality of your information. The developers are not liable for data breaches, unauthorized access, or misuse of your data by third parties.
+
+Third-Party Content
+If the app includes links to external websites, services, or content, you agree to use them at your own risk. The developers are not responsible for the accuracy, legality, or safety of third-party content or services.
+
+Intellectual Property
+The app, its content, and all related intellectual property (including but not limited to trademarks, copyrights, and patents) are the property of fsacars.com or its licensors. You may not copy, modify, or distribute the app without prior written permission.
+
+Limitation of Liability
+In no event shall fsacars.com or its affiliates be liable for any indirect, incidental, special, or consequential damages, including but not limited to loss of profits, data, or business, arising from the use or inability to use FSACARS.
+
+Acknowledgment
+By using FSACARS, you confirm that you have read, understood, and agreed to these terms.
+
+
+© 2015-26 FSACARS/Evans Research LLC. All rights reserved.
+

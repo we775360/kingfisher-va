@@ -24,12 +24,12 @@ export default function Handbook() {
     {
       title: "Flight Operations",
       icon: Navigation,
-      content: "Flights must be booked via the 'Duty Roster'. All operations must be recorded using the Kingfisher ACARS system. Manual PIREPs are allowed only in cases of technical failure and must include screenshots of the flight summary."
+      content: "Flights must be booked via the 'Duty Roster'. All operations must be recorded using the FSACARS client. Manual PIREPs are allowed only in cases of technical failure and must include screenshots of the flight summary."
     },
     {
-      title: "ACARS Usage",
+      title: "FSACARS Usage",
       icon: Zap,
-      content: "The ACARS system must be active from engine start to engine shutdown. Telemetry is monitored live. Disconnections exceeding 15 minutes may result in an automatic mission rejection."
+      content: "FSACARS must be active from engine start to engine shutdown. Telemetry is monitored live. Disconnections exceeding 15 minutes may result in an automatic mission rejection."
     },
     {
       title: "Community Conduct",

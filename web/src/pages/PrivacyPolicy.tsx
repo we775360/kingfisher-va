@@ -56,7 +56,7 @@ export default function PrivacyPolicy() {
             {
               title: "Flight Tracking",
               icon: Globe,
-              content: "Our ACARS system records your flight telemetry, simulator position, and aircraft state. This data is used exclusively to generate your pilot service record and statistics within the Kingfisher network."
+              content: "Our flight tracking system (FSACARS) records your flight telemetry, simulator position, and aircraft state. This data is used exclusively to generate your pilot service record and statistics within the Kingfisher network."
             },
             {
               title: "Third-Party Services",

@@ -1,11 +1,8 @@
 packages:
   - 'api'
   - 'web'
-  - 'acars'
 allowBuilds:
   '@prisma/client': false
   '@prisma/engines': false
-  electron: true
   esbuild: false
-  fsuipc: true
   prisma: false
