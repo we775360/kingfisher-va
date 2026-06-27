@@ -396,7 +396,7 @@ export default function Dashboard() {
                     </div>
                     <h4 className="text-2xl font-black italic tracking-tighter uppercase mb-3 text-[#5865F2]">Live COMMS</h4>
                     <p className={`${theme.textMuted} text-xs font-bold leading-relaxed mb-10 uppercase tracking-widest`}>Official Frequency · Pilot Lounge · Operations Support</p>
-                    <a href="https://discord.gg/jefmDpfa" target="_blank" className="flex items-center justify-between p-5 bg-[#5865F2] rounded-2xl text-white transition-all hover:bg-[#4752c4] shadow-xl shadow-[#5865F2]/20">
+                    <a href="https://discord.gg/XxSyQJH327" target="_blank" className="flex items-center justify-between p-5 bg-[#5865F2] rounded-2xl text-white transition-all hover:bg-[#4752c4] shadow-xl shadow-[#5865F2]/20">
                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Connect Now</span>
                        <ExternalLink size={18} />
                     </a>

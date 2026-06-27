@@ -93,7 +93,7 @@ export default function PrivacyPolicy() {
         <div className="mt-20 p-12 rounded-[3rem] bg-red-600 text-white text-center shadow-2xl shadow-red-600/20">
            <h4 className="text-3xl font-black italic tracking-tighter uppercase mb-4">Have Questions?</h4>
            <p className="text-red-100 font-medium mb-8">Our support team is available on Discord to clarify any privacy concerns.</p>
-           <a href="https://discord.gg/jefmDpfa" className="inline-block px-10 py-5 bg-white text-red-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-all">Contact Ops</a>
+           <a href="https://discord.gg/XxSyQJH327" className="inline-block px-10 py-5 bg-white text-red-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-all">Contact Ops</a>
         </div>
       </main>
 

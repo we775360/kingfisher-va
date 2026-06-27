@@ -828,7 +828,7 @@ export default function Landing() {
                         <button onClick={() => navigate('/register')} className="group flex items-center gap-4 bg-red-600 text-white px-12 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-red-600/40 hover:scale-105 transition-all">
                             Apply Now <ArrowRight size={18} />
                         </button>
-                        <a href="https://discord.gg/jefmDpfa" target="_blank" rel="noreferrer" className="flex items-center gap-4 bg-[#5865F2] text-white px-12 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[#5865F2]/40 hover:scale-105 transition-all">
+                        <a href="https://discord.gg/XxSyQJH327" target="_blank" rel="noreferrer" className="flex items-center gap-4 bg-[#5865F2] text-white px-12 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-[#5865F2]/40 hover:scale-105 transition-all">
                             Join Discord <ExternalLink size={18} />
                         </a>
                     </div>
@@ -850,7 +850,7 @@ export default function Landing() {
                         Redefining the virtual aviation landscape through technology and community.
                     </p>
                     <div className="flex gap-6">
-                        <a href="https://discord.gg/jefmDpfa" className={`w-12 h-12 rounded-2xl ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'} border flex items-center justify-center ${theme.textMuted} hover:text-[#5865F2] hover:border-[#5865F2]/50 transition-all`}><Radio size={20} /></a>
+                        <a href="https://discord.gg/XxSyQJH327" className={`w-12 h-12 rounded-2xl ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'} border flex items-center justify-center ${theme.textMuted} hover:text-[#5865F2] hover:border-[#5865F2]/50 transition-all`}><Radio size={20} /></a>
                         <a href="#" className={`w-12 h-12 rounded-2xl ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'} border flex items-center justify-center ${theme.textMuted} hover:text-[#1DA1F2] transition-all`}><Share2 size={20} /></a>
                         <a href="#" className={`w-12 h-12 rounded-2xl ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'} border flex items-center justify-center ${theme.textMuted} hover:text-[#FF0000] transition-all`}><PlayCircle size={20} /></a>
                         <a href="mailto:kingfishervirtualairline@gmail.com" className={`w-12 h-12 rounded-2xl ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100 border-slate-200'} border flex items-center justify-center ${theme.textMuted} hover:text-red-600 transition-all`}><Mail size={20} /></a>

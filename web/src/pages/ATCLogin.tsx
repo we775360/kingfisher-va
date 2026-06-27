@@ -309,7 +309,7 @@ export default function ATCLogin() {
                     </div>
                   </div>
 
-                  <a href="https://discord.gg/jefmDpfa" target="_blank" rel="noopener noreferrer"
+                  <a href="https://discord.gg/XxSyQJH327" target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-3 p-4 rounded-xl transition-all hover:scale-[1.01]"
                     style={{ background: 'rgba(88,101,242,0.1)', border: '1px solid rgba(88,101,242,0.2)', textDecoration: 'none' }}>
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
