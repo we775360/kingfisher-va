@@ -288,6 +288,22 @@ export const toggleFlight = async (req: FastifyRequest, reply: FastifyReply) => 
       return reply.status(404).send({ error: 'Flight not found' })
     }
 
+    // Only allow confirmation on BOOKED flights
+    if (flight.status !== 'BOOKED') {
+      return reply.status(400).send({ error: 'Can only confirm flights that are booked by a pilot' })
+    }
+
+    // Don't allow confirmation before off-block time
+    const now = new Date()
+    const today = now.toISOString().split('T')[0]
+    const currentMinutes = now.getUTCHours() * 60 + now.getUTCMinutes()
+    const [offH, offM] = flight.offBlock.split(':').map(Number)
+    const offBlockMinutes = offH * 60 + offM
+
+    if (flight.date > today || (flight.date === today && offBlockMinutes > currentMinutes)) {
+      return reply.status(400).send({ error: 'Cannot confirm flight before its scheduled off-block time' })
+    }
+
     const updated = await prisma.realisticFlight.update({
       where: { id },
       data: { [field]: !(flight as any)[field] },
@@ -331,20 +347,12 @@ export const getStats = async (_req: FastifyRequest, reply: FastifyReply) => {
       prisma.realisticFlight.count({ where: { date: today } }),
     ])
 
-    // Count filled vs total positions for today
-    const totalPositionsNeeded = generateTimeSlots().length * 10
-    const filledDep = await prisma.aTCSchedule.count({ where: { date: today, airport: 'DEP' } })
-    const filledArr = await prisma.aTCSchedule.count({ where: { date: today, airport: 'ARR' } })
-
     const flightsBooked = await prisma.realisticFlight.count({ where: { date: today, status: { not: 'AVAILABLE' } } })
     const flightsCompleted = await prisma.realisticFlight.count({ where: { date: today, status: 'COMPLETED' } })
 
     return reply.send({
       staffOnline,
       positionsFilled: schedules,
-      totalPositionsNeeded,
-      filledDep,
-      filledArr,
       flightsToday,
       flightsBooked,
       flightsCompleted,

@@ -268,28 +268,28 @@ export default function ATCDashboard() {
                     <div className="flex items-center gap-6 flex-wrap">
                       {/* Departure */}
                       <div className="flex-1">
-                        <div className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                        <div className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>
                           Departure Airport
                         </div>
                         <div className="flex items-center gap-3">
                           <div>
-                            <div className="text-4xl font-black italic tracking-tighter text-white">
+                            <div className="text-4xl font-black italic tracking-tighter" style={{ color: isDark ? '#ffffff' : '#0a0a0a' }}>
                               {dailyHub.depIcao}
                             </div>
-                            <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                            <div className="text-xs mt-0.5" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
                               {dailyHub.depName}
                             </div>
                           </div>
                           <ArrowRight size={20} style={{ color: '#c0121e' }} />
                           <div>
-                            <div className="text-4xl font-black italic tracking-tighter text-white">
+                            <div className="text-4xl font-black italic tracking-tighter" style={{ color: isDark ? '#ffffff' : '#0a0a0a' }}>
                               {dailyHub.arrIcao}
                             </div>
-                            <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                            <div className="text-xs mt-0.5" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
                               {dailyHub.arrName}
                             </div>
                           </div>
-                          <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                          <div className="text-xs" style={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>
                             Arrival Airport
                           </div>
                         </div>
@@ -309,13 +309,13 @@ export default function ATCDashboard() {
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full" style={{ background: '#10b981' }} />
                         <span className="text-xs font-medium" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
-                          DEP: {stats?.filledDep || 0}/{stats?.totalPositionsNeeded ? Math.floor(stats.totalPositionsNeeded / 2) : '?'} positions
+                          {stats?.positionsFilled || 0} total positions filled today
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full" style={{ background: '#3b82f6' }} />
                         <span className="text-xs font-medium" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
-                          ARR: {stats?.filledArr || 0}/{stats?.totalPositionsNeeded ? Math.floor(stats.totalPositionsNeeded / 2) : '?'} positions
+                          {stats?.flightsToday || 0} flights scheduled
                         </span>
                       </div>
                     </div>
@@ -605,52 +605,65 @@ export default function ATCDashboard() {
                   <table className="w-full text-xs">
                     <thead>
                       <tr style={{ borderBottom: `1px solid ${t.border}` }}>
-                        <th className="px-3 py-2 text-left font-semibold sticky left-0" style={{ background: t.card, color: t.textMuted }}>
+                        <th className="px-3 py-2 text-left font-semibold" style={{ color: t.textMuted, minWidth: 80 }}>
                           Slot
                         </th>
-                        {AIRPORTS.map(ap => (
-                          POSITIONS.map(pos => (
-                            <th key={`${ap}-${pos}`} className="px-2 py-2 text-center font-semibold"
-                              style={{ color: ap === 'DEP' ? '#10b981' : '#3b82f6' }}>
-                              {ap}-{pos}
-                            </th>
-                          ))
+                        <th className="px-3 py-2 text-center font-semibold" style={{ color: '#10b981' }} colSpan={5}>
+                          DEP ({dailyHub?.depIcao})
+                        </th>
+                        <th className="px-3 py-2 text-center font-semibold" style={{ color: '#3b82f6' }} colSpan={5}>
+                          ARR ({dailyHub?.arrIcao})
+                        </th>
+                      </tr>
+                      <tr style={{ borderBottom: `1px solid ${t.border}` }}>
+                        <th className="px-3 py-1"></th>
+                        {POSITIONS.map(pos => (
+                          <th key={`dep-${pos}`} className="px-2 py-1 text-center font-semibold text-[10px]" style={{ color: '#10b981' }}>
+                            {pos}
+                          </th>
+                        ))}
+                        {POSITIONS.map(pos => (
+                          <th key={`arr-${pos}`} className="px-2 py-1 text-center font-semibold text-[10px]" style={{ color: '#3b82f6' }}>
+                            {pos}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y" style={{ borderColor: t.border }}>
-                      {positionStatus.slice(0, 12).map((slot: any) => (
-                        <tr key={`${slot.timeSlot}-${slot.airport}`}
-                          onMouseEnter={e => e.currentTarget.style.background = t.navHover}
-                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                          <td className="px-3 py-2 font-mono font-semibold sticky left-0" style={{ background: t.card, color: t.text }}>
-                            {slot.timeSlot}
-                          </td>
-                          {slot.airport === 'DEP' ? (
-                            <>
-                              {slot.positions.map((p: any) => (
-                                <td key={p.position} className="px-2 py-2 text-center">
-                                  <div className={`w-5 h-5 rounded mx-auto ${p.filled ? 'bg-green-500/20 text-green-500' : 'bg-zinc-500/10 text-zinc-500'} flex items-center justify-center`}>
+                      {positionStatus
+                        .filter((ps: any) => ps.airport === 'DEP')
+                        .slice(0, 12)
+                        .map((depSlot: any) => {
+                          const arrSlot = positionStatus.find((ps: any) => ps.timeSlot === depSlot.timeSlot && ps.airport === 'ARR')
+                          const allPos = [
+                            ...depSlot.positions,
+                            ...(arrSlot?.positions || []),
+                          ]
+                          return (
+                            <tr key={depSlot.timeSlot}
+                              onMouseEnter={e => e.currentTarget.style.background = t.navHover}
+                              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                              <td className="px-3 py-2 font-mono font-semibold" style={{ color: t.text }}>
+                                {depSlot.timeSlot}
+                              </td>
+                              {allPos.map((p: any, i: number) => (
+                                <td key={i} className="px-2 py-2 text-center">
+                                  <div className="w-5 h-5 rounded mx-auto flex items-center justify-center"
+                                    style={{
+                                      background: p.filled
+                                        ? (i < 5 ? 'rgba(16,185,129,0.15)' : 'rgba(59,130,246,0.15)')
+                                        : t.badge,
+                                      color: p.filled
+                                        ? (i < 5 ? '#10b981' : '#3b82f6')
+                                        : t.textMuted,
+                                    }}>
                                     {p.filled ? <Check size={10} /> : <X size={10} />}
                                   </div>
                                 </td>
                               ))}
-                              {/* ARR positions from matching slot */}
-                              {positionStatus
-                                .filter((ps: any) => ps.timeSlot === slot.timeSlot && ps.airport === 'ARR')
-                                .flatMap((ps: any) => ps.positions)
-                                .map((p: any, i: number) => (
-                                  <td key={`arr-${i}`} className="px-2 py-2 text-center">
-                                    <div className={`w-5 h-5 rounded mx-auto ${p.filled ? 'bg-blue-500/20 text-blue-500' : 'bg-zinc-500/10 text-zinc-500'} flex items-center justify-center`}>
-                                      {p.filled ? <Check size={10} /> : <X size={10} />}
-                                    </div>
-                                  </td>
-                                ))
-                              }
-                            </>
-                          ) : null}
-                        </tr>
-                      ))}
+                            </tr>
+                          )
+                        })}
                     </tbody>
                   </table>
                 </div>
@@ -805,26 +818,38 @@ export default function ATCDashboard() {
                       </div>
 
                       <div className="flex flex-col gap-2 flex-shrink-0">
-                        <button onClick={() => handleToggleFlight(f.id, 'depConfirmed')}
-                          className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
-                          style={{
-                            background: f.depConfirmed ? t.success : t.badge,
-                            border: `1px solid ${f.depConfirmed ? t.successBorder : t.border}`,
-                            color: f.depConfirmed ? '#10b981' : t.textSub,
-                          }}>
-                          {f.depConfirmed ? <CheckSquare size={14} /> : <Square size={14} />}
-                          Dep Confirmed
-                        </button>
-                        <button onClick={() => handleToggleFlight(f.id, 'arrConfirmed')}
-                          className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
-                          style={{
-                            background: f.arrConfirmed ? t.success : t.badge,
-                            border: `1px solid ${f.arrConfirmed ? t.successBorder : t.border}`,
-                            color: f.arrConfirmed ? '#10b981' : t.textSub,
-                          }}>
-                          {f.arrConfirmed ? <CheckSquare size={14} /> : <Square size={14} />}
-                          Arr Confirmed
-                        </button>
+                        {f.status === 'BOOKED' ? (
+                          <>
+                            <button onClick={() => handleToggleFlight(f.id, 'depConfirmed')}
+                              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                              style={{
+                                background: f.depConfirmed ? t.success : t.badge,
+                                border: `1px solid ${f.depConfirmed ? t.successBorder : t.border}`,
+                                color: f.depConfirmed ? '#10b981' : t.textSub,
+                              }}>
+                              {f.depConfirmed ? <CheckSquare size={14} /> : <Square size={14} />}
+                              Dep Confirmed
+                            </button>
+                            <button onClick={() => handleToggleFlight(f.id, 'arrConfirmed')}
+                              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                              style={{
+                                background: f.arrConfirmed ? t.success : t.badge,
+                                border: `1px solid ${f.arrConfirmed ? t.successBorder : t.border}`,
+                                color: f.arrConfirmed ? '#10b981' : t.textSub,
+                              }}>
+                              {f.arrConfirmed ? <CheckSquare size={14} /> : <Square size={14} />}
+                              Arr Confirmed
+                            </button>
+                          </>
+                        ) : f.status === 'AVAILABLE' ? (
+                          <div className="px-3 py-2 rounded-xl text-xs" style={{ background: t.badge, color: t.textMuted }}>
+                            Not booked
+                          </div>
+                        ) : (
+                          <div className="px-3 py-2 rounded-xl text-xs font-semibold" style={{ background: t.success, color: '#10b981' }}>
+                            {f.depConfirmed && f.arrConfirmed ? 'ALL CONFIRMED' : 'Completed'}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </motion.div>

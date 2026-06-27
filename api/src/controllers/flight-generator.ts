@@ -76,21 +76,19 @@ function generateFlightNumber(index: number): string {
 }
 
 export async function autoGenerateFlights(date: string, timeSlot: string) {
-  // Check all 10 positions (5 DEP + 5 ARR) are filled
   const schedules = await prisma.aTCSchedule.findMany({
     where: { date, timeSlot },
   })
 
+  // Generate flights when MORE THAN 3 positions are filled at either airport
   const depBooked = new Set(schedules.filter(s => s.airport === 'DEP').map(s => s.position))
   const arrBooked = new Set(schedules.filter(s => s.airport === 'ARR').map(s => s.position))
-  const depFilled = POSITIONS.every(p => depBooked.has(p))
-  const arrFilled = POSITIONS.every(p => arrBooked.has(p))
+  const filledCount = depBooked.size + arrBooked.size
 
-  if (!depFilled || !arrFilled) {
-    return { generated: 0, reason: `Need all positions at both airports. DEP: ${depFilled}, ARR: ${arrFilled}` }
+  if (filledCount <= 3) {
+    return { generated: 0, reason: `Only ${filledCount}/10 positions filled. Need >3.` }
   }
 
-  // Check if flights already generated
   const existingFlights = await prisma.realisticFlight.count({
     where: { date, timeSlot },
   })
@@ -98,7 +96,6 @@ export async function autoGenerateFlights(date: string, timeSlot: string) {
     return { generated: 0, reason: 'Flights already generated for this slot' }
   }
 
-  // Get daily hub
   const hub = await prisma.dailyHub.findUnique({ where: { date } })
   if (!hub) {
     return { generated: 0, reason: 'No daily hub set for this date' }
@@ -123,8 +120,8 @@ export async function autoGenerateFlights(date: string, timeSlot: string) {
   const slotEnd = timeToMinutes(slotEndStr)
   const slotDuration = slotEnd - slotStart
 
-  // Generate 20 flights
-  const numFlights = 20
+  // Generate 10 flights spaced evenly
+  const numFlights = 10
   const spacing = Math.floor(slotDuration / (numFlights + 1))
 
   const totalFlights = await prisma.realisticFlight.count()
