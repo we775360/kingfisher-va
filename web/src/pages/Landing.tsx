@@ -134,12 +134,31 @@ export default function Landing() {
     <>
     <Helmet>
       <title>Kingfisher Virtual Airline | India's Premier Virtual Aviation Community | KFR VA</title>
-      <meta name="description" content="Kingfisher Virtual Airline (KFR VA) — India's most innovative virtual airline. Join hundreds of aviators flying realistic routes across India & the globe. Apply now for free!" />
-      <meta name="keywords" content="Kingfisher Virtual, Kingfisher Virtual Airline, KFR Virtual, KFR VA, Virtual Airlines India, Indian Virtual Airline, Indian VA, Virtual Aviation India, Best Virtual Airline India, Kingfisher VA, Virtual Airline Community, VATSIM India, Flight Simulator India, MSFS India, Virtual Pilot India" />
+      <link rel="canonical" href="https://kingfisherva.com" />
+      <meta name="robots" content="index, follow" />
+      <meta name="description" content="Kingfisher Virtual Airline (KFR VA) — India's most innovative virtual airline with full ATC-covered realistic flight operations. Join hundreds of aviators flying scheduled routes across India & the globe with gate-to-gate ATC on VATSIM/IVAO. Free to join!" />
+      <meta name="keywords" content="Kingfisher Virtual, Kingfisher Virtual Airline, KFR Virtual, KFR VA, Virtual Airlines India, Indian Virtual Airline, Indian VA, Virtual Aviation India, Best Virtual Airline India, Kingfisher VA, Virtual Airline Community, VATSIM India, Flight Simulator India, MSFS India, Virtual Pilot India, free virtual airline management system, virtual airline with acars, ATC covered flights, realistic flight ops" />
       <meta property="og:title" content="Kingfisher Virtual Airline | India's #1 Virtual Aviation Community" />
-      <meta property="og:description" content="Experience the ultimate fusion of realism and high-energy aviation. Join India's most innovative virtual airline, built by aviators, for aviators." />
+      <meta property="og:description" content="India's only virtual airline with full 5-position ATC coverage at both airports. Fly realistic scheduled routes on VATSIM/IVAO. Free to join!" />
+      <meta property="og:type" content="website" />
+      <meta property="og:url" content="https://kingfisherva.com" />
+      <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content="Kingfisher Virtual Airline | India's #1 Virtual Aviation Community" />
-      <meta name="twitter:description" content="Join India's premier virtual airline. Fly realistic routes, build your hours, and connect with fellow aviators. Free to join!" />
+      <meta name="twitter:description" content="Join India's premier virtual airline with full ATC-covered realistic flight ops. Fly realistic routes, build your hours, connect with aviators. Free!" />
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Airline",
+          "name": "Kingfisher Virtual Airline",
+          "alternateName": "KFR VA",
+          "url": "https://kingfisherva.com",
+          "description": "India's premier virtual aviation community offering realistic flight operations with full ATC coverage on VATSIM and IVAO.",
+          "areaServed": { "@type": "Country", "name": "India" },
+          "founder": { "@type": "Person", "name": "Guneet Singh" },
+          "offers": { "@type": "Offer", "description": "Free membership for virtual pilots" },
+          "sameAs": ["https://discord.gg/XxSyQJH327"]
+        })}
+      </script>
     </Helmet>
     <div className={`${theme.bg} ${theme.text} min-h-screen font-sans selection:bg-red-600 selection:text-white overflow-x-hidden transition-colors duration-500`}>
       
@@ -155,10 +174,10 @@ export default function Landing() {
             <button onClick={() => setMobileMenuOpen(false)} className={`absolute top-8 right-8 ${theme.textMuted} hover:text-red-600 transition-colors`}>
               <X size={32} />
             </button>
-            {['Network', 'Fleet', 'Roster', 'About'].map((item) => (
+            {['Realistic Ops', 'Network', 'Fleet', 'Roster', 'About'].map((item) => (
               <a 
                 key={item} 
-                href={`#${item.toLowerCase()}`} 
+                href={`#${item.toLowerCase().replace(/\s+/g, '-')}`} 
                 onClick={() => setMobileMenuOpen(false)}
                 className={`text-4xl font-black italic tracking-tighter uppercase ${isDark ? 'text-zinc-600' : 'text-slate-300'} hover:text-red-600 transition-all`}
               >
@@ -166,6 +185,7 @@ export default function Landing() {
               </a>
             ))}
             <div className="mt-auto flex flex-col gap-4">
+              <button onClick={() => navigate('/atc/login')} className={`w-full py-4 text-xl font-black uppercase tracking-widest border ${theme.border} rounded-2xl`}>Join as Staff</button>
               <button onClick={() => navigate('/login')} className={`w-full py-4 text-xl font-black uppercase tracking-widest border ${theme.border} rounded-2xl`}>Log In</button>
               <button onClick={() => navigate('/register')} className="w-full py-4 text-xl font-black uppercase tracking-widest bg-red-600 rounded-2xl shadow-xl shadow-red-600/20 text-white">Join Crew</button>
               <button onClick={toggleTheme} className={`w-full py-4 flex items-center justify-center gap-3 text-xl font-black uppercase tracking-widest border ${theme.border} rounded-2xl`}>
@@ -195,11 +215,11 @@ export default function Landing() {
                 </div>
             </motion.div>
             
-            <div className="hidden lg:flex gap-10 items-center">
-                {['Network', 'Fleet', 'Roster', 'About'].map((i, idx) => (
+            <div className="hidden lg:flex gap-8 items-center">
+                {['Realistic Ops', 'Network', 'Fleet', 'Roster', 'About'].map((i, idx) => (
                     <motion.a 
                         key={i} 
-                        href={`#${i.toLowerCase()}`}
+                        href={`#${i.toLowerCase().replace(/\s+/g, '-')}`}
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: idx * 0.1 }}
@@ -211,7 +231,8 @@ export default function Landing() {
                 ))}
             </div>
 
-            <div className="flex gap-4 items-center">
+            <div className="flex gap-3 items-center">
+                <button onClick={() => navigate('/atc/login')} className={`hidden md:block text-[10px] font-black uppercase tracking-widest ${theme.textMuted} hover:text-green-500 transition-colors`}>Staff</button>
                 <button onClick={toggleTheme} className={`hidden lg:flex p-2 rounded-xl border ${theme.border} ${theme.textMuted} hover:text-red-600 transition-all`}>
                   {isDark ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
@@ -276,7 +297,10 @@ export default function Landing() {
                     <button onClick={() => navigate('/register')} className="group flex items-center gap-4 bg-red-600 text-white px-12 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-red-600/40 hover:scale-105 transition-all">
                         Take Command <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </button>
-                    <button onClick={() => document.getElementById('network')?.scrollIntoView({ behavior: 'smooth' })} className={`flex items-center gap-4 ${isDark ? 'bg-white/5' : 'bg-white/80'} backdrop-blur-xl border ${theme.border} px-12 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-red-600 hover:text-white transition-all`}>
+                    <button onClick={() => navigate('/atc/login')} className="group flex items-center gap-4 bg-emerald-600 text-white px-10 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-emerald-600/30 hover:scale-105 transition-all">
+                        Join as Staff <Headphones size={18} />
+                    </button>
+                    <button onClick={() => document.getElementById('network')?.scrollIntoView({ behavior: 'smooth' })} className={`flex items-center gap-4 ${isDark ? 'bg-white/5' : 'bg-white/80'} backdrop-blur-xl border ${theme.border} px-10 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-red-600 hover:text-white transition-all`}>
                         Explore Network <Compass className="w-4 h-4" />
                     </button>
                 </motion.div>
@@ -318,6 +342,205 @@ export default function Landing() {
         >
             <ChevronDown size={32} />
         </motion.div>
+      </section>
+
+      {/* ── REALISTIC FLIGHT OPERATIONS ── */}
+      <section id="realistic-ops" className={`py-32 relative overflow-hidden transition-colors duration-500`}>
+        <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-red-600/5 to-transparent"></div>
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
+              style={{ background: isDark ? 'rgba(192,18,30,0.1)' : 'rgba(192,18,30,0.06)', border: '1px solid rgba(192,18,30,0.15)' }}>
+              <RadioIcon size={12} style={{ color: '#c0121e' }} />
+              <span className="text-[9px] font-black uppercase tracking-[0.5em]" style={{ color: '#c0121e' }}>New — Network Ops</span>
+            </div>
+            <h2 className={`text-5xl md:text-7xl font-black italic tracking-tighter uppercase leading-none mb-6 ${!isDark && 'text-slate-900'}`}>
+              REALISTIC <span className="text-red-600 text-glow-red">FLIGHT OPS.</span>
+            </h2>
+            <p className={`${theme.textMuted} text-lg max-w-2xl mx-auto font-medium`}>
+              Fly fixed scheduled flights with full gate-to-gate ATC coverage on VATSIM and IVAO.
+              No offline flying — pure network immersion.
+            </p>
+          </div>
+
+          {/* UNIQUE SELLING POINT — Full banner highlight */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            className="relative overflow-hidden rounded-[40px] p-8 md:p-12 mb-12 text-center"
+            style={{
+              background: isDark ? 'linear-gradient(135deg, #1a0000, #0a0a0a)' : 'linear-gradient(135deg, #fff5f5, #ffffff)',
+              border: `2px solid ${isDark ? 'rgba(192,18,30,0.3)' : 'rgba(192,18,30,0.15)'}`,
+            }}>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-red-600/5 blur-[100px] rounded-full" />
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4"
+                style={{ background: 'rgba(192,18,30,0.1)', border: '1px solid rgba(192,18,30,0.2)' }}>
+                <Award size={12} style={{ color: '#c0121e' }} />
+                <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: '#c0121e' }}>
+                  One of Its Own Kind
+                </span>
+              </div>
+              <h3 className={`text-2xl md:text-4xl font-black italic tracking-tighter uppercase mb-4 ${!isDark ? 'text-slate-900' : 'text-white'}`}>
+                Full ATC Coverage at <span className="text-red-600">Both Airports</span>
+              </h3>
+              <p className={`max-w-3xl mx-auto text-sm leading-relaxed ${theme.textMuted} font-medium`}>
+                Kingfisher VA is the <strong style={{ color: '#c0121e' }}>only virtual airline</strong> that provides 
+                complete 5-position ATC staffing (DEL, GND, TWR, APR, CTR) at <strong>both departure and arrival airports</strong> simultaneously.
+                Controllers book in 30-min granular slots for precise coverage. Flights are auto-generated as soon as 
+                all positions at both airports are staffed for a time slot — ensuring every aircraft has 
+                full gate-to-gate ATC on VATSIM or IVAO.
+              </p>
+              <div className="flex items-center justify-center gap-8 mt-6">
+                <div className="text-center">
+                  <div className="text-2xl font-black text-white">DEP</div>
+                  <div className="flex gap-1 mt-1">
+                    {['DEL','GND','TWR','APR','CTR'].map(p => (
+                      <span key={p} className="px-2 py-0.5 rounded text-[9px] font-bold"
+                        style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>{p}</span>
+                    ))}
+                  </div>
+                </div>
+                <ArrowRight size={20} style={{ color: '#c0121e' }} />
+                <div className="text-center">
+                  <div className="text-2xl font-black text-white">ARR</div>
+                  <div className="flex gap-1 mt-1">
+                    {['DEL','GND','TWR','APR','CTR'].map(p => (
+                      <span key={p} className="px-2 py-0.5 rounded text-[9px] font-bold"
+                        style={{ background: 'rgba(59,130,246,0.15)', color: '#3b82f6' }}>{p}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          <div className="grid lg:grid-cols-3 gap-8 mb-16">
+              {[
+                {
+                  icon: RadioIcon,
+                  title: 'Dual-Airport ATC',
+                  desc: 'Every flight has 5 positions staffed at BOTH departure and arrival airports. 30-min slot granularity for precise coverage.',
+                  color: '#3b82f6',
+                },
+                {
+                  icon: Calendar,
+                  title: 'Auto-Generated Flights',
+                  desc: '20 flights auto-created per fully staffed time slot with unique flight numbers. Browse and book at your convenience.',
+                  color: '#10b981',
+                },
+                {
+                  icon: Award,
+                  title: 'Dual Confirmation',
+                  desc: 'Both departure AND arrival ground controllers must confirm your flight. Reward credited only after both sign off.',
+                  color: '#f59e0b',
+                },
+              ].map((item, i) => (
+              <motion.div key={item.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className={`${theme.card} p-8 rounded-[35px] border hover:border-red-600/30 transition-all group`}>
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6"
+                  style={{ background: `${item.color}15`, color: item.color }}>
+                  <item.icon size={28} />
+                </div>
+                <h3 className={`text-xl font-black italic mb-3 uppercase ${!isDark && 'text-slate-900'}`}>{item.title}</h3>
+                <p className={`${theme.textMuted} text-sm leading-relaxed font-medium`}>{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* How it works steps */}
+          <div className={`${theme.card} rounded-[40px] p-10 md:p-16 border mb-16`}>
+            <h3 className={`text-3xl md:text-4xl font-black italic tracking-tighter uppercase mb-12 text-center ${!isDark && 'text-slate-900'}`}>
+              HOW IT <span className="text-red-600">WORKS</span>
+            </h3>
+            <div className="grid md:grid-cols-4 gap-8">
+              {[
+                { step: '01', title: 'ATC Staff Book', desc: 'Controllers book positions and time slots. Flights are auto-generated once all positions are filled.' },
+                { step: '02', title: 'Browse & Book', desc: 'Pilots browse available flights with full details — off-block, on-block, network, route.' },
+                { step: '03', title: 'Fly on Network', desc: 'Connect to VATSIM or IVAO and fly your scheduled route with live ATC coverage.' },
+                { step: '04', title: 'Get Confirmed', desc: 'Ground controllers at both airports tick your flight. Reward is credited to your wallet.' },
+              ].map((item, i) => (
+                <motion.div key={item.step}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="text-center">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-6"
+                    style={{ background: 'rgba(192,18,30,0.1)', color: '#c0121e' }}>
+                    <span className="text-xl font-black italic">{item.step}</span>
+                  </div>
+                  <h4 className={`text-sm font-black uppercase tracking-wider mb-3 ${!isDark && 'text-slate-800'}`}>{item.title}</h4>
+                  <p className={`${theme.textMuted} text-xs leading-relaxed font-medium px-4`}>{item.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Dual CTAs */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              className={`relative overflow-hidden rounded-[40px] p-10 md:p-14 border cursor-pointer group`}
+              style={{
+                background: isDark ? 'linear-gradient(135deg, #0c0c0c, #1a0000)' : 'linear-gradient(135deg, #ffffff, #fef2f2)',
+                borderColor: isDark ? 'rgba(192,18,30,0.2)' : 'rgba(192,18,30,0.1)',
+              }}
+              onClick={() => navigate('/realistic-flights')}>
+              <div className="absolute top-0 right-0 w-48 h-48 bg-red-600/5 blur-[80px] rounded-full" />
+              <div className="relative z-10">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6"
+                  style={{ background: 'rgba(192,18,30,0.1)' }}>
+                  <Plane size={22} style={{ color: '#c0121e' }} />
+                </div>
+                <h3 className={`text-3xl font-black italic tracking-tighter uppercase mb-3 ${!isDark ? 'text-slate-900' : 'text-white'}`}>
+                  FOR PILOTS
+                </h3>
+                <p className={`${theme.textMuted} text-sm leading-relaxed mb-8 font-medium max-w-xs`}>
+                  Browse and book scheduled network flights with full ATC coverage.
+                </p>
+                <div className="flex items-center gap-3 text-sm font-bold uppercase tracking-widest" style={{ color: '#c0121e' }}>
+                  View Flights <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              className={`relative overflow-hidden rounded-[40px] p-10 md:p-14 border cursor-pointer group`}
+              style={{
+                background: isDark ? 'linear-gradient(135deg, #0c0c0c, #001a1a)' : 'linear-gradient(135deg, #ffffff, #f0fdf4)',
+                borderColor: isDark ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.1)',
+              }}
+              onClick={() => navigate('/atc/login')}>
+              <div className="absolute top-0 right-0 w-48 h-48 bg-green-600/5 blur-[80px] rounded-full" />
+              <div className="relative z-10">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6"
+                  style={{ background: 'rgba(16,185,129,0.1)' }}>
+                  <Headphones size={22} style={{ color: '#10b981' }} />
+                </div>
+                <h3 className={`text-3xl font-black italic tracking-tighter uppercase mb-3 ${!isDark ? 'text-slate-900' : 'text-white'}`}>
+                  FOR ATC STAFF
+                </h3>
+                <p className={`${theme.textMuted} text-sm leading-relaxed mb-8 font-medium max-w-xs`}>
+                  Join as an air traffic controller. Book positions, manage schedules, and log flights.
+                </p>
+                <div className="flex items-center gap-3 text-sm font-bold uppercase tracking-widest" style={{ color: '#10b981' }}>
+                  Staff Login <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                </div>
+                <div className="mt-4 pt-4 border-t" style={{ borderColor: isDark ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)' }}>
+                  <p className="text-[10px] font-medium" style={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.35)' }}>
+                    Don't have credentials? <span className="font-semibold" style={{ color: '#10b981' }}>Contact us</span> to join the ATC team
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
       </section>
 
       {/* ── 3D GLOBAL NETWORK ── */}
@@ -608,205 +831,6 @@ export default function Landing() {
                     </div>
                 </div>
             </div>
-        </div>
-      </section>
-
-      {/* ── REALISTIC FLIGHT OPERATIONS ── */}
-      <section className={`py-32 relative overflow-hidden transition-colors duration-500`}>
-        <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-red-600/5 to-transparent"></div>
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
-              style={{ background: isDark ? 'rgba(192,18,30,0.1)' : 'rgba(192,18,30,0.06)', border: '1px solid rgba(192,18,30,0.15)' }}>
-              <RadioIcon size={12} style={{ color: '#c0121e' }} />
-              <span className="text-[9px] font-black uppercase tracking-[0.5em]" style={{ color: '#c0121e' }}>New — Network Ops</span>
-            </div>
-            <h2 className={`text-5xl md:text-7xl font-black italic tracking-tighter uppercase leading-none mb-6 ${!isDark && 'text-slate-900'}`}>
-              REALISTIC <span className="text-red-600 text-glow-red">FLIGHT OPS.</span>
-            </h2>
-            <p className={`${theme.textMuted} text-lg max-w-2xl mx-auto font-medium`}>
-              Fly fixed scheduled flights with full gate-to-gate ATC coverage on VATSIM and IVAO.
-              No offline flying — pure network immersion.
-            </p>
-          </div>
-
-          {/* UNIQUE SELLING POINT — Full banner highlight */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-[40px] p-8 md:p-12 mb-12 text-center"
-            style={{
-              background: isDark ? 'linear-gradient(135deg, #1a0000, #0a0a0a)' : 'linear-gradient(135deg, #fff5f5, #ffffff)',
-              border: `2px solid ${isDark ? 'rgba(192,18,30,0.3)' : 'rgba(192,18,30,0.15)'}`,
-            }}>
-            <div className="absolute top-0 right-0 w-96 h-96 bg-red-600/5 blur-[100px] rounded-full" />
-            <div className="relative z-10">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4"
-                style={{ background: 'rgba(192,18,30,0.1)', border: '1px solid rgba(192,18,30,0.2)' }}>
-                <Award size={12} style={{ color: '#c0121e' }} />
-                <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: '#c0121e' }}>
-                  One of Its Own Kind
-                </span>
-              </div>
-              <h3 className={`text-2xl md:text-4xl font-black italic tracking-tighter uppercase mb-4 ${!isDark ? 'text-slate-900' : 'text-white'}`}>
-                Full ATC Coverage at <span className="text-red-600">Both Airports</span>
-              </h3>
-              <p className={`max-w-3xl mx-auto text-sm leading-relaxed ${theme.textMuted} font-medium`}>
-                Kingfisher VA is the <strong style={{ color: '#c0121e' }}>only virtual airline</strong> that provides 
-                complete 5-position ATC staffing (DEL, GND, TWR, APR, CTR) at <strong>both departure and arrival airports</strong> simultaneously.
-                Controllers book in 30-min granular slots for precise coverage. Flights are auto-generated as soon as 
-                all positions at both airports are staffed for a time slot — ensuring every aircraft has 
-                full gate-to-gate ATC on VATSIM or IVAO.
-              </p>
-              <div className="flex items-center justify-center gap-8 mt-6">
-                <div className="text-center">
-                  <div className="text-2xl font-black text-white">DEP</div>
-                  <div className="flex gap-1 mt-1">
-                    {['DEL','GND','TWR','APR','CTR'].map(p => (
-                      <span key={p} className="px-2 py-0.5 rounded text-[9px] font-bold"
-                        style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>{p}</span>
-                    ))}
-                  </div>
-                </div>
-                <ArrowRight size={20} style={{ color: '#c0121e' }} />
-                <div className="text-center">
-                  <div className="text-2xl font-black text-white">ARR</div>
-                  <div className="flex gap-1 mt-1">
-                    {['DEL','GND','TWR','APR','CTR'].map(p => (
-                      <span key={p} className="px-2 py-0.5 rounded text-[9px] font-bold"
-                        style={{ background: 'rgba(59,130,246,0.15)', color: '#3b82f6' }}>{p}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          <div className="grid lg:grid-cols-3 gap-8 mb-16">
-              {[
-                {
-                  icon: RadioIcon,
-                  title: 'Dual-Airport ATC',
-                  desc: 'Every flight has 5 positions staffed at BOTH departure and arrival airports. 30-min slot granularity for precise coverage.',
-                  color: '#3b82f6',
-                },
-                {
-                  icon: Calendar,
-                  title: 'Auto-Generated Flights',
-                  desc: '20 flights auto-created per fully staffed time slot with unique flight numbers. Browse and book at your convenience.',
-                  color: '#10b981',
-                },
-                {
-                  icon: Award,
-                  title: 'Dual Confirmation',
-                  desc: 'Both departure AND arrival ground controllers must confirm your flight. Reward credited only after both sign off.',
-                  color: '#f59e0b',
-                },
-              ].map((item, i) => (
-              <motion.div key={item.title}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className={`${theme.card} p-8 rounded-[35px] border hover:border-red-600/30 transition-all group`}>
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6"
-                  style={{ background: `${item.color}15`, color: item.color }}>
-                  <item.icon size={28} />
-                </div>
-                <h3 className={`text-xl font-black italic mb-3 uppercase ${!isDark && 'text-slate-900'}`}>{item.title}</h3>
-                <p className={`${theme.textMuted} text-sm leading-relaxed font-medium`}>{item.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* How it works steps */}
-          <div className={`${theme.card} rounded-[40px] p-10 md:p-16 border mb-16`}>
-            <h3 className={`text-3xl md:text-4xl font-black italic tracking-tighter uppercase mb-12 text-center ${!isDark && 'text-slate-900'}`}>
-              HOW IT <span className="text-red-600">WORKS</span>
-            </h3>
-            <div className="grid md:grid-cols-4 gap-8">
-              {[
-                { step: '01', title: 'ATC Staff Book', desc: 'Controllers book positions and time slots. Flights are auto-generated once all positions are filled.' },
-                { step: '02', title: 'Browse & Book', desc: 'Pilots browse available flights with full details — off-block, on-block, network, route.' },
-                { step: '03', title: 'Fly on Network', desc: 'Connect to VATSIM or IVAO and fly your scheduled route with live ATC coverage.' },
-                { step: '04', title: 'Get Confirmed', desc: 'Ground controllers at both airports tick your flight. Reward is credited to your wallet.' },
-              ].map((item, i) => (
-                <motion.div key={item.step}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="text-center">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-6"
-                    style={{ background: 'rgba(192,18,30,0.1)', color: '#c0121e' }}>
-                    <span className="text-xl font-black italic">{item.step}</span>
-                  </div>
-                  <h4 className={`text-sm font-black uppercase tracking-wider mb-3 ${!isDark && 'text-slate-800'}`}>{item.title}</h4>
-                  <p className={`${theme.textMuted} text-xs leading-relaxed font-medium px-4`}>{item.desc}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          {/* Dual CTAs */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              className={`relative overflow-hidden rounded-[40px] p-10 md:p-14 border cursor-pointer group`}
-              style={{
-                background: isDark ? 'linear-gradient(135deg, #0c0c0c, #1a0000)' : 'linear-gradient(135deg, #ffffff, #fef2f2)',
-                borderColor: isDark ? 'rgba(192,18,30,0.2)' : 'rgba(192,18,30,0.1)',
-              }}
-              onClick={() => navigate('/realistic-flights')}>
-              <div className="absolute top-0 right-0 w-48 h-48 bg-red-600/5 blur-[80px] rounded-full" />
-              <div className="relative z-10">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6"
-                  style={{ background: 'rgba(192,18,30,0.1)' }}>
-                  <Plane size={22} style={{ color: '#c0121e' }} />
-                </div>
-                <h3 className={`text-3xl font-black italic tracking-tighter uppercase mb-3 ${!isDark ? 'text-slate-900' : 'text-white'}`}>
-                  FOR PILOTS
-                </h3>
-                <p className={`${theme.textMuted} text-sm leading-relaxed mb-8 font-medium max-w-xs`}>
-                  Browse and book scheduled network flights with full ATC coverage.
-                </p>
-                <div className="flex items-center gap-3 text-sm font-bold uppercase tracking-widest" style={{ color: '#c0121e' }}>
-                  View Flights <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              className={`relative overflow-hidden rounded-[40px] p-10 md:p-14 border cursor-pointer group`}
-              style={{
-                background: isDark ? 'linear-gradient(135deg, #0c0c0c, #001a1a)' : 'linear-gradient(135deg, #ffffff, #f0fdf4)',
-                borderColor: isDark ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.1)',
-              }}
-              onClick={() => navigate('/atc/login')}>
-              <div className="absolute top-0 right-0 w-48 h-48 bg-green-600/5 blur-[80px] rounded-full" />
-              <div className="relative z-10">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6"
-                  style={{ background: 'rgba(16,185,129,0.1)' }}>
-                  <Headphones size={22} style={{ color: '#10b981' }} />
-                </div>
-                <h3 className={`text-3xl font-black italic tracking-tighter uppercase mb-3 ${!isDark ? 'text-slate-900' : 'text-white'}`}>
-                  FOR ATC STAFF
-                </h3>
-                <p className={`${theme.textMuted} text-sm leading-relaxed mb-8 font-medium max-w-xs`}>
-                  Join as an air traffic controller. Book positions, manage schedules, and log flights.
-                </p>
-                <div className="flex items-center gap-3 text-sm font-bold uppercase tracking-widest" style={{ color: '#10b981' }}>
-                  Staff Login <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                </div>
-                <div className="mt-4 pt-4 border-t" style={{ borderColor: isDark ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)' }}>
-                  <p className="text-[10px] font-medium" style={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.35)' }}>
-                    Don't have credentials? <span className="font-semibold" style={{ color: '#10b981' }}>Contact us</span> to join the ATC team
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </div>
         </div>
       </section>
 

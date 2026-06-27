@@ -1,15 +1,12 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  Download, Settings, Plane, Monitor, CheckCircle, ArrowLeft,
-  FileText, Copy, Check
+  Download, Settings, Plane, Monitor, CheckCircle, ArrowLeft
 } from 'lucide-react'
 import { useThemeStore } from '../store/theme.store'
 
 export default function FSACARS() {
   const { isDark } = useThemeStore()
-  const [copied, setCopied] = useState(false)
 
   const t = {
     bg: isDark ? '#0f0f0f' : '#f0f2f5',
@@ -49,25 +46,7 @@ export default function FSACARS() {
     },
   ]
 
-  const orgCfgContent = `; Kingfisher Virtual Airlines - FSACARS Configuration
-; This file is already pre-configured in your download!
 
-orgname=Kingfisher Virtual Airlines
-orgurl=https://kingfisherva.com
-orglogo=logo.png
-orglicense=none
-hashalgo=HTTPS
-userquery=https://kingfisher-api.onrender.com/api/v1/fsacars/userquery
-pirep=https://kingfisher-api.onrender.com/api/v1/fsacars/pirep
-posrep=https://kingfisher-api.onrender.com/api/v1/fsacars/posrep
-dispatch=https://kingfisher-api.onrender.com/api/v1/fsacars/dispatch
-serverpass=kfva_fsacars_2026`
-
-  const copyOrgCfg = () => {
-    navigator.clipboard.writeText(orgCfgContent)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
 
   return (
     <div className="min-h-screen" style={{ background: t.bg, color: t.text }}>
@@ -148,43 +127,7 @@ serverpass=kfva_fsacars_2026`
           </div>
         </motion.div>
 
-        {/* org.cfg reference */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-          className="rounded-2xl overflow-hidden"
-          style={{ background: t.card, border: `1px solid ${t.border}` }}>
-          <div className="flex items-center justify-between px-6 py-4"
-            style={{ borderBottom: `1px solid ${t.border}` }}>
-            <div className="flex items-center gap-2.5">
-              <FileText size={15} style={{ color: '#c0121e' }} />
-              <span className="text-sm font-semibold">
-                org.cfg — Already configured in your download
-              </span>
-            </div>
-            <button onClick={copyOrgCfg}
-              className="text-xs font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-2"
-              style={{
-                background: t.navActive,
-                color: copied ? '#10b981' : '#c0121e',
-              }}>
-              {copied ? <Check size={14} /> : <Copy size={14} />}
-              {copied ? 'Copied!' : 'Copy for reference'}
-            </button>
-          </div>
-          <div className="p-6">
-            <pre className="text-xs leading-relaxed p-4 rounded-xl overflow-x-auto font-mono"
-              style={{
-                background: isDark ? '#0a0a0a' : '#f5f5f5',
-                border: `1px solid ${t.border}`,
-                color: isDark ? '#a1a1aa' : '#52525b',
-              }}>
-              {orgCfgContent}
-            </pre>
-            <p className="text-xs mt-3" style={{ color: t.textMuted }}>
-              This file is already inside your downloaded zip. You don't need to modify anything —<br />
-              just extract and run <code style={{ color: '#c0121e' }}>fsacars.exe</code>.
-            </p>
-          </div>
-        </motion.div>
+
 
         {/* How It Works */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}

@@ -51,6 +51,28 @@ await app.register(fsacarsRoutes, { prefix: '/api/v1' })
 await app.register(atcRoutes, { prefix: '/api/v1' })
 await app.register(realisticFlightsRoutes, { prefix: '/api/v1' })
 
+// ── SEO / PUBLIC FILES ──
+app.get('/robots.txt', async (_req, reply) => {
+  return reply.type('text/plain').send(`User-agent: *
+Allow: /
+Sitemap: https://kingfisherva.com/sitemap.xml
+`)
+})
+
+app.get('/sitemap.xml', async (_req, reply) => {
+  const baseUrl = 'https://kingfisherva.com'
+  const staticPages = ['', '/login', '/register', '/privacy', '/handbook', '/flights', '/routes', '/live-map', '/roster', '/events', '/fsacars']
+  const urls = staticPages.map(p => `  <url>
+    <loc>${baseUrl}${p}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>${p === '' ? '1.0' : '0.8'}</priority>
+  </url>`).join('\n')
+  return reply.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>`)
+})
+
 // ── HEALTH CHECK ──
 app.get('/health', async () => {
   return { status: 'ok', airline: 'Kingfisher Virtual Airlines', version: '1.0.0' }
