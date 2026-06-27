@@ -48,6 +48,13 @@ async function getActiveBooking(pilotId: string) {
 
 // ── USERQUERY ──────────────────────────────────────────
 export const userquery = async (req: FastifyRequest, reply: FastifyReply) => {
+  const serverpass = getParam(req, 'serverpass') ?? ''
+  const expectedServerPass = process.env.FSACARS_SERVER_PASS
+
+  if (expectedServerPass && serverpass !== expectedServerPass) {
+    return reply.type('text/plain').send('NOUSR')
+  }
+
   const username = getParam(req, 'user') ?? ''
   const password = getParam(req, 'pass') ?? ''
 
