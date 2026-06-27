@@ -90,6 +90,7 @@ model Pilot {
   logbook       LogbookEntry[]
   events        EventAttendee[]
   liveFlight    LiveFlight?
+  realisticBookings RealisticFlight[]
 }
 
 model Aircraft {
@@ -266,6 +267,82 @@ model EventAttendee {
   event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   pilot     Pilot    @relation(fields: [pilotId], references: [id], onDelete: Cascade)
   @@unique([eventId, pilotId])
+}
+
+// ── ATC SYSTEM ──
+enum ATCStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model ATCController {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  firstName String
+  lastName  String
+  position  String
+  rating    String    @default("S1")
+  status    ATCStatus @default(ACTIVE)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  schedules ATCSchedule[]
+}
+
+model ATCSchedule {
+  id        String   @id @default(cuid())
+  staffId   String
+  date      String
+  position  String
+  timeSlot  String
+  status    String   @default("BOOKED")
+  createdAt DateTime @default(now())
+  staff     ATCController @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, date, timeSlot])
+}
+
+enum RealisticFlightStatus {
+  AVAILABLE
+  BOOKED
+  COMPLETED
+  CANCELLED
+}
+
+model RealisticFlight {
+  id                 String                  @id @default(cuid())
+  flightNumber       String                  @unique
+  depIcao            String
+  arrIcao            String
+  depName            String?
+  arrName            String?
+  offBlock           String
+  onBlock            String
+  estimatedFlightTime String
+  distance           Int
+  network            String
+  reward             Float                   @default(50)
+  date               String
+  timeSlot           String
+  status             RealisticFlightStatus   @default(AVAILABLE)
+  depConfirmed       Boolean                 @default(false)
+  arrConfirmed       Boolean                 @default(false)
+  pilotId            String?
+  bookedAt           DateTime?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  pilot              Pilot?                  @relation(fields: [pilotId], references: [id])
+}
+
+model DailyHub {
+  id       String   @id @default(cuid())
+  depIcao  String
+  arrIcao  String
+  depName  String?
+  arrName  String?
+  date     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model LiveFlight {

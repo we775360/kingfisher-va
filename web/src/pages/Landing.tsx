@@ -12,7 +12,8 @@ import {
   ExternalLink, Globe as GlobeIcon, Shield, Zap, Info, Camera,
   MapPin, Clock, Wind, ArrowUpRight, Radio, Mail, 
   ChevronDown, Menu, X, Landmark, Compass, Award, Share2, PlayCircle,
-  Sun, Moon
+  Sun, Moon, Headphones, Radio as RadioIcon, Calendar,
+  Check, Star
 } from 'lucide-react'
 import { useThemeStore } from '../store/theme.store'
 import api from '../lib/axios'
@@ -575,8 +576,8 @@ export default function Landing() {
                             className="w-full aspect-[4/5] object-cover rounded-[45px] opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" 
                         />
                         <div className="absolute bottom-12 left-12">
-                            <h3 className={`text-4xl font-black italic tracking-tighter uppercase mb-2 ${!isDark && 'text-white'}`}>GtechSolutions</h3>
-                            <p className="text-red-600 font-black uppercase tracking-[0.5em] text-[10px]">Founder & Builder</p>
+            <h3 className={`text-4xl font-black italic tracking-tighter uppercase mb-2 ${!isDark && 'text-white'}`}>Guneet Singh</h3>
+                    <p className="text-red-600 font-black uppercase tracking-[0.5em] text-[10px]">Founder & Builder</p>
                         </div>
                     </div>
                 </motion.div>
@@ -589,7 +590,7 @@ export default function Landing() {
                     </h2>
                     <div className={`${theme.textMuted} space-y-8 text-lg leading-relaxed font-medium`}>
                         <p>
-                            Hi, I'm GtechSolutions. I have founded this Virtual Airline - Kingfisher Virtual Airline which is no where in relation with the real world airline that used to exist. Do feel free to join the KFR VA!
+                            Founded by Guneet Singh, Kingfisher Virtual Airline is built with passion for aviation and simulation. Join us and experience virtual flying at its finest!
                         </p>
                     </div>
                     
@@ -607,6 +608,148 @@ export default function Landing() {
                     </div>
                 </div>
             </div>
+        </div>
+      </section>
+
+      {/* ── REALISTIC FLIGHT OPERATIONS ── */}
+      <section className={`py-32 relative overflow-hidden transition-colors duration-500`}>
+        <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-red-600/5 to-transparent"></div>
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
+              style={{ background: isDark ? 'rgba(192,18,30,0.1)' : 'rgba(192,18,30,0.06)', border: '1px solid rgba(192,18,30,0.15)' }}>
+              <RadioIcon size={12} style={{ color: '#c0121e' }} />
+              <span className="text-[9px] font-black uppercase tracking-[0.5em]" style={{ color: '#c0121e' }}>New — Network Ops</span>
+            </div>
+            <h2 className={`text-5xl md:text-7xl font-black italic tracking-tighter uppercase leading-none mb-6 ${!isDark && 'text-slate-900'}`}>
+              REALISTIC <span className="text-red-600 text-glow-red">FLIGHT OPS.</span>
+            </h2>
+            <p className={`${theme.textMuted} text-lg max-w-2xl mx-auto font-medium`}>
+              Fly fixed scheduled flights with full gate-to-gate ATC coverage on VATSIM and IVAO.
+              No offline flying — pure network immersion.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8 mb-16">
+            {[
+              {
+                icon: RadioIcon,
+                title: 'Full ATC Coverage',
+                desc: 'Every flight has DEL, GND, TWR, APR, and CTR positions staffed from gate to gate.',
+                color: '#3b82f6',
+              },
+              {
+                icon: Calendar,
+                title: 'Fixed Schedules',
+                desc: 'Flights run on fixed off-block and on-block times. Book your slot and fly on schedule.',
+                color: '#10b981',
+              },
+              {
+                icon: Award,
+                title: 'Complete & Earn',
+                desc: 'Both departure and arrival ground controllers confirm your flight before reward is paid.',
+                color: '#f59e0b',
+              },
+            ].map((item, i) => (
+              <motion.div key={item.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className={`${theme.card} p-8 rounded-[35px] border hover:border-red-600/30 transition-all group`}>
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6"
+                  style={{ background: `${item.color}15`, color: item.color }}>
+                  <item.icon size={28} />
+                </div>
+                <h3 className={`text-xl font-black italic mb-3 uppercase ${!isDark && 'text-slate-900'}`}>{item.title}</h3>
+                <p className={`${theme.textMuted} text-sm leading-relaxed font-medium`}>{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* How it works steps */}
+          <div className={`${theme.card} rounded-[40px] p-10 md:p-16 border mb-16`}>
+            <h3 className={`text-3xl md:text-4xl font-black italic tracking-tighter uppercase mb-12 text-center ${!isDark && 'text-slate-900'}`}>
+              HOW IT <span className="text-red-600">WORKS</span>
+            </h3>
+            <div className="grid md:grid-cols-4 gap-8">
+              {[
+                { step: '01', title: 'ATC Staff Book', desc: 'Controllers book positions and time slots. Flights are auto-generated once all positions are filled.' },
+                { step: '02', title: 'Browse & Book', desc: 'Pilots browse available flights with full details — off-block, on-block, network, route.' },
+                { step: '03', title: 'Fly on Network', desc: 'Connect to VATSIM or IVAO and fly your scheduled route with live ATC coverage.' },
+                { step: '04', title: 'Get Confirmed', desc: 'Ground controllers at both airports tick your flight. Reward is credited to your wallet.' },
+              ].map((item, i) => (
+                <motion.div key={item.step}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="text-center">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-6"
+                    style={{ background: 'rgba(192,18,30,0.1)', color: '#c0121e' }}>
+                    <span className="text-xl font-black italic">{item.step}</span>
+                  </div>
+                  <h4 className={`text-sm font-black uppercase tracking-wider mb-3 ${!isDark && 'text-slate-800'}`}>{item.title}</h4>
+                  <p className={`${theme.textMuted} text-xs leading-relaxed font-medium px-4`}>{item.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Dual CTAs */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              className={`relative overflow-hidden rounded-[40px] p-10 md:p-14 border cursor-pointer group`}
+              style={{
+                background: isDark ? 'linear-gradient(135deg, #0c0c0c, #1a0000)' : 'linear-gradient(135deg, #ffffff, #fef2f2)',
+                borderColor: isDark ? 'rgba(192,18,30,0.2)' : 'rgba(192,18,30,0.1)',
+              }}
+              onClick={() => navigate('/realistic-flights')}>
+              <div className="absolute top-0 right-0 w-48 h-48 bg-red-600/5 blur-[80px] rounded-full" />
+              <div className="relative z-10">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6"
+                  style={{ background: 'rgba(192,18,30,0.1)' }}>
+                  <Plane size={22} style={{ color: '#c0121e' }} />
+                </div>
+                <h3 className={`text-3xl font-black italic tracking-tighter uppercase mb-3 ${!isDark ? 'text-slate-900' : 'text-white'}`}>
+                  FOR PILOTS
+                </h3>
+                <p className={`${theme.textMuted} text-sm leading-relaxed mb-8 font-medium max-w-xs`}>
+                  Browse and book scheduled network flights with full ATC coverage.
+                </p>
+                <div className="flex items-center gap-3 text-sm font-bold uppercase tracking-widest" style={{ color: '#c0121e' }}>
+                  View Flights <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              className={`relative overflow-hidden rounded-[40px] p-10 md:p-14 border cursor-pointer group`}
+              style={{
+                background: isDark ? 'linear-gradient(135deg, #0c0c0c, #001a1a)' : 'linear-gradient(135deg, #ffffff, #f0fdf4)',
+                borderColor: isDark ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.1)',
+              }}
+              onClick={() => navigate('/atc/login')}>
+              <div className="absolute top-0 right-0 w-48 h-48 bg-green-600/5 blur-[80px] rounded-full" />
+              <div className="relative z-10">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6"
+                  style={{ background: 'rgba(16,185,129,0.1)' }}>
+                  <Headphones size={22} style={{ color: '#10b981' }} />
+                </div>
+                <h3 className={`text-3xl font-black italic tracking-tighter uppercase mb-3 ${!isDark ? 'text-slate-900' : 'text-white'}`}>
+                  FOR ATC STAFF
+                </h3>
+                <p className={`${theme.textMuted} text-sm leading-relaxed mb-8 font-medium max-w-xs`}>
+                  Join as an air traffic controller. Book positions, manage schedules, and log flights.
+                </p>
+                <div className="flex items-center gap-3 text-sm font-bold uppercase tracking-widest" style={{ color: '#10b981' }}>
+                  Staff Login <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 

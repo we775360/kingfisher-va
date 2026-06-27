@@ -195,6 +195,81 @@ acars/
 1. User provides .mp3 files → place them in `acars/public/audio/announcements/`
 2. Test & debug on actual Windows + sim setup
 
+## Next Major Feature: Realistic Flight Operations (Planned)
+
+### Concept
+A network-flying feature for pilots + ATC staff integration. Fixed scheduled flights with full gate-to-gate ATC coverage on VATSIM/IVAO (no offline flying). System auto-generates flights when all ATC positions are staffed.
+
+### Pilot Side
+- New public landing page section showcasing Realistic Flight Operations
+- Pilots browse available flights with details: off-block time, on-block time, estimated flight time, departure/arrival, network (VATSIM/IVAO)
+- Pilots book a flight → system assigns flight number
+- After flying, ground controllers at both dep/arr airports tick the pilot's flight as completed
+- Upon confirmation, pilot is rewarded with virtual currency into their wallet
+
+### ATC Staff Side
+- Separate login/auth system for ATC controllers
+- ATC Staff Dashboard (separate from pilot dashboard)
+- Admin sets the daily departure hub airport (changes each day)
+- Controller selects:
+  - Which day they're available
+  - Position: DEL, GND, TWR, APR, CTR, etc.
+  - Time slot they'll be online
+- System shows all higher-position staff booked in same time frame
+- Once ALL positions for a time slot are booked, the system auto-generates flights:
+  - Flight numbers, schedules, routes within the covered time frame
+  - Gives pilots a pool of flights to fly with full ATC coverage
+- Controllers can log which flight numbers actually flew (tick/confirm)
+- Both dep & arr ground controllers must confirm → pilot gets paid
+
+### Admin Controls
+- Admin portal: set daily departure/arrival airports
+- Manage ATC staff accounts (create, suspend, assign)
+- Oversee the entire ATC schedule and flight generation pipeline
+- Wire everything together
+
+### Status: ✅ FRONTEND COMPLETE (Session 1) | ✅ BACKEND COMPLETE (Session 2)
+
+### Files Created (Frontend)
+- `web/src/store/atc.store.ts` — Zustand store for ATC auth (separate localStorage keys from pilot auth)
+- `web/src/components/ATCRoute.tsx` — Auth guard for `/atc/dashboard` routes
+- `web/src/pages/ATCLogin.tsx` — ATC Staff login page (separate from pilot login)
+- `web/src/pages/ATCDashboard.tsx` — Full ATC dashboard with 4 tabs (Overview, Schedule, Flights, Staff)
+- `web/src/pages/RealisticFlights.tsx` — Pilot-facing realistic flights browser with booking
+
+### Files Created (Backend)
+- `api/prisma/schema.prisma` — Updated with ATCController, ATCSchedule, RealisticFlight, DailyHub models
+- `api/src/middleware/atc.middleware.ts` — `authenticateATC` middleware (verifies JWT + role === 'ATC')
+- `api/src/controllers/atc.controller.ts` — ATC auth + all operations (login, me, schedule CRUD, flights, stats, toggle)
+- `api/src/controllers/realistic-flights.controller.ts` — Pilot realistic flights CRUD (list, book, cancel, my)
+- `api/src/controllers/flight-generator.ts` — Auto-flight generation engine (triggers when all 5 positions filled)
+- `api/src/controllers/admin-atc.controller.ts` — Admin ATC staff management + daily hub CRUD
+- `api/src/routes/atc.routes.ts` — 10 ATC endpoints
+- `api/src/routes/realistic-flights.routes.ts` — 4 realistic flight endpoints
+
+### Files Modified (Frontend)
+- `web/src/App.tsx` — Added `/atc/login`, `/atc/dashboard`, `/realistic-flights` routes
+- `web/src/pages/Landing.tsx` — Added "Realistic Flight Operations" section (3 feature cards, 4-step process, dual CTAs); replaced GtechSolutions with Guneet Singh
+- `web/src/pages/Admin.tsx` — Added ATC Staff (create/suspend) + Daily Hubs (set/current) tabs
+
+### Files Modified (Backend)
+- `api/src/index.ts` — Registered `atcRoutes` + `realisticFlightsRoutes`
+- `api/src/routes/admin.routes.ts` — Added 5 admin endpoints for ATC + daily hub management
+
+### How It Works (Data Flow)
+1. **Admin** sets a daily hub (dep/arr airports + date) via Admin → Daily Hubs
+2. **Admin** creates ATC staff accounts via Admin → ATC Staff
+3. **ATC Staff** logs in at `/atc/login` (separate auth from pilots)
+4. **ATC Staff** books schedules (day + position + time slot) in ATC Dashboard
+5. When all 5 positions (DEL, GND, TWR, APR, CTR) are filled for a time slot → **auto-generates** 3-6 realistic flights with flight numbers, routes, times
+6. **Pilots** browse available flights at `/realistic-flights` and book
+7. **Pilots** fly on VATSIM/IVAO during the scheduled time
+8. **ATC Staff** ticks flights as confirmed (dep + arr) in the Flights tab
+9. When both dep and arr confirmed → pilot's wallet credited automatically
+
+### Workflow Rule
+- After completing each logical step/phase during development, save progress to AGENTS.md so it persists across chat sessions. Update status, document what was built, and list what's remaining.
+
 ## Commands
 - `pnpm install` (root)
 - API dev: `cd api && pnpm dev`

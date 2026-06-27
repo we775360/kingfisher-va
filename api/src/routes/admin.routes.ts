@@ -8,6 +8,10 @@ import {
   getAllHubs, createHub, deleteHub,
   createAnnouncement, deleteAnnouncement, getStats
 } from '../controllers/admin.controller.js'
+import {
+  listATCStaff, createATCStaff, updateATCStaffStatus,
+  getCurrentDailyHub, setDailyHub,
+} from '../controllers/admin-atc.controller.js'
 
 export const adminRoutes = async (app: FastifyInstance) => {
   // Stats
@@ -39,4 +43,13 @@ export const adminRoutes = async (app: FastifyInstance) => {
   // Announcements
   app.post('/admin/announcements', { preHandler: requireAdmin }, createAnnouncement)
   app.delete('/admin/announcements/:id', { preHandler: requireAdmin }, deleteAnnouncement)
+
+  // ATC Staff Management
+  app.get('/admin/atc', { preHandler: requireStaff }, listATCStaff)
+  app.post('/admin/atc', { preHandler: requireAdmin }, createATCStaff)
+  app.patch('/admin/atc/:id/status', { preHandler: requireAdmin }, updateATCStaffStatus)
+
+  // Daily Hubs
+  app.get('/admin/daily-hubs/current', { preHandler: requireStaff }, getCurrentDailyHub)
+  app.post('/admin/daily-hubs', { preHandler: requireAdmin }, setDailyHub)
 }

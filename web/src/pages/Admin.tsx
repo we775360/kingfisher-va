@@ -6,7 +6,8 @@ import {
   Settings, Shield, BarChart3, Plus, Trash2,
   Check, X, AlertTriangle, Hash, Clock,
   TrendingUp, Navigation, Building2, Sun, Moon,
-  Eye, Search, Filter, Calendar
+  Eye, Search, Filter, Calendar,
+  Headphones, Radio, MapPin, Key,
 } from 'lucide-react'
 import { useAuthStore } from '../store/auth.store'
 import { useThemeStore } from '../store/theme.store'
@@ -21,6 +22,8 @@ const NAV_ITEMS = [
   { icon: Building2, label: 'Hubs', id: 'hubs' },
   { icon: Calendar, label: 'Events', id: 'events' },
   { icon: Bell, label: 'Announcements', id: 'announcements' },
+  { icon: Headphones, label: 'ATC Staff', id: 'atc-staff' },
+  { icon: Map, label: 'Daily Hubs', id: 'daily-hubs' },
 ]
 
 export default function Admin() {
@@ -44,6 +47,12 @@ export default function Admin() {
   const [hubs, setHubs] = useState<any[]>([])
   const [events, setEvents] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+
+  // ATC Staff states
+  const [atcStaff, setAtcStaff] = useState<any[]>([])
+  const [atcStaffForm, setAtcStaffForm] = useState({ email: '', password: '', firstName: '', lastName: '', position: 'TWR', rating: 'S1' })
+  const [dailyHubForm, setDailyHubForm] = useState({ depIcao: '', arrIcao: '', date: new Date().toISOString().split('T')[0] })
+  const [currentDailyHub, setCurrentDailyHub] = useState<any>(null)
 
   // Form states
   const [aircraftForm, setAircraftForm] = useState({ icao: '', name: '', registration: '', type: '', engines: '', pax: '', range: '', cruiseSpeed: '', hub: '' })
@@ -123,9 +132,21 @@ export default function Admin() {
 
   const [announcements, setAnnouncements] = useState<any[]>([])
 
+  const fetchATCData = useCallback(async () => {
+    try {
+      const [staff, hub] = await Promise.all([
+        api.get('/admin/atc').catch(() => ({ data: [] })),
+        api.get('/admin/daily-hubs/current').catch(() => ({ data: null })),
+      ])
+      setAtcStaff(staff.data)
+      setCurrentDailyHub(hub.data)
+    } catch (err) { console.error(err) }
+  }, [])
+
   useEffect(() => {
     fetchAll()
-  }, [fetchAll])
+    fetchATCData()
+  }, [fetchAll, fetchATCData])
 
 
   const updatePilotStatus = async (id: string, status: string) => {
@@ -1091,6 +1112,263 @@ export default function Admin() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        )
+
+      // ── ATC STAFF ──
+      case 'atc-staff':
+        const filteredStaff = atcStaff.filter((s: any) =>
+          `${s.firstName} ${s.lastName} ${s.email} ${s.position}`.toLowerCase().includes(search.toLowerCase())
+        )
+        return (
+          <div className="space-y-5">
+            {/* Add ATC Staff Form */}
+            <div className="rounded-2xl p-5" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+              <div className="flex items-center gap-2.5 mb-4">
+                <Headphones size={15} style={{ color: '#c0121e' }} />
+                <span className="text-sm font-semibold" style={{ color: t.text }}>Create ATC Staff Account</span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                {[
+                  { key: 'firstName', label: 'First Name', placeholder: 'John', type: 'text' },
+                  { key: 'lastName', label: 'Last Name', placeholder: 'Doe', type: 'text' },
+                  { key: 'email', label: 'Email', placeholder: 'controller@kfrva.com', type: 'email' },
+                  { key: 'password', label: 'Password', placeholder: 'Min 8 characters', type: 'password' },
+                ].map(field => (
+                  <div key={field.key}>
+                    <label className="block text-xs mb-1.5" style={{ color: t.textMuted }}>{field.label}</label>
+                    <input type={field.type}
+                      value={(atcStaffForm as any)[field.key]}
+                      onChange={e => setAtcStaffForm({ ...atcStaffForm, [field.key]: e.target.value })}
+                      placeholder={field.placeholder}
+                      style={inputStyle} />
+                  </div>
+                ))}
+                <div>
+                  <label className="block text-xs mb-1.5" style={{ color: t.textMuted }}>Position</label>
+                  <select value={atcStaffForm.position}
+                    onChange={e => setAtcStaffForm({ ...atcStaffForm, position: e.target.value })}
+                    style={{ ...inputStyle, cursor: 'pointer' }}>
+                    {['DEL', 'GND', 'TWR', 'APR', 'CTR'].map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs mb-1.5" style={{ color: t.textMuted }}>Rating</label>
+                  <select value={atcStaffForm.rating}
+                    onChange={e => setAtcStaffForm({ ...atcStaffForm, rating: e.target.value })}
+                    style={{ ...inputStyle, cursor: 'pointer' }}>
+                    {['S1', 'S2', 'S3', 'C1', 'C3'].map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {formMsg && active === 'atc-staff' && (
+                <div className="mb-3 text-xs px-3 py-2 rounded-lg"
+                  style={{ background: formMsg.includes('Error') ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)', color: formMsg.includes('Error') ? '#ef4444' : '#10b981' }}>
+                  {formMsg}
+                </div>
+              )}
+              <button onClick={async () => {
+                try {
+                  await api.post('/admin/atc', atcStaffForm)
+                  setAtcStaffForm({ email: '', password: '', firstName: '', lastName: '', position: 'TWR', rating: 'S1' })
+                  setFormMsg('ATC staff account created!')
+                  fetchATCData()
+                } catch (err: any) {
+                  setFormMsg(err.response?.data?.error || 'Error creating ATC staff')
+                }
+              }}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+                style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
+                Create ATC Account
+              </button>
+            </div>
+
+            {/* ATC Staff List */}
+            <div className="rounded-2xl overflow-hidden" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+              <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${t.border}` }}>
+                <div className="flex items-center gap-2.5">
+                  <Headphones size={15} style={{ color: '#c0121e' }} />
+                  <span className="text-sm font-semibold" style={{ color: t.text }}>ATC Staff ({atcStaff.length})</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: t.input, border: `1px solid ${t.border}` }}>
+                  <Search size={13} style={{ color: t.textMuted }} />
+                  <input value={search} onChange={e => setSearch(e.target.value)}
+                    placeholder="Search staff..."
+                    className="bg-transparent outline-none text-xs w-40" style={{ color: t.text }} />
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${t.border}` }}>
+                      {['Name', 'Email', 'Position', 'Rating', 'Status', 'Actions'].map(h => (
+                        <th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{ color: t.textMuted }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y" style={{ borderColor: t.border }}>
+                    {filteredStaff.map((staff: any) => (
+                      <tr key={staff.id}
+                        onMouseEnter={e => e.currentTarget.style.background = t.navHover}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                              style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)', color: 'white' }}>
+                              {staff.firstName?.[0]}{staff.lastName?.[0]}
+                            </div>
+                            <span className="text-sm font-medium" style={{ color: t.text }}>
+                              {staff.firstName} {staff.lastName}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className="text-xs" style={{ color: t.textSub }}>{staff.email}</span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className="px-2 py-0.5 rounded-lg text-xs font-bold font-mono"
+                            style={{
+                              background: staff.position === 'CTR' ? 'rgba(239,68,68,0.1)' :
+                                staff.position === 'APR' ? 'rgba(139,92,246,0.1)' :
+                                  staff.position === 'TWR' ? 'rgba(245,158,11,0.1)' :
+                                    staff.position === 'GND' ? 'rgba(16,185,129,0.1)' : 'rgba(59,130,246,0.1)',
+                              color: staff.position === 'CTR' ? '#ef4444' :
+                                staff.position === 'APR' ? '#8b5cf6' :
+                                  staff.position === 'TWR' ? '#f59e0b' :
+                                    staff.position === 'GND' ? '#10b981' : '#3b82f6',
+                            }}>
+                            {staff.position}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className="text-xs font-semibold" style={{ color: t.textSub }}>{staff.rating}</span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <StatusBadge status={staff.status || 'ACTIVE'} />
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-1.5">
+                            {staff.status === 'ACTIVE' ? (
+                              <button onClick={async () => {
+                                try { await api.patch(`/admin/atc/${staff.id}/status`, { status: 'SUSPENDED' }); fetchATCData() }
+                                catch (err) { console.error(err) }
+                              }}
+                                className="px-2.5 py-1 rounded-lg text-xs font-medium"
+                                style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>
+                                Suspend
+                              </button>
+                            ) : (
+                              <button onClick={async () => {
+                                try { await api.patch(`/admin/atc/${staff.id}/status`, { status: 'ACTIVE' }); fetchATCData() }
+                                catch (err) { console.error(err) }
+                              }}
+                                className="px-2.5 py-1 rounded-lg text-xs font-medium"
+                                style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
+                                Reactivate
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {filteredStaff.length === 0 && (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-sm" style={{ color: t.textSub }}>No ATC staff found</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+
+      // ── DAILY HUBS ──
+      case 'daily-hubs':
+        return (
+          <div className="space-y-5">
+            {/* Current hub */}
+            {currentDailyHub && (
+              <div className="rounded-2xl p-6 overflow-hidden relative"
+                style={{
+                  background: isDark ? 'linear-gradient(135deg, #1a0000, #0a0a0a)' : 'linear-gradient(135deg, #fff5f5, #ffffff)',
+                  border: `1px solid ${isDark ? 'rgba(192,18,30,0.2)' : 'rgba(192,18,30,0.1)'}`,
+                }}>
+                <div className="absolute top-0 right-0 w-48 h-48 bg-red-600/5 blur-[80px] rounded-full" />
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin size={14} style={{ color: '#c0121e' }} />
+                    <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#c0121e' }}>Current Daily Hub</span>
+                  </div>
+                  <div className="flex items-end gap-6">
+                    <div>
+                      <div className="text-4xl font-black italic tracking-tighter" style={{ color: t.text }}>
+                        {currentDailyHub.depIcao}
+                      </div>
+                      <div className="text-xs mt-1" style={{ color: t.textSub }}>
+                        {currentDailyHub.depName || 'Departure'} → {currentDailyHub.arrIcao}
+                      </div>
+                    </div>
+                    <div className="pb-1">
+                      <div className="text-xs" style={{ color: t.textMuted }}>
+                        {new Date(currentDailyHub.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Set Daily Hub Form */}
+            <div className="rounded-2xl p-5" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+              <div className="flex items-center gap-2.5 mb-4">
+                <MapPin size={15} style={{ color: '#c0121e' }} />
+                <span className="text-sm font-semibold" style={{ color: t.text }}>Set Daily Hub</span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                {[
+                  { key: 'depIcao', label: 'Departure ICAO', placeholder: 'VABB' },
+                  { key: 'arrIcao', label: 'Arrival ICAO', placeholder: 'VIDP' },
+                ].map(field => (
+                  <div key={field.key}>
+                    <label className="block text-xs mb-1.5" style={{ color: t.textMuted }}>{field.label}</label>
+                    <input value={(dailyHubForm as any)[field.key]}
+                      onChange={e => setDailyHubForm({ ...dailyHubForm, [field.key]: e.target.value.toUpperCase() })}
+                      placeholder={field.placeholder}
+                      style={inputStyle} />
+                  </div>
+                ))}
+                <div>
+                  <label className="block text-xs mb-1.5" style={{ color: t.textMuted }}>Date</label>
+                  <input type="date" value={dailyHubForm.date}
+                    onChange={e => setDailyHubForm({ ...dailyHubForm, date: e.target.value })}
+                    style={inputStyle} />
+                </div>
+              </div>
+              {formMsg && active === 'daily-hubs' && (
+                <div className="mb-3 text-xs px-3 py-2 rounded-lg"
+                  style={{ background: formMsg.includes('Error') ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)', color: formMsg.includes('Error') ? '#ef4444' : '#10b981' }}>
+                  {formMsg}
+                </div>
+              )}
+              <button onClick={async () => {
+                try {
+                  await api.post('/admin/daily-hubs', dailyHubForm)
+                  setFormMsg('Daily hub set!')
+                  fetchATCData()
+                } catch (err: any) {
+                  setFormMsg(err.response?.data?.error || 'Error setting daily hub')
+                }
+              }}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+                style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
+                Set as Current Hub
+              </button>
             </div>
           </div>
         )

@@ -10,6 +10,8 @@ import { pirepRoutes } from './routes/pirep.routes.js'
 import { eventRoutes } from './routes/events.routes.js'
 import { publicRoutes } from './routes/public.routes.js'
 import acarsRoutes from './routes/acars.routes.js'
+import { atcRoutes } from './routes/atc.routes.js'
+import { realisticFlightsRoutes } from './routes/realistic-flights.routes.js'
 import { initializeDiscordBot } from './discord/discord.js'
 dotenv.config()
 
@@ -41,6 +43,8 @@ await app.register(pirepRoutes, { prefix: '/api/v1' })
 await app.register(eventRoutes, { prefix: '/api/v1' })
 await app.register(publicRoutes, { prefix: '/api/v1' })
 await app.register(acarsRoutes, { prefix: '/api/v1/acars' })
+await app.register(atcRoutes, { prefix: '/api/v1' })
+await app.register(realisticFlightsRoutes, { prefix: '/api/v1' })
 
 // ── HEALTH CHECK ──
 app.get('/health', async () => {

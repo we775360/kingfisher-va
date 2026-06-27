@@ -17,6 +17,10 @@ import Events from './pages/Events'
 import RoutesPage from './pages/RoutesPage'
 import Community from './pages/Community'
 import ATCVSO from './pages/ATCVSO'
+import ATCLogin from './pages/ATCLogin'
+import ATCDashboard from './pages/ATCDashboard'
+import ATCRoute from './components/ATCRoute'
+import RealisticFlights from './pages/RealisticFlights'
 import SettingsPage from './pages/Settings'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import Handbook from './pages/Handbook'
@@ -44,6 +48,13 @@ function App() {
       <Route path="/routes" element={<RoutesPage />} />
       <Route path="/forums" element={<Community />} />
       <Route path="/atc" element={<ATCVSO />} />
+      <Route path="/atc/login" element={<ATCLogin />} />
+      <Route path="/atc/dashboard" element={
+        <ATCRoute>
+          <ATCDashboard />
+        </ATCRoute>
+      } />
+      <Route path="/realistic-flights" element={<RealisticFlights />} />
       <Route path="/settings" element={<SettingsPage />} />
       <Route path="/admin/*" element={
         <AdminRoute>
