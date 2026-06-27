@@ -601,7 +601,7 @@ export default function ATCDashboard() {
                     <span className="text-sm font-semibold" style={{ color: t.text }}>Position Coverage — {dailyHub.depIcao} / {dailyHub.arrIcao}</span>
                   </div>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="overflow-auto" style={{ maxHeight: 480 }}>
                   <table className="w-full text-xs">
                     <thead>
                       <tr style={{ borderBottom: `1px solid ${t.border}` }}>
@@ -632,7 +632,6 @@ export default function ATCDashboard() {
                     <tbody className="divide-y" style={{ borderColor: t.border }}>
                       {positionStatus
                         .filter((ps: any) => ps.airport === 'DEP')
-                        .slice(0, 12)
                         .map((depSlot: any) => {
                           const arrSlot = positionStatus.find((ps: any) => ps.timeSlot === depSlot.timeSlot && ps.airport === 'ARR')
                           const allPos = [
