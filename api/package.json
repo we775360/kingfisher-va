@@ -9,7 +9,7 @@
     "build": "prisma generate && tsc",
     "start": "prisma db push --accept-data-loss 2>/dev/null; node dist/index.js",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push",
+    "db:push": "prisma db push --accept-data-loss",
     "db:studio": "prisma studio",
     "db:migrate": "prisma migrate dev"
   },
