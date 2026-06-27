@@ -294,12 +294,13 @@ model ATCSchedule {
   staffId   String
   date      String
   position  String
+  airport   String   @default("DEP")
   timeSlot  String
   status    String   @default("BOOKED")
   createdAt DateTime @default(now())
   staff     ATCController @relation(fields: [staffId], references: [id], onDelete: Cascade)
 
-  @@unique([staffId, date, timeSlot])
+  @@unique([staffId, date, timeSlot, airport])
 }
 
 enum RealisticFlightStatus {

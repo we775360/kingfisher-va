@@ -9,6 +9,9 @@ const loginSchema = z.object({
   password: z.string(),
 })
 
+const POSITIONS = ['DEL', 'GND', 'TWR', 'APR', 'CTR']
+const AIRPORTS = ['DEP', 'ARR']
+
 // ── LOGIN ──
 export const login = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
@@ -116,6 +119,7 @@ export const getAllSchedules = async (req: FastifyRequest, reply: FastifyReply) 
       id: s.id,
       date: s.date,
       position: s.position,
+      airport: s.airport,
       timeSlot: s.timeSlot,
       status: s.status,
       staffName: `${s.staff.firstName} ${s.staff.lastName}`,
@@ -131,6 +135,7 @@ export const getAllSchedules = async (req: FastifyRequest, reply: FastifyReply) 
 const scheduleSchema = z.object({
   date: z.string(),
   position: z.string().min(1),
+  airport: z.string().default('DEP'),
   timeSlot: z.string().min(1),
 })
 
@@ -141,10 +146,10 @@ export const bookSchedule = async (req: FastifyRequest, reply: FastifyReply) => 
     const body = scheduleSchema.parse(req.body)
 
     const existing = await prisma.aTCSchedule.findFirst({
-      where: { staffId: controllerId, date: body.date, timeSlot: body.timeSlot },
+      where: { staffId: controllerId, date: body.date, timeSlot: body.timeSlot, airport: body.airport },
     })
     if (existing) {
-      return reply.status(400).send({ error: 'You already booked a slot for this date and time' })
+      return reply.status(400).send({ error: 'You already booked a slot for this date, time, and airport' })
     }
 
     const schedule = await prisma.aTCSchedule.create({
@@ -152,6 +157,7 @@ export const bookSchedule = async (req: FastifyRequest, reply: FastifyReply) => 
         staffId: controllerId,
         date: body.date,
         position: body.position,
+        airport: body.airport,
         timeSlot: body.timeSlot,
       },
     })
@@ -185,6 +191,48 @@ export const cancelSchedule = async (req: FastifyRequest, reply: FastifyReply) =
     }
     await prisma.aTCSchedule.delete({ where: { id } })
     return reply.send({ message: 'Schedule cancelled' })
+  } catch (err) {
+    console.error(err)
+    return reply.status(500).send({ error: 'Internal server error' })
+  }
+}
+
+// ── GET POSITION STATUS ──
+export const getPositionStatus = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const query = req.query as { date?: string }
+    const date = query.date || new Date().toISOString().split('T')[0]
+
+    const schedules = await prisma.aTCSchedule.findMany({
+      where: { date },
+      select: { position: true, airport: true, timeSlot: true, staffId: true },
+    })
+
+    // Group by timeSlot + airport
+    const timeSlots = generateTimeSlots()
+    const result: any[] = []
+
+    for (const slot of timeSlots) {
+      for (const airport of AIRPORTS) {
+        const booked = schedules.filter(s => s.timeSlot === slot && s.airport === airport)
+        const bookedPositions = new Set(booked.map(s => s.position))
+        const positions = POSITIONS.map(pos => ({
+          position: pos,
+          filled: bookedPositions.has(pos),
+          staffId: booked.find(s => s.position === pos)?.staffId || null,
+        }))
+        result.push({
+          timeSlot: slot,
+          airport,
+          allFilled: positions.every(p => p.filled),
+          filledCount: positions.filter(p => p.filled).length,
+          totalCount: positions.length,
+          positions,
+        })
+      }
+    }
+
+    return reply.send(result)
   } catch (err) {
     console.error(err)
     return reply.status(500).send({ error: 'Internal server error' })
@@ -245,7 +293,6 @@ export const toggleFlight = async (req: FastifyRequest, reply: FastifyReply) => 
       data: { [field]: !(flight as any)[field] },
     })
 
-    // Check if both confirmed — if yes, reward pilot
     const newDep = field === 'depConfirmed' ? !flight.depConfirmed : flight.depConfirmed
     const newArr = field === 'arrConfirmed' ? !flight.arrConfirmed : flight.arrConfirmed
 
@@ -263,7 +310,6 @@ export const toggleFlight = async (req: FastifyRequest, reply: FastifyReply) => 
       })
     }
 
-    // Re-fetch to return fresh state
     const final = await prisma.realisticFlight.findUnique({ where: { id } })
     return reply.send(final)
   } catch (err) {
@@ -276,7 +322,7 @@ export const toggleFlight = async (req: FastifyRequest, reply: FastifyReply) => 
 }
 
 // ── GET STATS ──
-export const getStats = async (req: FastifyRequest, reply: FastifyReply) => {
+export const getStats = async (_req: FastifyRequest, reply: FastifyReply) => {
   try {
     const today = new Date().toISOString().split('T')[0]
     const [staffOnline, schedules, flightsToday] = await Promise.all([
@@ -284,13 +330,38 @@ export const getStats = async (req: FastifyRequest, reply: FastifyReply) => {
       prisma.aTCSchedule.count({ where: { date: today } }),
       prisma.realisticFlight.count({ where: { date: today } }),
     ])
+
+    // Count filled vs total positions for today
+    const totalPositionsNeeded = generateTimeSlots().length * 10
+    const filledDep = await prisma.aTCSchedule.count({ where: { date: today, airport: 'DEP' } })
+    const filledArr = await prisma.aTCSchedule.count({ where: { date: today, airport: 'ARR' } })
+
+    const flightsBooked = await prisma.realisticFlight.count({ where: { date: today, status: { not: 'AVAILABLE' } } })
+    const flightsCompleted = await prisma.realisticFlight.count({ where: { date: today, status: 'COMPLETED' } })
+
     return reply.send({
       staffOnline,
       positionsFilled: schedules,
+      totalPositionsNeeded,
+      filledDep,
+      filledArr,
       flightsToday,
+      flightsBooked,
+      flightsCompleted,
     })
   } catch (err) {
     console.error(err)
     return reply.status(500).send({ error: 'Internal server error' })
   }
+}
+
+// ── HELPERS ──
+function generateTimeSlots(): string[] {
+  const slots: string[] = []
+  for (let h = 0; h < 24; h++) {
+    const hh = String(h).padStart(2, '0')
+    slots.push(`${hh}:00-${hh}:30`)
+    slots.push(`${hh}:30-${String(h + 1).padStart(2, '0')}:00`)
+  }
+  return slots
 }

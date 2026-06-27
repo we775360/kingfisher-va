@@ -1,7 +1,8 @@
 import { FastifyInstance } from 'fastify'
 import {
   login, getMe, getDailyHub, getMySchedule, getAllSchedules,
-  bookSchedule, cancelSchedule, getFlights, toggleFlight, getStats,
+  bookSchedule, cancelSchedule, getPositionStatus,
+  getFlights, toggleFlight, getStats,
 } from '../controllers/atc.controller.js'
 import { authenticateATC } from '../middleware/atc.middleware.js'
 
@@ -17,6 +18,7 @@ export const atcRoutes = async (app: FastifyInstance) => {
   app.get('/atc/flights', { preHandler: authenticateATC }, getFlights)
   app.patch('/atc/flights/:id/toggle', { preHandler: authenticateATC }, toggleFlight)
   app.get('/atc/stats', { preHandler: authenticateATC }, getStats)
+  app.get('/atc/position-status', { preHandler: authenticateATC }, getPositionStatus)
 
   // Public but requires date context - use token from ATC too
   app.get('/atc/daily-hub', getDailyHub)

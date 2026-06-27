@@ -630,27 +630,79 @@ export default function Landing() {
             </p>
           </div>
 
+          {/* UNIQUE SELLING POINT — Full banner highlight */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            className="relative overflow-hidden rounded-[40px] p-8 md:p-12 mb-12 text-center"
+            style={{
+              background: isDark ? 'linear-gradient(135deg, #1a0000, #0a0a0a)' : 'linear-gradient(135deg, #fff5f5, #ffffff)',
+              border: `2px solid ${isDark ? 'rgba(192,18,30,0.3)' : 'rgba(192,18,30,0.15)'}`,
+            }}>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-red-600/5 blur-[100px] rounded-full" />
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4"
+                style={{ background: 'rgba(192,18,30,0.1)', border: '1px solid rgba(192,18,30,0.2)' }}>
+                <Award size={12} style={{ color: '#c0121e' }} />
+                <span className="text-[9px] font-black uppercase tracking-[0.3em]" style={{ color: '#c0121e' }}>
+                  One of Its Own Kind
+                </span>
+              </div>
+              <h3 className={`text-2xl md:text-4xl font-black italic tracking-tighter uppercase mb-4 ${!isDark ? 'text-slate-900' : 'text-white'}`}>
+                Full ATC Coverage at <span className="text-red-600">Both Airports</span>
+              </h3>
+              <p className={`max-w-3xl mx-auto text-sm leading-relaxed ${theme.textMuted} font-medium`}>
+                Kingfisher VA is the <strong style={{ color: '#c0121e' }}>only virtual airline</strong> that provides 
+                complete 5-position ATC staffing (DEL, GND, TWR, APR, CTR) at <strong>both departure and arrival airports</strong> simultaneously.
+                Controllers book in 30-min granular slots for precise coverage. Flights are auto-generated as soon as 
+                all positions at both airports are staffed for a time slot — ensuring every aircraft has 
+                full gate-to-gate ATC on VATSIM or IVAO.
+              </p>
+              <div className="flex items-center justify-center gap-8 mt-6">
+                <div className="text-center">
+                  <div className="text-2xl font-black text-white">DEP</div>
+                  <div className="flex gap-1 mt-1">
+                    {['DEL','GND','TWR','APR','CTR'].map(p => (
+                      <span key={p} className="px-2 py-0.5 rounded text-[9px] font-bold"
+                        style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>{p}</span>
+                    ))}
+                  </div>
+                </div>
+                <ArrowRight size={20} style={{ color: '#c0121e' }} />
+                <div className="text-center">
+                  <div className="text-2xl font-black text-white">ARR</div>
+                  <div className="flex gap-1 mt-1">
+                    {['DEL','GND','TWR','APR','CTR'].map(p => (
+                      <span key={p} className="px-2 py-0.5 rounded text-[9px] font-bold"
+                        style={{ background: 'rgba(59,130,246,0.15)', color: '#3b82f6' }}>{p}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
           <div className="grid lg:grid-cols-3 gap-8 mb-16">
-            {[
-              {
-                icon: RadioIcon,
-                title: 'Full ATC Coverage',
-                desc: 'Every flight has DEL, GND, TWR, APR, and CTR positions staffed from gate to gate.',
-                color: '#3b82f6',
-              },
-              {
-                icon: Calendar,
-                title: 'Fixed Schedules',
-                desc: 'Flights run on fixed off-block and on-block times. Book your slot and fly on schedule.',
-                color: '#10b981',
-              },
-              {
-                icon: Award,
-                title: 'Complete & Earn',
-                desc: 'Both departure and arrival ground controllers confirm your flight before reward is paid.',
-                color: '#f59e0b',
-              },
-            ].map((item, i) => (
+              {[
+                {
+                  icon: RadioIcon,
+                  title: 'Dual-Airport ATC',
+                  desc: 'Every flight has 5 positions staffed at BOTH departure and arrival airports. 30-min slot granularity for precise coverage.',
+                  color: '#3b82f6',
+                },
+                {
+                  icon: Calendar,
+                  title: 'Auto-Generated Flights',
+                  desc: '20 flights auto-created per fully staffed time slot with unique flight numbers. Browse and book at your convenience.',
+                  color: '#10b981',
+                },
+                {
+                  icon: Award,
+                  title: 'Dual Confirmation',
+                  desc: 'Both departure AND arrival ground controllers must confirm your flight. Reward credited only after both sign off.',
+                  color: '#f59e0b',
+                },
+              ].map((item, i) => (
               <motion.div key={item.title}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}

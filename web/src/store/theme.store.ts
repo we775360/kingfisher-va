@@ -6,7 +6,7 @@ interface ThemeStore {
 }
 
 export const useThemeStore = create<ThemeStore>((set) => ({
-  isDark: localStorage.getItem('kf_theme') !== 'light',
+  isDark: localStorage.getItem('kf_theme') === 'dark',
   toggle: () => set((state) => {
     const newDark = !state.isDark
     localStorage.setItem('kf_theme', newDark ? 'dark' : 'light')

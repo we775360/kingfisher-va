@@ -1,8 +1,8 @@
 import prisma from '../utils/prisma.js'
 
 const POSITIONS = ['DEL', 'GND', 'TWR', 'APR', 'CTR']
+const AIRPORTS = ['DEP', 'ARR']
 
-// Airport names lookup
 const AIRPORT_NAMES: Record<string, string> = {
   VIDP: 'Indira Gandhi International',
   VABB: 'Chhatrapati Shivaji Maharaj International',
@@ -24,7 +24,6 @@ const AIRPORT_NAMES: Record<string, string> = {
   VTBS: 'Suvarnabhumi International',
 }
 
-// Airport coordinates for distance calculation
 const AIRPORT_COORDS: Record<string, [number, number]> = {
   VIDP: [28.5665, 77.1031],
   VABB: [19.0896, 72.8656],
@@ -51,7 +50,7 @@ function toRad(deg: number) {
 }
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 3440.065 // nautical miles
+  const R = 3440.065
   const dLat = toRad(lat2 - lat1)
   const dLon = toRad(lon2 - lon1)
   const a =
@@ -73,23 +72,25 @@ function minutesToTime(min: number): string {
 }
 
 function generateFlightNumber(index: number): string {
-  return `KFR${String(1001 + index).padStart(2, '0')}`
+  return `KFR${String(1001 + index)}`
 }
 
 export async function autoGenerateFlights(date: string, timeSlot: string) {
-  // Check if all 5 positions are booked for this date + timeSlot
+  // Check all 10 positions (5 DEP + 5 ARR) are filled
   const schedules = await prisma.aTCSchedule.findMany({
     where: { date, timeSlot },
   })
 
-  const bookedPositions = new Set(schedules.map(s => s.position))
-  const allFilled = POSITIONS.every(p => bookedPositions.has(p))
+  const depBooked = new Set(schedules.filter(s => s.airport === 'DEP').map(s => s.position))
+  const arrBooked = new Set(schedules.filter(s => s.airport === 'ARR').map(s => s.position))
+  const depFilled = POSITIONS.every(p => depBooked.has(p))
+  const arrFilled = POSITIONS.every(p => arrBooked.has(p))
 
-  if (!allFilled) {
-    return { generated: 0, reason: 'Not all positions filled yet' }
+  if (!depFilled || !arrFilled) {
+    return { generated: 0, reason: `Need all positions at both airports. DEP: ${depFilled}, ARR: ${arrFilled}` }
   }
 
-  // Check if flights already generated for this date + timeSlot
+  // Check if flights already generated
   const existingFlights = await prisma.realisticFlight.count({
     where: { date, timeSlot },
   })
@@ -97,7 +98,7 @@ export async function autoGenerateFlights(date: string, timeSlot: string) {
     return { generated: 0, reason: 'Flights already generated for this slot' }
   }
 
-  // Get daily hub for route info
+  // Get daily hub
   const hub = await prisma.dailyHub.findUnique({ where: { date } })
   if (!hub) {
     return { generated: 0, reason: 'No daily hub set for this date' }
@@ -108,28 +109,24 @@ export async function autoGenerateFlights(date: string, timeSlot: string) {
   const depName = hub.depName || AIRPORT_NAMES[depIcao] || depIcao
   const arrName = hub.arrName || AIRPORT_NAMES[arrIcao] || arrIcao
 
-  // Calculate distance
   const depCoord = AIRPORT_COORDS[depIcao]
   const arrCoord = AIRPORT_COORDS[arrIcao]
   const distance = depCoord && arrCoord
     ? calculateDistance(depCoord[0], depCoord[1], arrCoord[0], arrCoord[1])
     : 500
 
-  // Estimate flight time (min)
-  const estimatedMinutes = Math.round(distance / 420 * 60 + 30) // avg 420kt GS + 30min taxi
+  const estimatedMinutes = Math.round(distance / 420 * 60 + 30)
   const estTimeStr = `${Math.floor(estimatedMinutes / 60)}h ${estimatedMinutes % 60}m`
 
-  // Parse time slot to generate multiple flights
   const [slotStartStr, slotEndStr] = timeSlot.split('-')
   const slotStart = timeToMinutes(slotStartStr)
   const slotEnd = timeToMinutes(slotEndStr)
   const slotDuration = slotEnd - slotStart
 
-  // Generate 3-6 flights spaced across the time slot
-  const numFlights = Math.min(Math.max(Math.floor(slotDuration / estimatedMinutes), 3), 6)
+  // Generate 20 flights
+  const numFlights = 20
   const spacing = Math.floor(slotDuration / (numFlights + 1))
 
-  // Get existing flight count for unique numbers
   const totalFlights = await prisma.realisticFlight.count()
 
   const networks = ['VATSIM', 'IVAO']
@@ -139,8 +136,7 @@ export async function autoGenerateFlights(date: string, timeSlot: string) {
     const offBlockMin = slotStart + spacing * (i + 1)
     const onBlockMin = offBlockMin + estimatedMinutes
 
-    // Skip if on-block exceeds slot
-    if (onBlockMin > slotEnd + 30) break
+    if (onBlockMin > slotEnd + 60) break
 
     const offBlock = minutesToTime(offBlockMin)
     const onBlock = minutesToTime(onBlockMin)

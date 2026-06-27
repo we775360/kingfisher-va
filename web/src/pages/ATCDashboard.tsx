@@ -5,24 +5,40 @@ import {
   LayoutDashboard, Radio, Clock, Calendar, Plane,
   LogOut, Sun, Moon, Check, X, Users,
   Navigation, ChevronLeft, ChevronRight, Shield,
-  MapPin, UserPlus, Search, Filter, AlertTriangle,
+  MapPin, Search, AlertTriangle,
   Headphones, BarChart3, CheckSquare, Square,
-  ArrowRight, Loader
+  ArrowRight, Loader, TowerControl, Map,
+  Airplay, Radar, Satellite
 } from 'lucide-react'
 import { useThemeStore } from '../store/theme.store'
 import { useATCStore } from '../store/atc.store'
 import api from '../lib/axios'
 
 const POSITIONS = ['DEL', 'GND', 'TWR', 'APR', 'CTR']
-const TIME_SLOTS = [
-  '00:00-02:00', '02:00-04:00', '04:00-06:00', '06:00-08:00',
-  '08:00-10:00', '10:00-12:00', '12:00-14:00', '14:00-16:00',
-  '16:00-18:00', '18:00-20:00', '20:00-22:00', '22:00-00:00',
-]
+const AIRPORTS = ['DEP', 'ARR']
+
+function generateTimeSlots(): string[] {
+  const slots: string[] = []
+  for (let h = 0; h < 24; h++) {
+    const hh = String(h).padStart(2, '0')
+    slots.push(`${hh}:00-${hh}:30`)
+    slots.push(`${hh}:30-${String(h + 1).padStart(2, '0')}:00`)
+  }
+  return slots
+}
+const TIME_SLOTS = generateTimeSlots()
+
+const POSITION_LABELS: Record<string, string> = {
+  DEL: 'Clearance',
+  GND: 'Ground',
+  TWR: 'Tower',
+  APR: 'Approach',
+  CTR: 'Center',
+}
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Overview', id: 'overview' },
-  { icon: Calendar, label: 'Schedule', id: 'schedule' },
+  { icon: TowerControl, label: 'Schedule', id: 'schedule' },
   { icon: Plane, label: 'Flights', id: 'flights' },
   { icon: Users, label: 'Staff', id: 'staff' },
 ]
@@ -52,23 +68,22 @@ export default function ATCDashboard() {
   const [hovered, setHovered] = useState(false)
   const [pinned, setPinned] = useState(true)
 
-  // Data states
   const [dailyHub, setDailyHub] = useState<any>(null)
   const [mySchedule, setMySchedule] = useState<any[]>([])
   const [allSchedules, setAllSchedules] = useState<any[]>([])
   const [flights, setFlights] = useState<any[]>([])
+  const [positionStatus, setPositionStatus] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState('')
 
-  // Schedule form
   const days = generateNext14Days()
   const [selectedDay, setSelectedDay] = useState(days[0].date)
   const [selectedPosition, setSelectedPosition] = useState('')
+  const [selectedAirport, setSelectedAirport] = useState('DEP')
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('')
   const [scheduleLoading, setScheduleLoading] = useState(false)
 
-  // Flights tab
   const [flightSearch, setFlightSearch] = useState('')
 
   const isExpanded = pinned ? !collapsed : hovered
@@ -103,7 +118,6 @@ export default function ATCDashboard() {
     width: '100%',
   }
 
-  // GMT Clock
   useEffect(() => {
     const tick = () => {
       const now = new Date()
@@ -120,12 +134,13 @@ export default function ATCDashboard() {
       const token = localStorage.getItem('kf_atc_token')
       const headers = { Authorization: `Bearer ${token}` }
 
-      const [hubRes, mySchedRes, allSchedRes, flightsRes, statsRes] = await Promise.all([
+      const [hubRes, mySchedRes, allSchedRes, flightsRes, statsRes, posRes] = await Promise.all([
         api.get('/atc/daily-hub').catch(() => ({ data: null })),
         api.get('/atc/my-schedule', { headers }).catch(() => ({ data: [] })),
         api.get('/atc/schedules', { headers }).catch(() => ({ data: [] })),
         api.get('/atc/flights', { headers }).catch(() => ({ data: [] })),
         api.get('/atc/stats', { headers }).catch(() => ({ data: null })),
+        api.get('/atc/position-status', { headers }).catch(() => ({ data: [] })),
       ])
 
       setDailyHub(hubRes.data)
@@ -133,6 +148,7 @@ export default function ATCDashboard() {
       setAllSchedules(allSchedRes.data)
       setFlights(flightsRes.data)
       setStats(statsRes.data)
+      setPositionStatus(posRes.data)
     } catch (err) {
       console.error(err)
     } finally {
@@ -160,6 +176,7 @@ export default function ATCDashboard() {
       await api.post('/atc/schedule', {
         date: selectedDay,
         position: selectedPosition,
+        airport: selectedAirport,
         timeSlot: selectedTimeSlot,
       }, { headers: { Authorization: `Bearer ${token}` } })
       setMsg('Schedule booked!')
@@ -212,6 +229,11 @@ export default function ATCDashboard() {
     </span>
   )
 
+  // ── Find my booked positions for a given slot & airport ──
+  const myBookedPositions = mySchedule
+    .filter(s => s.date === selectedDay)
+    .map(s => `${s.airport}-${s.position}`)
+
   const renderContent = () => {
     if (loading) return (
       <div className="flex items-center justify-center h-64">
@@ -221,49 +243,87 @@ export default function ATCDashboard() {
     )
 
     switch (active) {
+
       // ═══════════════════ OVERVIEW ═══════════════════
       case 'overview':
         return (
           <div className="space-y-6">
-            {/* Daily Hub Card */}
+            {/* Daily Hub Card — shows BOTH airports */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
               className="rounded-2xl p-6 overflow-hidden relative"
               style={{
-                background: 'linear-gradient(135deg, #1a0000, #0a0a0a)',
-                border: '1px solid rgba(192,18,30,0.2)',
+                background: isDark ? 'linear-gradient(135deg, #1a0000, #0a0a0a)' : 'linear-gradient(135deg, #fff5f5, #ffffff)',
+                border: `1px solid ${isDark ? 'rgba(192,18,30,0.2)' : 'rgba(192,18,30,0.15)'}`,
               }}>
               <div className="absolute top-0 right-0 w-64 h-64 bg-red-600/5 blur-[80px] rounded-full" />
               <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-4">
                   <MapPin size={14} style={{ color: '#c0121e' }} />
                   <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#c0121e' }}>
-                    Today's Operations Hub
+                    Today's Operations
                   </span>
                 </div>
                 {dailyHub ? (
-                  <div className="flex items-end gap-6">
-                    <div>
-                      <div className="text-5xl font-black italic tracking-tighter text-white">
-                        {dailyHub.depIcao}
+                  <>
+                    <div className="flex items-center gap-6 flex-wrap">
+                      {/* Departure */}
+                      <div className="flex-1">
+                        <div className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                          Departure Airport
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <div className="text-4xl font-black italic tracking-tighter text-white">
+                              {dailyHub.depIcao}
+                            </div>
+                            <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                              {dailyHub.depName}
+                            </div>
+                          </div>
+                          <ArrowRight size={20} style={{ color: '#c0121e' }} />
+                          <div>
+                            <div className="text-4xl font-black italic tracking-tighter text-white">
+                              {dailyHub.arrIcao}
+                            </div>
+                            <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                              {dailyHub.arrName}
+                            </div>
+                          </div>
+                          <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                            Arrival Airport
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                        {dailyHub.depName} → {dailyHub.arrIcao}
+                      <div className="flex items-center gap-3 pb-1">
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+                          style={{ background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}>
+                          <Calendar size={12} style={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }} />
+                          <span className="text-xs font-semibold" style={{ color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' }}>
+                            {new Date(dailyHub.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 pb-1">
-                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-                        style={{ background: 'rgba(255,255,255,0.06)' }}>
-                        <Calendar size={12} style={{ color: 'rgba(255,255,255,0.4)' }} />
-                        <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                          {new Date(dailyHub.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                    {/* Coverage summary */}
+                    <div className="flex items-center gap-4 mt-4 pt-4" style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full" style={{ background: '#10b981' }} />
+                        <span className="text-xs font-medium" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
+                          DEP: {stats?.filledDep || 0}/{stats?.totalPositionsNeeded ? Math.floor(stats.totalPositionsNeeded / 2) : '?'} positions
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full" style={{ background: '#3b82f6' }} />
+                        <span className="text-xs font-medium" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
+                          ARR: {stats?.filledArr || 0}/{stats?.totalPositionsNeeded ? Math.floor(stats.totalPositionsNeeded / 2) : '?'} positions
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </>
                 ) : (
                   <div className="flex items-center gap-3">
                     <AlertTriangle size={18} style={{ color: '#f59e0b' }} />
-                    <span className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                    <span className="text-sm font-medium" style={{ color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' }}>
                       No hub set for today. Check back later.
                     </span>
                   </div>
@@ -291,6 +351,28 @@ export default function ATCDashboard() {
                 </motion.div>
               ))}
             </div>
+
+            {/* Traffic Summary */}
+            {stats && (
+              <div className="grid grid-cols-2 gap-4">
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                  className="p-4 rounded-2xl" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <BarChart3 size={14} style={{ color: '#10b981' }} />
+                    <span className="text-xs font-semibold" style={{ color: t.textSub }}>Flights Booked</span>
+                  </div>
+                  <div className="text-xl font-bold" style={{ color: '#10b981' }}>{stats.flightsBooked || 0}</div>
+                </motion.div>
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                  className="p-4 rounded-2xl" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Check size={14} style={{ color: '#8b5cf6' }} />
+                    <span className="text-xs font-semibold" style={{ color: t.textSub }}>Flights Completed</span>
+                  </div>
+                  <div className="text-xl font-bold" style={{ color: '#8b5cf6' }}>{stats.flightsCompleted || 0}</div>
+                </motion.div>
+              </div>
+            )}
 
             {/* My Schedule */}
             <div className="rounded-2xl overflow-hidden" style={{ background: t.card, border: `1px solid ${t.border}` }}>
@@ -329,9 +411,9 @@ export default function ATCDashboard() {
                           </span>
                           <div>
                             <div className="text-sm font-medium" style={{ color: t.text }}>
-                              {new Date(s.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                              {new Date(s.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} — {s.airport}
                             </div>
-                            <div className="text-xs" style={{ color: t.textSub }}>{s.timeSlot}</div>
+                            <div className="text-xs" style={{ color: t.textSub }}>{s.timeSlot} UTC</div>
                           </div>
                         </div>
                         <button onClick={() => handleCancelSchedule(s.id)}
@@ -361,7 +443,7 @@ export default function ATCDashboard() {
                 </div>
                 <div>
                   <div className="text-sm font-bold" style={{ color: t.text }}>Book ATC Slot</div>
-                  <div className="text-xs" style={{ color: t.textMuted }}>Select your availability</div>
+                  <div className="text-xs" style={{ color: t.textMuted }}>Select airport, position, and time</div>
                 </div>
               </div>
 
@@ -386,48 +468,105 @@ export default function ATCDashboard() {
                 </div>
               </div>
 
+              {/* Airport selector */}
+              {dailyHub && (
+                <div className="mb-5">
+                  <label className="block text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: t.textMuted }}>
+                    SELECT AIRPORT
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button onClick={() => setSelectedAirport('DEP')}
+                      className="p-4 rounded-xl text-left transition-all"
+                      style={{
+                        background: selectedAirport === 'DEP' ? 'rgba(16,185,129,0.1)' : t.input,
+                        border: `1px solid ${selectedAirport === 'DEP' ? 'rgba(16,185,129,0.4)' : t.border}`,
+                      }}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Airplay size={14} style={{ color: '#10b981' }} />
+                        <span className="text-sm font-bold" style={{ color: selectedAirport === 'DEP' ? '#10b981' : t.text }}>
+                          Departure
+                        </span>
+                      </div>
+                      <div className="text-xs font-mono font-bold" style={{ color: selectedAirport === 'DEP' ? '#10b981' : t.textSub }}>
+                        {dailyHub.depIcao} — {dailyHub.depName}
+                      </div>
+                    </button>
+                    <button onClick={() => setSelectedAirport('ARR')}
+                      className="p-4 rounded-xl text-left transition-all"
+                      style={{
+                        background: selectedAirport === 'ARR' ? 'rgba(59,130,246,0.1)' : t.input,
+                        border: `1px solid ${selectedAirport === 'ARR' ? 'rgba(59,130,246,0.4)' : t.border}`,
+                      }}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Satellite size={14} style={{ color: '#3b82f6' }} />
+                        <span className="text-sm font-bold" style={{ color: selectedAirport === 'ARR' ? '#3b82f6' : t.text }}>
+                          Arrival
+                        </span>
+                      </div>
+                      <div className="text-xs font-mono font-bold" style={{ color: selectedAirport === 'ARR' ? '#3b82f6' : t.textSub }}>
+                        {dailyHub.arrIcao} — {dailyHub.arrName}
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Position selector */}
               <div className="mb-5">
                 <label className="block text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: t.textMuted }}>
-                  SELECT POSITION
+                  SELECT POSITION — {selectedAirport} ({selectedAirport === 'DEP' ? dailyHub?.depIcao : dailyHub?.arrIcao})
                 </label>
                 <div className="grid grid-cols-5 gap-2">
                   {POSITIONS.map(pos => {
                     const pc = positionColor(pos)
+                    const isBookedByMe = myBookedPositions.includes(`${selectedAirport}-${pos}`)
                     return (
                       <button key={pos}
                         onClick={() => setSelectedPosition(pos)}
                         className="py-3 rounded-xl text-sm font-bold transition-all"
                         style={{
-                          background: selectedPosition === pos ? pc.bg : t.input,
-                          border: `1px solid ${selectedPosition === pos ? pc.color + '60' : t.border}`,
-                          color: selectedPosition === pos ? pc.color : t.textSub,
-                        }}>
+                          background: isBookedByMe ? 'rgba(192,18,30,0.08)' : selectedPosition === pos ? pc.bg : t.input,
+                          border: `1px solid ${isBookedByMe ? 'rgba(192,18,30,0.3)' : selectedPosition === pos ? pc.color + '60' : t.border}`,
+                          color: isBookedByMe ? '#c0121e' : selectedPosition === pos ? pc.color : t.textSub,
+                          opacity: isBookedByMe ? 0.6 : 1,
+                          cursor: isBookedByMe ? 'not-allowed' : 'pointer',
+                        }}
+                        title={isBookedByMe ? 'Already booked' : POSITION_LABELS[pos]}>
                         {pos}
+                        {isBookedByMe && <div className="text-[9px] opacity-70">Booked</div>}
                       </button>
                     )
                   })}
                 </div>
               </div>
 
-              {/* Time slot selector */}
+              {/* Time slot selector - 30-min */}
               <div className="mb-5">
                 <label className="block text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: t.textMuted }}>
-                  SELECT TIME SLOT (UTC)
+                  SELECT TIME SLOT (30-min blocks — UTC)
                 </label>
-                <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
-                  {TIME_SLOTS.map(slot => (
-                    <button key={slot}
-                      onClick={() => setSelectedTimeSlot(slot)}
-                      className="py-2.5 rounded-xl text-xs font-medium transition-all"
-                      style={{
-                        background: selectedTimeSlot === slot ? 'rgba(192,18,30,0.15)' : t.input,
-                        border: `1px solid ${selectedTimeSlot === slot ? 'rgba(192,18,30,0.4)' : t.border}`,
-                        color: selectedTimeSlot === slot ? '#c0121e' : t.textSub,
-                      }}>
-                      {slot}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-4 md:grid-cols-6 gap-1.5 max-h-48 overflow-y-auto"
+                  style={{ scrollbarWidth: 'thin' }}>
+                  {TIME_SLOTS.map(slot => {
+                    const status = positionStatus.find(ps => ps.timeSlot === slot && ps.airport === selectedAirport)
+                    const posStatus = status?.positions?.find((p: any) => p.position === selectedPosition)
+                    const alreadyFilled = posStatus?.filled
+                    return (
+                      <button key={slot}
+                        onClick={() => !alreadyFilled && setSelectedTimeSlot(prev => prev === slot ? '' : slot)}
+                        className="py-2 rounded-lg text-[11px] font-medium transition-all"
+                        style={{
+                          background: selectedTimeSlot === slot ? 'rgba(192,18,30,0.15)' : alreadyFilled ? 'rgba(16,185,129,0.08)' : t.input,
+                          border: `1px solid ${selectedTimeSlot === slot ? 'rgba(192,18,30,0.4)' : alreadyFilled ? 'rgba(16,185,129,0.2)' : t.border}`,
+                          color: selectedTimeSlot === slot ? '#c0121e' : alreadyFilled ? '#10b981' : t.textSub,
+                          opacity: alreadyFilled ? 0.6 : 1,
+                          cursor: alreadyFilled ? 'not-allowed' : 'pointer',
+                        }}
+                        title={alreadyFilled ? `Already filled at ${selectedAirport}` : `Book ${slot}`}>
+                        {slot}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -449,9 +588,74 @@ export default function ATCDashboard() {
                   background: scheduleLoading ? 'rgba(192,18,30,0.5)' : 'linear-gradient(135deg, #c0121e, #8b0000)',
                   boxShadow: scheduleLoading ? 'none' : '0 0 20px rgba(192,18,30,0.3)',
                 }}>
-                {scheduleLoading ? 'Booking...' : `Book ${selectedPosition || 'Position'} — ${selectedTimeSlot || 'Select Slot'}`}
+                {scheduleLoading ? 'Booking...' : `Book ${selectedPosition || 'Position'} @ ${selectedAirport} — ${selectedTimeSlot || 'Select Slot'}`}
               </button>
             </div>
+
+            {/* Position Status Grid — shows filled/empty positions per slot */}
+            {dailyHub && (
+              <div className="rounded-2xl overflow-hidden" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+                <div className="px-5 py-4" style={{ borderBottom: `1px solid ${t.border}` }}>
+                  <div className="flex items-center gap-2.5">
+                    <Radar size={15} style={{ color: '#c0121e' }} />
+                    <span className="text-sm font-semibold" style={{ color: t.text }}>Position Coverage — {dailyHub.depIcao} / {dailyHub.arrIcao}</span>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr style={{ borderBottom: `1px solid ${t.border}` }}>
+                        <th className="px-3 py-2 text-left font-semibold sticky left-0" style={{ background: t.card, color: t.textMuted }}>
+                          Slot
+                        </th>
+                        {AIRPORTS.map(ap => (
+                          POSITIONS.map(pos => (
+                            <th key={`${ap}-${pos}`} className="px-2 py-2 text-center font-semibold"
+                              style={{ color: ap === 'DEP' ? '#10b981' : '#3b82f6' }}>
+                              {ap}-{pos}
+                            </th>
+                          ))
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y" style={{ borderColor: t.border }}>
+                      {positionStatus.slice(0, 12).map((slot: any) => (
+                        <tr key={`${slot.timeSlot}-${slot.airport}`}
+                          onMouseEnter={e => e.currentTarget.style.background = t.navHover}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                          <td className="px-3 py-2 font-mono font-semibold sticky left-0" style={{ background: t.card, color: t.text }}>
+                            {slot.timeSlot}
+                          </td>
+                          {slot.airport === 'DEP' ? (
+                            <>
+                              {slot.positions.map((p: any) => (
+                                <td key={p.position} className="px-2 py-2 text-center">
+                                  <div className={`w-5 h-5 rounded mx-auto ${p.filled ? 'bg-green-500/20 text-green-500' : 'bg-zinc-500/10 text-zinc-500'} flex items-center justify-center`}>
+                                    {p.filled ? <Check size={10} /> : <X size={10} />}
+                                  </div>
+                                </td>
+                              ))}
+                              {/* ARR positions from matching slot */}
+                              {positionStatus
+                                .filter((ps: any) => ps.timeSlot === slot.timeSlot && ps.airport === 'ARR')
+                                .flatMap((ps: any) => ps.positions)
+                                .map((p: any, i: number) => (
+                                  <td key={`arr-${i}`} className="px-2 py-2 text-center">
+                                    <div className={`w-5 h-5 rounded mx-auto ${p.filled ? 'bg-blue-500/20 text-blue-500' : 'bg-zinc-500/10 text-zinc-500'} flex items-center justify-center`}>
+                                      {p.filled ? <Check size={10} /> : <X size={10} />}
+                                    </div>
+                                  </td>
+                                ))
+                              }
+                            </>
+                          ) : null}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {/* My Booked Schedules */}
             <div className="rounded-2xl overflow-hidden" style={{ background: t.card, border: `1px solid ${t.border}` }}>
@@ -479,6 +683,9 @@ export default function ATCDashboard() {
                           <div>
                             <div className="text-sm font-medium" style={{ color: t.text }}>
                               {new Date(s.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                              <span className="ml-2 text-xs" style={{ color: s.airport === 'DEP' ? '#10b981' : '#3b82f6' }}>
+                                {s.airport === 'DEP' ? `${dailyHub?.depIcao || 'DEP'}` : `${dailyHub?.arrIcao || 'ARR'}`}
+                              </span>
                             </div>
                             <div className="text-xs" style={{ color: t.textSub }}>{s.timeSlot} UTC</div>
                           </div>
@@ -502,9 +709,27 @@ export default function ATCDashboard() {
         const filteredFlights = flights.filter((f: any) =>
           `${f.flightNumber} ${f.depIcao} ${f.arrIcao} ${f.pilotName}`.toLowerCase().includes(flightSearch.toLowerCase())
         )
+        const bookedFlights = flights.filter((f: any) => f.status !== 'AVAILABLE')
+        const completedFlights = flights.filter((f: any) => f.status === 'COMPLETED')
         return (
           <div className="space-y-4">
-            {/* Search & Stats */}
+            {/* Stats bar */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="p-3 rounded-xl" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+                <div className="text-xs" style={{ color: t.textSub }}>Total</div>
+                <div className="text-lg font-bold" style={{ color: t.text }}>{flights.length}</div>
+              </div>
+              <div className="p-3 rounded-xl" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+                <div className="text-xs" style={{ color: t.textSub }}>Booked</div>
+                <div className="text-lg font-bold" style={{ color: '#3b82f6' }}>{bookedFlights.length}</div>
+              </div>
+              <div className="p-3 rounded-xl" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+                <div className="text-xs" style={{ color: t.textSub }}>Completed</div>
+                <div className="text-lg font-bold" style={{ color: '#10b981' }}>{completedFlights.length}</div>
+              </div>
+            </div>
+
+            {/* Search */}
             <div className="flex items-center gap-3">
               <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-xl"
                 style={{ background: t.card, border: `1px solid ${t.border}` }}>
@@ -525,7 +750,7 @@ export default function ATCDashboard() {
               <div className="flex flex-col items-center justify-center py-20">
                 <Plane size={40} style={{ color: t.textMuted, marginBottom: 12 }} strokeWidth={1.5} />
                 <div className="text-sm font-medium mb-1" style={{ color: t.textSub }}>No flights scheduled today</div>
-                <div className="text-xs" style={{ color: t.textMuted }}>Flights will appear once slots are fully staffed</div>
+                <div className="text-xs" style={{ color: t.textMuted }}>Flights appear once all positions at both airports are staffed</div>
               </div>
             ) : (
               <div className="space-y-3">
@@ -534,19 +759,17 @@ export default function ATCDashboard() {
                     className="p-5 rounded-2xl" style={{ background: t.card, border: `1px solid ${t.border}` }}>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        {/* Flight number + Status */}
                         <div className="flex items-center gap-3 mb-3">
                           <span className="text-sm font-bold font-mono" style={{ color: '#c0121e' }}>
                             {f.flightNumber}
                           </span>
                           <StatusBadge
                             label={f.status || 'Scheduled'}
-                            color={f.status === 'COMPLETED' ? '#10b981' : '#3b82f6'}
-                            bg={f.status === 'COMPLETED' ? 'rgba(16,185,129,0.1)' : 'rgba(59,130,246,0.1)'}
+                            color={f.status === 'COMPLETED' ? '#10b981' : f.status === 'BOOKED' ? '#3b82f6' : '#6b7280'}
+                            bg={f.status === 'COMPLETED' ? 'rgba(16,185,129,0.1)' : f.status === 'BOOKED' ? 'rgba(59,130,246,0.1)' : 'rgba(107,114,128,0.1)'}
                           />
                         </div>
 
-                        {/* Route */}
                         <div className="flex items-center gap-3 mb-3">
                           <div className="text-center">
                             <div className="text-xl font-bold" style={{ color: t.text }}>{f.depIcao}</div>
@@ -559,7 +782,6 @@ export default function ATCDashboard() {
                           </div>
                         </div>
 
-                        {/* Pilot & Time */}
                         <div className="flex items-center gap-4 flex-wrap text-xs" style={{ color: t.textSub }}>
                           {f.pilotName && (
                             <div className="flex items-center gap-1">
@@ -570,7 +792,7 @@ export default function ATCDashboard() {
                           {f.offBlock && (
                             <div className="flex items-center gap-1">
                               <Clock size={12} />
-                              Off-block: {f.offBlock}
+                              OB: {f.offBlock}
                             </div>
                           )}
                           {f.network && (
@@ -582,7 +804,6 @@ export default function ATCDashboard() {
                         </div>
                       </div>
 
-                      {/* Confirmation checkboxes */}
                       <div className="flex flex-col gap-2 flex-shrink-0">
                         <button onClick={() => handleToggleFlight(f.id, 'depConfirmed')}
                           className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
@@ -615,22 +836,89 @@ export default function ATCDashboard() {
 
       // ═══════════════════ STAFF ═══════════════════
       case 'staff':
+        // Group by airport for display
+        const depStaff = allSchedules.filter((s: any) => s.airport === 'DEP')
+        const arrStaff = allSchedules.filter((s: any) => s.airport === 'ARR')
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* DEP Staff */}
             <div className="rounded-2xl overflow-hidden" style={{ background: t.card, border: `1px solid ${t.border}` }}>
-              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${t.border}` }}>
+              <div className="px-5 py-4" style={{
+                borderBottom: `1px solid ${t.border}`,
+                background: 'rgba(16,185,129,0.03)',
+              }}>
                 <div className="flex items-center gap-2.5">
-                  <Users size={15} style={{ color: '#c0121e' }} />
-                  <span className="text-sm font-semibold" style={{ color: t.text }}>ATC Staff Schedule ({allSchedules.length})</span>
+                  <Airplay size={15} style={{ color: '#10b981' }} />
+                  <span className="text-sm font-semibold" style={{ color: t.text }}>
+                    Departure Staff — {dailyHub?.depIcao || 'DEP'} ({depStaff.length})
+                  </span>
                 </div>
               </div>
-              {allSchedules.length === 0 ? (
-                <div className="flex items-center justify-center py-10">
-                  <div className="text-sm" style={{ color: t.textSub }}>No staff schedules found</div>
+              {depStaff.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-sm" style={{ color: t.textSub }}>No departure staff scheduled</div>
                 </div>
               ) : (
                 <div className="divide-y" style={{ borderColor: t.border }}>
-                  {allSchedules.map((s: any) => {
+                  {depStaff.map((s: any) => {
+                    const pc = positionColor(s.position)
+                    return (
+                      <div key={s.id} className="px-5 py-3.5 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold"
+                            style={{ background: pc.bg, color: pc.color }}>
+                            {s.staffName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || '??'}
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium" style={{ color: t.text }}>
+                              {s.staffName || 'Unknown'}
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="px-1.5 py-0.5 rounded text-xs font-bold font-mono"
+                                style={{ background: pc.bg, color: pc.color }}>
+                                {s.position}
+                              </span>
+                              <span className="text-xs" style={{ color: t.textSub }}>
+                                {new Date(s.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                              </span>
+                              <span className="text-xs" style={{ color: t.textMuted }}>
+                                {s.timeSlot}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <StatusBadge
+                          label={s.status || 'Booked'}
+                          color={s.status === 'ACTIVE' ? '#10b981' : t.textSub}
+                          bg={s.status === 'ACTIVE' ? 'rgba(16,185,129,0.1)' : t.badge}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* ARR Staff */}
+            <div className="rounded-2xl overflow-hidden" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+              <div className="px-5 py-4" style={{
+                borderBottom: `1px solid ${t.border}`,
+                background: 'rgba(59,130,246,0.03)',
+              }}>
+                <div className="flex items-center gap-2.5">
+                  <Satellite size={15} style={{ color: '#3b82f6' }} />
+                  <span className="text-sm font-semibold" style={{ color: t.text }}>
+                    Arrival Staff — {dailyHub?.arrIcao || 'ARR'} ({arrStaff.length})
+                  </span>
+                </div>
+              </div>
+              {arrStaff.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-sm" style={{ color: t.textSub }}>No arrival staff scheduled</div>
+                </div>
+              ) : (
+                <div className="divide-y" style={{ borderColor: t.border }}>
+                  {arrStaff.map((s: any) => {
                     const pc = positionColor(s.position)
                     return (
                       <div key={s.id} className="px-5 py-3.5 flex items-center justify-between gap-4">
@@ -864,7 +1152,7 @@ export default function ATCDashboard() {
             <div className="flex items-center gap-3">
               <Radio size={14} style={{ color: '#c0121e' }} />
               <span className="text-xs font-semibold" style={{ color: t.text }}>ATC Center</span>
-              <span className="text-xs" style={{ color: t.textMuted }}>v1.0.0</span>
+              <span className="text-xs" style={{ color: t.textMuted }}>v2.0.0</span>
             </div>
             <div className="flex items-center gap-2">
               <Headphones size={11} style={{ color: '#c0121e' }} />
