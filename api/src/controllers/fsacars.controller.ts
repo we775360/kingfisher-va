@@ -157,9 +157,6 @@ export const posrep = async (req: FastifyRequest, reply: FastifyReply) => {
 
   const existing = await prisma.liveFlight.findUnique({
     where: { pilotId: pilot.id },
-    include: {
-      booking: { include: { route: true } },
-    },
   })
 
   let flightNumber = existing?.flightNumber
