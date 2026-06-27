@@ -13,7 +13,7 @@ import {
   MapPin, Clock, Wind, ArrowUpRight, Radio, Mail, 
   ChevronDown, Menu, X, Landmark, Compass, Award, Share2, PlayCircle,
   Sun, Moon, Headphones, Radio as RadioIcon, Calendar,
-  Check, Star
+  Check, Star, Download, Monitor
 } from 'lucide-react'
 import { useThemeStore } from '../store/theme.store'
 import api from '../lib/axios'
@@ -185,7 +185,7 @@ export default function Landing() {
               </a>
             ))}
             <div className="mt-auto flex flex-col gap-4">
-              <button onClick={() => navigate('/atc/login')} className={`w-full py-4 text-xl font-black uppercase tracking-widest border ${theme.border} rounded-2xl`}>Join as Staff</button>
+              <button onClick={() => navigate('/atc/login')} className={`w-full py-4 text-xl font-black uppercase tracking-widest border ${theme.border} rounded-2xl`}>Join as ATC Staff</button>
               <button onClick={() => navigate('/login')} className={`w-full py-4 text-xl font-black uppercase tracking-widest border ${theme.border} rounded-2xl`}>Log In</button>
               <button onClick={() => navigate('/register')} className="w-full py-4 text-xl font-black uppercase tracking-widest bg-red-600 rounded-2xl shadow-xl shadow-red-600/20 text-white">Join Crew</button>
               <button onClick={toggleTheme} className={`w-full py-4 flex items-center justify-center gap-3 text-xl font-black uppercase tracking-widest border ${theme.border} rounded-2xl`}>
@@ -232,7 +232,7 @@ export default function Landing() {
             </div>
 
             <div className="flex gap-3 items-center">
-                <button onClick={() => navigate('/atc/login')} className={`hidden md:block text-[10px] font-black uppercase tracking-widest ${theme.textMuted} hover:text-green-500 transition-colors`}>Staff</button>
+                <button onClick={() => navigate('/atc/login')} className={`hidden md:block text-[10px] font-black uppercase tracking-widest ${theme.textMuted} hover:text-green-500 transition-colors`}>ATC Staff</button>
                 <button onClick={toggleTheme} className={`hidden lg:flex p-2 rounded-xl border ${theme.border} ${theme.textMuted} hover:text-red-600 transition-all`}>
                   {isDark ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
@@ -298,7 +298,7 @@ export default function Landing() {
                         Take Command <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </button>
                     <button onClick={() => navigate('/atc/login')} className="group flex items-center gap-4 bg-emerald-600 text-white px-10 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-emerald-600/30 hover:scale-105 transition-all">
-                        Join as Staff <Headphones size={18} />
+                        Join as ATC Staff <Headphones size={18} />
                     </button>
                     <button onClick={() => document.getElementById('network')?.scrollIntoView({ behavior: 'smooth' })} className={`flex items-center gap-4 ${isDark ? 'bg-white/5' : 'bg-white/80'} backdrop-blur-xl border ${theme.border} px-10 py-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-red-600 hover:text-white transition-all`}>
                         Explore Network <Compass className="w-4 h-4" />
@@ -530,7 +530,7 @@ export default function Landing() {
                   Join as an air traffic controller. Book positions, manage schedules, and log flights.
                 </p>
                 <div className="flex items-center gap-3 text-sm font-bold uppercase tracking-widest" style={{ color: '#10b981' }}>
-                  Staff Login <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                  ATC Staff Login <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </div>
                 <div className="mt-4 pt-4 border-t" style={{ borderColor: isDark ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)' }}>
                   <p className="text-[10px] font-medium" style={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.35)' }}>
@@ -831,6 +831,157 @@ export default function Landing() {
                     </div>
                 </div>
             </div>
+        </div>
+      </section>
+
+      {/* ── PARTNERSHIPS ── */}
+      <section className="py-24 relative overflow-hidden transition-colors duration-500">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
+              style={{ background: isDark ? 'rgba(192,18,30,0.1)' : 'rgba(192,18,30,0.06)', border: '1px solid rgba(192,18,30,0.15)' }}>
+              <Shield size={12} style={{ color: '#c0121e' }} />
+              <span className="text-[9px] font-black uppercase tracking-[0.5em]" style={{ color: '#c0121e' }}>Partners</span>
+            </div>
+            <h2 className={`text-5xl md:text-7xl font-black italic tracking-tighter uppercase leading-none mb-6 ${!isDark && 'text-slate-900'}`}>
+              OUR <span className="text-red-600">PARTNERS.</span>
+            </h2>
+            <p className={`${theme.textMuted} text-lg max-w-2xl mx-auto font-medium`}>
+              Powering the Kingfisher experience through strategic partnerships.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              className={`relative overflow-hidden rounded-[40px] p-10 text-center border ${theme.card}`}
+              style={{ borderColor: isDark ? 'rgba(192,18,30,0.2)' : 'rgba(192,18,30,0.1)' }}>
+              <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6"
+                style={{ background: 'rgba(192,18,30,0.1)' }}>
+                <RadioIcon size={36} style={{ color: '#c0121e' }} />
+              </div>
+              <h3 className={`text-2xl font-black italic uppercase mb-2 ${!isDark && 'text-slate-900'}`}>FSACARS</h3>
+              <p className={`${theme.textMuted} text-sm leading-relaxed font-medium mb-4`}>
+                Flight tracking client powering our PIREP and telemetry system.
+              </p>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest"
+                style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
+                <Check size={10} /> Active
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className={`relative overflow-hidden rounded-[40px] p-10 text-center border ${theme.card}`}
+              style={{ borderColor: isDark ? 'rgba(59,130,246,0.2)' : 'rgba(59,130,246,0.1)' }}>
+              <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6"
+                style={{ background: 'rgba(59,130,246,0.1)' }}>
+                <GlobeIcon size={36} style={{ color: '#3b82f6' }} />
+              </div>
+              <h3 className={`text-2xl font-black italic uppercase mb-2 ${!isDark && 'text-slate-900'}`}>IVAO</h3>
+              <p className={`${theme.textMuted} text-sm leading-relaxed font-medium mb-4`}>
+                Global VATSIM-alternative network — ATC coverage and events integration.
+              </p>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest"
+                style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>
+                <Clock size={10} /> Upcoming
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className={`relative overflow-hidden rounded-[40px] p-10 text-center border ${theme.card}`}
+              style={{ borderColor: isDark ? 'rgba(139,92,246,0.2)' : 'rgba(139,92,246,0.1)' }}>
+              <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6"
+                style={{ background: 'rgba(139,92,246,0.1)' }}>
+                <GlobeIcon size={36} style={{ color: '#8b5cf6' }} />
+              </div>
+              <h3 className={`text-2xl font-black italic uppercase mb-2 ${!isDark && 'text-slate-900'}`}>VATSIM</h3>
+              <p className={`${theme.textMuted} text-sm leading-relaxed font-medium mb-4`}>
+                The world's largest online ATC network — realistic ops with full coverage.
+              </p>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest"
+                style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>
+                <Clock size={10} /> Upcoming
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── LIVERIES ── */}
+      <section className="py-24 relative overflow-hidden transition-colors duration-500">
+        <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-red-600/5 to-transparent"></div>
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
+              style={{ background: isDark ? 'rgba(192,18,30,0.1)' : 'rgba(192,18,30,0.06)', border: '1px solid rgba(192,18,30,0.15)' }}>
+              <Plane size={12} style={{ color: '#c0121e' }} />
+              <span className="text-[9px] font-black uppercase tracking-[0.5em]" style={{ color: '#c0121e' }}>Free Downloads</span>
+            </div>
+            <h2 className={`text-5xl md:text-7xl font-black italic tracking-tighter uppercase leading-none mb-6 ${!isDark && 'text-slate-900'}`}>
+              OFFICIAL <span className="text-red-600">LIVERIES.</span>
+            </h2>
+            <p className={`${theme.textMuted} text-lg max-w-2xl mx-auto font-medium`}>
+              Download the official Kingfisher Airlines paint schemes for your favourite aircraft and simulator.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                type: 'A320',
+                desc: 'Kingfisher Airlines livery for the Airbus A320 family. Available in standard and sharklet variants.',
+                sims: ['MSFS 2020', 'MSFS 2024', 'X-Plane 12', 'P3D v5+'],
+                color: '#c0121e',
+              },
+              {
+                type: 'A321',
+                desc: 'Kingfisher Airlines livery for the stretched Airbus A321. Long-haul configuration with wingtip fences.',
+                sims: ['MSFS 2020', 'MSFS 2024', 'X-Plane 12', 'P3D v5+'],
+                color: '#3b82f6',
+              },
+              {
+                type: 'A380',
+                desc: 'Kingfisher Airlines livery for the Airbus A380 flagship. Four-engine widebody with full regal scheme.',
+                sims: ['MSFS 2020', 'MSFS 2024', 'X-Plane 12', 'P3D v5+'],
+                color: '#10b981',
+              },
+            ].map((item, i) => (
+              <motion.div key={item.type}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className={`${theme.card} p-8 rounded-[35px] border hover:border-red-600/30 transition-all group`}
+                style={{ borderColor: i === 0 ? 'rgba(192,18,30,0.15)' : i === 1 ? 'rgba(59,130,246,0.15)' : 'rgba(16,185,129,0.15)' }}>
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6"
+                  style={{ background: `${item.color}15`, color: item.color }}>
+                  <span className="text-2xl font-black italic">{item.type}</span>
+                </div>
+                <h3 className={`text-xl font-black italic mb-3 uppercase ${!isDark && 'text-slate-900'}`}>Airbus {item.type}</h3>
+                <p className={`${theme.textMuted} text-sm leading-relaxed font-medium mb-6`}>{item.desc}</p>
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {item.sims.map(sim => (
+                    <span key={sim} className="px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider"
+                      style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', color: theme.textMuted }}>
+                      {sim}
+                    </span>
+                  ))}
+                </div>
+                <a href="#"
+                  onClick={e => { e.preventDefault(); alert(`Download link for ${item.type} livery coming soon!`); }}
+                  className="inline-flex items-center gap-3 text-sm font-bold uppercase tracking-widest group cursor-pointer"
+                  style={{ color: item.color }}>
+                  <Download size={14} /> Download Livery
+                </a>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 

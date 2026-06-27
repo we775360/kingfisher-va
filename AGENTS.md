@@ -9,6 +9,46 @@ Full-stack virtual airline (VA) platform for flight simulation. Two packages in 
 
 ## Current State (Updated 2026-06-28)
 
+### ✅ COMPLETED — Partnerships, Liveries & Text Polish (Session 6)
+
+#### 1. Partnerships Section
+- Added "Our Partners" section below Meet the Founder with 3 cards: FSACARS (Active), IVAO (Upcoming), VATSIM (Upcoming)
+- Each card has an icon, description, and status badge
+
+#### 2. Liveries Section
+- Added "Official Liveries" section with 3 aircraft cards: A320, A321, A380
+- Each card lists compatible simulators: MSFS 2020, MSFS 2024, X-Plane 12, P3D v5+
+- Download button per livery (placeholder — real links TBD)
+
+#### 3. CTA Text Updates
+- "Join as Staff" → "Join as ATC Staff" (hero CTA, mobile nav)
+- "Staff" → "ATC Staff" (desktop nav)
+- "Staff Login" → "ATC Staff Login" (Realistic Ops dual-CTA card)
+- `serverpass` blanked out in AGENTS.md org.cfg example
+
+---
+
+### ✅ COMPLETED — SEO, Landing Reorder & FSACARS Polish (Session 5)
+
+#### 1. Landing Page Reorder
+- Moved Realistic Flight Operations section to immediately after hero (was buried below 3D Network / Live Map)
+- Changed "Explore Network" button in hero to scroll to `#network` (3D globe section)
+- Added "Join as ATC Staff" green CTA button in hero section (links to `/atc/login`)
+- Added "Realistic Ops" to desktop & mobile nav links
+- Added "ATC Staff" button in desktop nav and "Join as ATC Staff" in mobile nav
+
+#### 2. SEO
+- Added `/robots.txt` and `/sitemap.xml` dynamic routes in `api/src/index.ts`
+- Sitemap covers all 11 static pages with weekly changefreq
+- Landing page: canonical URL, richer description/keywords, `og:type`, `twitter:card`, and JSON-LD (`@type: Airline`)
+
+#### 3. FSACARS Page Polish
+- Removed `useState` import (no longer used)
+- Removed entire org.cfg code block and `copyOrgCfg` handler
+- Page now only shows: download button, 4-step quick start, "How It Works" flow, credentials info, and important notes
+
+---
+
 ### ✅ COMPLETED — FSACARS Migration (Session 4)
 
 #### 1. Deleted Custom ACARS (`acars/`)
@@ -79,7 +119,7 @@ userquery=https://kingfisher-api.onrender.com/api/v1/fsacars/userquery
 pirep=https://kingfisher-api.onrender.com/api/v1/fsacars/pirep
 posrep=https://kingfisher-api.onrender.com/api/v1/fsacars/posrep
 dispatch=https://kingfisher-api.onrender.com/api/v1/fsacars/dispatch
-serverpass=kfva_fsacars_2026
+serverpass=
 ```
 
 ### ✅ COMPLETED — Previous Sessions
