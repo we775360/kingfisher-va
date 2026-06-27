@@ -747,6 +747,11 @@ export default function Landing() {
                 <div className="flex items-center gap-3 text-sm font-bold uppercase tracking-widest" style={{ color: '#10b981' }}>
                   Staff Login <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </div>
+                <div className="mt-4 pt-4 border-t" style={{ borderColor: isDark ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)' }}>
+                  <p className="text-[10px] font-medium" style={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.35)' }}>
+                    Don't have credentials? <span className="font-semibold" style={{ color: '#10b981' }}>Contact us</span> to join the ATC team
+                  </p>
+                </div>
               </div>
             </motion.div>
           </div>
