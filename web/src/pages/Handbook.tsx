@@ -19,7 +19,7 @@ export default function Handbook() {
     {
       title: "Pilot Admission",
       icon: Plane,
-      content: "All pilots must undergo an initial application process. Upon acceptance, you will be assigned the rank of Trainee. Promotion is based on logged flight hours and point accumulation through successful missions."
+      content: "All pilots must undergo an initial application process. Upon acceptance, you will be assigned the rank of Trainee. Promotion is based on logged flight hours and point accumulation through successful flights."
     },
     {
       title: "Flight Operations",
@@ -29,7 +29,7 @@ export default function Handbook() {
     {
       title: "FSACARS Usage",
       icon: Zap,
-      content: "FSACARS must be active from engine start to engine shutdown. Telemetry is monitored live. Disconnections exceeding 15 minutes may result in an automatic mission rejection."
+      content: "FSACARS must be active from engine start to engine shutdown. Telemetry is monitored live. Disconnections exceeding 15 minutes may result in an automatic flight rejection."
     },
     {
       title: "Community Conduct",

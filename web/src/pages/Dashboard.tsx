@@ -281,7 +281,7 @@ export default function Dashboard() {
            {/* Primary Stats Grid */}
            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
               <StatCard label="Air Time" value={`${pilot?.totalHours?.toFixed(1) || '0.0'} HRS`} icon={<Clock />} color="text-red-600" isDark={isDark} />
-              <StatCard label="Missions" value={pilot?.totalFlights || '0'} icon={<Navigation />} color="text-blue-500" isDark={isDark} />
+              <StatCard label="Flights" value={pilot?.totalFlights || '0'} icon={<Navigation />} color="text-blue-500" isDark={isDark} />
               <StatCard label="Performance" value={pilot?.points || '0'} icon={<Trophy />} color="text-amber-500" isDark={isDark} />
               <StatCard label="Status" value="ACTIVE" icon={<Shield />} color="text-green-500" isDark={isDark} />
            </div>

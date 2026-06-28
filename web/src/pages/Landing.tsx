@@ -762,7 +762,7 @@ export default function Landing() {
                                 <span className={`text-2xl font-black italic ${!isDark && 'text-slate-700'}`}>{p.totalHours.toFixed(1)}</span>
                             </div>
                             <div className="flex flex-col items-center md:items-start">
-                                <span className={`text-[8px] font-black ${theme.textMuted} uppercase tracking-widest mb-2`}>Missions</span>
+                                <span className={`text-[8px] font-black ${theme.textMuted} uppercase tracking-widest mb-2`}>Flights</span>
                                 <span className={`text-2xl font-black italic ${!isDark && 'text-slate-700'}`}>{p.totalFlights}</span>
                             </div>
                             <div className="flex flex-col items-center md:items-start">

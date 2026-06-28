@@ -19,15 +19,13 @@ export default function FSACARS() {
     input: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
   }
 
-  const downloadUrl = window.location.hostname === 'localhost'
-    ? 'http://localhost:8000/api/v1/fsacars/download'
-    : 'https://kingfisher-api.onrender.com/api/v1/fsacars/download'
+  const downloadUrl = 'https://www.fsacars.com'
 
   const steps = [
     {
       icon: <Download size={20} />,
       title: 'Download FSACARS',
-      desc: 'Download our pre-configured FSACARS client. It comes with Kingfisher VA settings built in — no configuration needed!',
+      desc: 'Download FSACARS v4.2.5 from the official website and install it on your Windows PC.',
     },
     {
       icon: <Settings size={20} />,
@@ -82,7 +80,7 @@ export default function FSACARS() {
           <h1 className="text-3xl font-black italic tracking-tight mb-3">FSACARS Flight Tracking</h1>
           <p className="text-sm max-w-xl mx-auto" style={{ color: t.textSub }}>
             Kingfisher Virtual Airlines uses <strong>FSACARS</strong> for flight tracking
-            and PIREP submission. Download the pre-configured client, log in, and fly.
+            and PIREP submission. Download the client, log in, and fly.
           </p>
         </motion.div>
 
@@ -90,16 +88,18 @@ export default function FSACARS() {
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="text-center">
           <a href={downloadUrl}
+            target="_blank"
+            rel="noreferrer"
             className="inline-flex items-center gap-3 px-8 py-4 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.02]"
             style={{
               background: 'linear-gradient(135deg, #c0121e, #8b0000)',
               boxShadow: '0 0 30px rgba(192,18,30,0.3)',
             }}>
             <Download size={20} />
-            Download Kingfisher FSACARS Client
+            Download FSACARS Client
           </a>
           <p className="text-xs mt-3" style={{ color: t.textMuted }}>
-            Pre-configured v4.2.5 — includes our logo, org.cfg, and airports database
+            Download v4.2.5 from fsacars.com — configure with your Kingfisher VA credentials
           </p>
         </motion.div>
 

@@ -103,7 +103,7 @@ export default function Events() {
           
           <div className={`hidden md:flex items-center gap-4 px-6 py-3 rounded-2xl border ${isDark ? 'bg-white/5' : 'bg-slate-50'} ${t.border}`}>
             <Calendar size={16} className="text-red-600" />
-            <span className="text-sm font-black tracking-widest uppercase">{upcoming.length} Upcoming Missions</span>
+            <span className="text-sm font-black tracking-widest uppercase">{upcoming.length} Upcoming Events</span>
           </div>
         </div>
       </header>
@@ -122,7 +122,7 @@ export default function Events() {
              <div className="absolute bottom-12 left-12 right-12 flex flex-col md:flex-row md:items-end justify-between gap-8">
                <div>
                  <div className="text-red-600 font-black uppercase tracking-[0.4em] text-[10px] mb-4">Elite Operations</div>
-                 <h2 className="text-4xl md:text-6xl font-black italic tracking-tighter uppercase leading-none text-white">GROUP <br /> <span className="text-red-600">MISSIONS.</span></h2>
+                 <h2 className="text-4xl md:text-6xl font-black italic tracking-tighter uppercase leading-none text-white">GROUP <br /> <span className="text-red-600">FLIGHTS.</span></h2>
                </div>
                <div className="p-8 glass-dark rounded-[2.5rem] border border-white/10 hidden lg:block">
                  <div className="flex items-center gap-4 mb-4">
@@ -223,7 +223,7 @@ export default function Events() {
                                disabled={joining === event.id}
                                className="w-full md:w-auto px-10 py-4 rounded-2xl border border-red-600/30 text-red-600 text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all"
                              >
-                               {joining === event.id ? 'Processing...' : 'Abort Mission'}
+                               {joining === event.id ? 'Processing...' : 'Abort'}
                              </button>
                           ) : (
                              <button 
