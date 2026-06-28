@@ -175,7 +175,6 @@ export async function autoGenerateFlights(date: string, timeSlot: string) {
   const spacing = Math.floor(slotDuration / (numFlights + 1))
 
   const routeCode = getRouteCode(depIcao, arrIcao)
-  const existingCount = await prisma.realisticFlight.count()
 
   const networks = ['VATSIM', 'IVAO']
   const aircraftTypes = ['A320', 'A321', 'A320', 'A321', 'B738', 'B739']
@@ -191,10 +190,11 @@ export async function autoGenerateFlights(date: string, timeSlot: string) {
     const onBlock = minutesToTime(onBlockMin)
     const network = i % 3 === 2 ? 'VATSIM' : networks[i % 2]
     const acType = aircraftTypes[i % aircraftTypes.length]
-    const flightNum = `${routeCode}${String(i + 1).padStart(2, '0')}`
+    const letter = i === 0 ? '' : String.fromCharCode(64 + i)
+    const flightCode = `${routeCode}${letter}`
 
     flights.push({
-      flightNumber: `KFR${flightNum}`,
+      flightNumber: `KFR${flightCode}`,
       aircraftType: acType,
       depIcao,
       arrIcao,
