@@ -1,8 +1,5 @@
 import prisma from '../utils/prisma.js'
 
-const POSITIONS = ['DEL', 'GND', 'TWR', 'APR', 'CTR']
-const AIRPORTS = ['DEP', 'ARR']
-
 const AIRPORT_NAMES: Record<string, string> = {
   VIDP: 'Indira Gandhi International',
   VABB: 'Chhatrapati Shivaji Maharaj International',
@@ -71,8 +68,61 @@ function minutesToTime(min: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
-function generateFlightNumber(index: number): string {
-  return `KFR${String(1001 + index)}`
+const ROUTE_FLIGHT_CODES: Record<string, string> = {
+  'VIDP-VABB': '501',
+  'VABB-VIDP': '502',
+  'VIDP-VOBL': '503',
+  'VOBL-VIDP': '504',
+  'VIDP-VOMM': '505',
+  'VOMM-VIDP': '506',
+  'VIDP-VECC': '507',
+  'VECC-VIDP': '508',
+  'VABB-VOBL': '511',
+  'VOBL-VABB': '512',
+  'VABB-VOMM': '513',
+  'VOMM-VABB': '514',
+  'VABB-VECC': '515',
+  'VECC-VABB': '516',
+  'VABB-OMDB': '521',
+  'OMDB-VABB': '522',
+  'VIDP-OMDB': '523',
+  'OMDB-VIDP': '524',
+  'VABB-EGLL': '531',
+  'EGLL-VABB': '532',
+  'VIDP-EGLL': '533',
+  'EGLL-VIDP': '534',
+  'VABB-WSSS': '541',
+  'WSSS-VABB': '542',
+  'VIDP-WSSS': '543',
+  'WSSS-VIDP': '544',
+}
+
+const AIRCRAFT_TYPES: Record<string, string> = {
+  SHORT: 'A320',
+  MEDIUM: 'A321',
+  LONG: 'A330',
+  ULTRALONG: 'A380',
+}
+
+function getRouteCode(dep: string, arr: string): string {
+  return ROUTE_FLIGHT_CODES[`${dep}-${arr}`] || ROUTE_FLIGHT_CODES[`${arr}-${dep}`] || '601'
+}
+
+function getAircraftForDistance(distance: number): string {
+  if (distance < 500) return AIRCRAFT_TYPES.SHORT
+  if (distance < 1500) return AIRCRAFT_TYPES.MEDIUM
+  if (distance < 3000) return AIRCRAFT_TYPES.LONG
+  return AIRCRAFT_TYPES.ULTRALONG
+}
+
+function getFlightsForTimeSlot(slot: string): number {
+  const hour = parseInt(slot.split(':')[0])
+  // Peak hours (6-9, 17-20): 6 flights
+  // Mid hours (10-16): 5 flights
+  // Off-peak (0-5, 21-23): 3 flights
+  if ((hour >= 6 && hour <= 9) || (hour >= 17 && hour <= 20)) return 6
+  if (hour >= 10 && hour <= 16) return 5
+  return 3
 }
 
 export async function autoGenerateFlights(date: string, timeSlot: string) {
@@ -80,13 +130,13 @@ export async function autoGenerateFlights(date: string, timeSlot: string) {
     where: { date, timeSlot },
   })
 
-  // Generate flights when at least 2 positions are filled (total, across both airports)
   const depBooked = new Set(schedules.filter(s => s.airport === 'DEP').map(s => s.position))
   const arrBooked = new Set(schedules.filter(s => s.airport === 'ARR').map(s => s.position))
   const filledCount = depBooked.size + arrBooked.size
 
-  if (filledCount < 2) {
-    return { generated: 0, reason: `Only ${filledCount}/10 positions filled. Need at least 2.` }
+  // Need ALL 5 positions at both airports to generate
+  if (depBooked.size < 5 || arrBooked.size < 5) {
+    return { generated: 0, reason: `Only ${depBooked.size}/5 DEP + ${arrBooked.size}/5 ARR filled. Need all 10.` }
   }
 
   const existingFlights = await prisma.realisticFlight.count({
@@ -112,7 +162,8 @@ export async function autoGenerateFlights(date: string, timeSlot: string) {
     ? calculateDistance(depCoord[0], depCoord[1], arrCoord[0], arrCoord[1])
     : 500
 
-  const estimatedMinutes = Math.round(distance / 420 * 60 + 30)
+  const cruiseSpeed = distance < 500 ? 420 : distance < 1500 ? 450 : 480
+  const estimatedMinutes = Math.round(distance / cruiseSpeed * 60 + 35)
   const estTimeStr = `${Math.floor(estimatedMinutes / 60)}h ${estimatedMinutes % 60}m`
 
   const [slotStartStr, slotEndStr] = timeSlot.split('-')
@@ -120,27 +171,31 @@ export async function autoGenerateFlights(date: string, timeSlot: string) {
   const slotEnd = timeToMinutes(slotEndStr)
   const slotDuration = slotEnd - slotStart
 
-  // Generate 10 flights spaced evenly
-  const numFlights = 10
+  const numFlights = getFlightsForTimeSlot(timeSlot)
   const spacing = Math.floor(slotDuration / (numFlights + 1))
 
-  const totalFlights = await prisma.realisticFlight.count()
+  const routeCode = getRouteCode(depIcao, arrIcao)
+  const existingCount = await prisma.realisticFlight.count()
 
   const networks = ['VATSIM', 'IVAO']
+  const aircraftTypes = ['A320', 'A321', 'A320', 'A321', 'B738', 'B739']
   const flights: any[] = []
 
   for (let i = 0; i < numFlights; i++) {
-    const offBlockMin = slotStart + spacing * (i + 1)
+    const offBlockMin = slotStart + spacing * (i + 1) + Math.floor(Math.random() * 3)
     const onBlockMin = offBlockMin + estimatedMinutes
 
     if (onBlockMin > slotEnd + 60) break
 
     const offBlock = minutesToTime(offBlockMin)
     const onBlock = minutesToTime(onBlockMin)
-    const network = networks[i % 2]
+    const network = i % 3 === 2 ? 'VATSIM' : networks[i % 2]
+    const acType = aircraftTypes[i % aircraftTypes.length]
+    const flightNum = `${routeCode}${String(i + 1).padStart(2, '0')}`
 
     flights.push({
-      flightNumber: generateFlightNumber(totalFlights + i),
+      flightNumber: `KFR${flightNum}`,
+      aircraftType: acType,
       depIcao,
       arrIcao,
       depName,
@@ -150,7 +205,7 @@ export async function autoGenerateFlights(date: string, timeSlot: string) {
       estimatedFlightTime: estTimeStr,
       distance,
       network,
-      reward: Math.round(distance * 0.15 + 20),
+      reward: Math.round(distance * 0.15 + 25 + Math.floor(Math.random() * 10)),
       date,
       timeSlot,
       status: 'AVAILABLE' as const,

@@ -313,6 +313,7 @@ enum RealisticFlightStatus {
 model RealisticFlight {
   id                 String                  @id @default(cuid())
   flightNumber       String                  @unique
+  aircraftType       String                  @default("A320")
   depIcao            String
   arrIcao            String
   depName            String?

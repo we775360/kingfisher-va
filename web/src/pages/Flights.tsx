@@ -20,6 +20,7 @@ export default function Flights() {
   const [routes, setRoutes] = useState<any[]>([])
   const [aircraft, setAircraft] = useState<any[]>([])
   const [myBookings, setMyBookings] = useState<any[]>([])
+  const [realisticOpsBookings, setRealisticOpsBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selectedRoute, setSelectedRoute] = useState<any>(null)
@@ -66,14 +67,35 @@ export default function Flights() {
 
   const fetchData = async () => {
     try {
-      const [r, a, b] = await Promise.all([
+      const [r, a, b, rb] = await Promise.all([
         api.get('/routes'),
         api.get('/aircraft'),
         api.get('/bookings/my'),
+        api.get('/realistic-flights/my').catch(() => ({ data: [] })),
       ])
       setRoutes(r.data)
       setAircraft(a.data)
-      setMyBookings(b.data)
+      const merged = [
+        ...(b.data || []).map((bk: any) => ({ ...bk, _type: 'scheduled' as const })),
+        ...(rb.data || []).map((rf: any) => ({
+          id: rf.id,
+          flightNumber: rf.flightNumber,
+          depIcao: rf.depIcao,
+          arrIcao: rf.arrIcao,
+          depName: rf.depName,
+          arrName: rf.arrName,
+          depTime: rf.offBlock,
+          route: { depIcao: rf.depIcao, arrIcao: rf.arrIcao, depName: rf.depName, arrName: rf.arrName, flightNumber: rf.flightNumber, duration: parseInt(rf.estimatedFlightTime) || 60 },
+          aircraft: { name: rf.aircraftType || 'A320', registration: '' },
+          network: rf.network,
+          status: rf.status === 'AVAILABLE' ? 'UPCOMING' : rf.status === 'BOOKED' ? 'UPCOMING' : rf.status === 'COMPLETED' ? 'APPROVED' : 'CANCELLED',
+          earnings: rf.reward,
+          _type: 'realistic-ops' as const,
+          _realistic: rf,
+        })),
+      ]
+      setMyBookings(merged)
+      setRealisticOpsBookings(rb.data || [])
     } catch (err) {
       console.error(err)
     } finally {
@@ -116,10 +138,15 @@ export default function Flights() {
     }
   }
 
-  const handleCancel = async (id: string) => {
+  const handleCancel = async (booking: any) => {
     if (!confirm('Cancel this booking?')) return
     try {
-      await api.patch(`/bookings/${id}/cancel`)
+      const isRealistic = booking._type === 'realistic-ops'
+      if (isRealistic) {
+        await api.patch(`/realistic-flights/${booking.id}/cancel`)
+      } else {
+        await api.patch(`/bookings/${booking.id}/cancel`)
+      }
       fetchData()
     } catch (err) { console.error(err) }
   }
@@ -313,19 +340,26 @@ export default function Flights() {
             ) : (
               myBookings.map((booking, i) => {
                 const s = getStatusStyle(booking.status)
+                const isRealisticOps = booking._type === 'realistic-ops'
                 return (
-                  <motion.div key={booking.id}
+                  <motion.div key={`${booking._type}-${booking.id}`}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: i * 0.05 }}
                     className="p-5 rounded-2xl"
-                    style={{ background: t.card, border: `1px solid ${t.border}` }}>
+                    style={{ background: t.card, border: `1px solid ${booking._type === 'realistic-ops' ? 'rgba(192,18,30,0.2)' : t.border}` }}>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-3">
                           <span className="text-sm font-bold font-mono" style={{ color: '#c0121e' }}>
-                            {booking.route?.flightNumber}
+                            {booking.flightNumber || booking.route?.flightNumber}
                           </span>
+                          {isRealisticOps && (
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold"
+                              style={{ background: 'rgba(192,18,30,0.1)', color: '#c0121e' }}>
+                              REALISTIC OPS
+                            </span>
+                          )}
                           <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
                             style={{ background: s.bg, color: s.color }}>
                             {s.label}
@@ -333,26 +367,28 @@ export default function Flights() {
                         </div>
                         <div className="flex items-center gap-3 mb-3">
                           <div className="text-center">
-                            <div className="text-xl font-bold" style={{ color: t.text }}>{booking.route?.depIcao}</div>
-                            <div className="text-xs" style={{ color: t.textSub }}>{booking.route?.depName}</div>
+                            <div className="text-xl font-bold" style={{ color: t.text }}>{booking.depIcao || booking.route?.depIcao}</div>
+                            <div className="text-xs" style={{ color: t.textSub }}>{booking.depName || booking.route?.depName}</div>
                           </div>
                           <ArrowRight size={16} style={{ color: t.textMuted }} />
                           <div className="text-center">
-                            <div className="text-xl font-bold" style={{ color: t.text }}>{booking.route?.arrIcao}</div>
-                            <div className="text-xs" style={{ color: t.textSub }}>{booking.route?.arrName}</div>
+                            <div className="text-xl font-bold" style={{ color: t.text }}>{booking.arrIcao || booking.route?.arrIcao}</div>
+                            <div className="text-xs" style={{ color: t.textSub }}>{booking.arrName || booking.route?.arrName}</div>
                           </div>
                         </div>
                         <div className="flex items-center gap-4 flex-wrap">
-                          <div className="flex items-center gap-1.5">
-                            <Plane size={12} style={{ color: t.textMuted }} />
-                            <span className="text-xs" style={{ color: t.textSub }}>
-                              {booking.aircraft?.name} · {booking.aircraft?.registration}
-                            </span>
-                          </div>
+                          {!isRealisticOps && (
+                            <div className="flex items-center gap-1.5">
+                              <Plane size={12} style={{ color: t.textMuted }} />
+                              <span className="text-xs" style={{ color: t.textSub }}>
+                                {booking.aircraft?.name} · {booking.aircraft?.registration}
+                              </span>
+                            </div>
+                          )}
                           <div className="flex items-center gap-1.5">
                             <Calendar size={12} style={{ color: t.textMuted }} />
                             <span className="text-xs" style={{ color: t.textSub }}>
-                              {new Date(booking.depTime).toLocaleString()}
+                              {isRealisticOps ? booking.depTime : new Date(booking.depTime).toLocaleString()}
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5">
@@ -362,13 +398,13 @@ export default function Flights() {
                           <div className="flex items-center gap-1.5">
                             <DollarSign size={12} style={{ color: '#10b981' }} />
                             <span className="text-xs font-semibold" style={{ color: '#10b981' }}>
-                              ${booking.earnings?.toFixed(0)} estimated
+                              ${isRealisticOps ? (booking.earnings || 0) : (booking.earnings?.toFixed(0) || '0')} estimated
                             </span>
                           </div>
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 flex-shrink-0">
-                        {booking.status === 'UPCOMING' && (
+                        {booking.status === 'UPCOMING' && !isRealisticOps && (
                           <>
                             <button
                               onClick={() => {
@@ -390,10 +426,13 @@ export default function Flights() {
                               style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)', textDecoration: 'none' }}>
                               File PIREP
                             </Link>
-                            <button onClick={() => handleCancel(booking.id)}
-                              className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
-                              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
-                              Cancel
+                          </>
+                        )}
+                        {booking.status === 'UPCOMING' && (
+                          <button onClick={() => handleCancel(booking)}
+                            className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
+                            style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                            Cancel
                             </button>
                           </>
                         )}

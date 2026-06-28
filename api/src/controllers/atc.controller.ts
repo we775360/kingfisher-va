@@ -102,15 +102,20 @@ export const getDailyHub = async (_req: FastifyRequest, reply: FastifyReply) => 
   }
 }
 
-// ── GET MY SCHEDULE ──
+// ── GET MY SCHEDULE (past dates auto-expired) ──
 export const getMySchedule = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const controllerId = (req as any).controllerId
+    const today = new Date().toISOString().split('T')[0]
     const schedules = await prisma.aTCSchedule.findMany({
       where: { staffId: controllerId },
       orderBy: [{ date: 'asc' }, { timeSlot: 'asc' }],
     })
-    return reply.send(schedules)
+    const mapped = schedules.map(s => ({
+      ...s,
+      status: s.date < today ? 'EXPIRED' : s.status,
+    }))
+    return reply.send(mapped)
   } catch (err) {
     console.error(err)
     return reply.status(500).send({ error: 'Internal server error' })
@@ -147,38 +152,53 @@ const scheduleSchema = z.object({
   date: z.string(),
   position: z.string().min(1),
   airport: z.string().default('DEP'),
-  timeSlot: z.string().min(1),
+  timeSlots: z.array(z.string().min(1)).min(1),
 })
 
-// ── BOOK SCHEDULE ──
+// ── BOOK SCHEDULE (supports multiple time slots) ──
 export const bookSchedule = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const controllerId = (req as any).controllerId
     const body = scheduleSchema.parse(req.body)
 
-    const existing = await prisma.aTCSchedule.findFirst({
-      where: { staffId: controllerId, date: body.date, timeSlot: body.timeSlot, airport: body.airport },
-    })
-    if (existing) {
-      return reply.status(400).send({ error: 'You already booked a slot for this date, time, and airport' })
-    }
-
-    const schedule = await prisma.aTCSchedule.create({
-      data: {
+    const existingSlots = await prisma.aTCSchedule.findMany({
+      where: {
         staffId: controllerId,
         date: body.date,
-        position: body.position,
+        timeSlot: { in: body.timeSlots },
         airport: body.airport,
-        timeSlot: body.timeSlot,
       },
     })
+    if (existingSlots.length > 0) {
+      const dupes = existingSlots.map(s => s.timeSlot).join(', ')
+      return reply.status(400).send({
+        error: `Already booked slot(s): ${dupes}`,
+        conflicts: existingSlots.map(s => s.timeSlot),
+      })
+    }
 
-    // Try auto-generating flights
-    await autoGenerateFlights(body.date, body.timeSlot).catch(err =>
-      console.error('Flight generation check failed:', err)
+    const created = await prisma.$transaction(
+      body.timeSlots.map(timeSlot =>
+        prisma.aTCSchedule.create({
+          data: {
+            staffId: controllerId,
+            date: body.date,
+            position: body.position,
+            airport: body.airport,
+            timeSlot,
+          },
+        })
+      )
     )
 
-    return reply.status(201).send(schedule)
+    // Try auto-generating flights for each slot
+    for (const ts of body.timeSlots) {
+      await autoGenerateFlights(body.date, ts).catch(err =>
+        console.error('Flight generation check failed:', err)
+      )
+    }
+
+    return reply.status(201).send({ created: created.length, schedules: created })
   } catch (err) {
     if (err instanceof z.ZodError) {
       return reply.status(400).send({ error: 'Invalid input', details: err.issues })
@@ -188,12 +208,19 @@ export const bookSchedule = async (req: FastifyRequest, reply: FastifyReply) => 
   }
 }
 
-// ── CANCEL SCHEDULE ──
+const batchCancelSchema = z.object({
+  date: z.string().optional(),
+  airport: z.string().optional(),
+  timeSlots: z.array(z.string()).optional(),
+})
+
+// ── CANCEL SCHEDULE (single or batch) ──
 export const cancelSchedule = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const controllerId = (req as any).controllerId
     const { id } = req.params as { id: string }
 
+    // Single cancel by ID
     const schedule = await prisma.aTCSchedule.findFirst({
       where: { id, staffId: controllerId },
     })
@@ -203,6 +230,28 @@ export const cancelSchedule = async (req: FastifyRequest, reply: FastifyReply) =
     await prisma.aTCSchedule.delete({ where: { id } })
     return reply.send({ message: 'Schedule cancelled' })
   } catch (err) {
+    console.error(err)
+    return reply.status(500).send({ error: 'Internal server error' })
+  }
+}
+
+// ── BATCH CANCEL SCHEDULES ──
+export const batchCancelSchedule = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const controllerId = (req as any).controllerId
+    const body = batchCancelSchema.parse(req.body)
+
+    const where: any = { staffId: controllerId }
+    if (body.date) where.date = body.date
+    if (body.airport) where.airport = body.airport
+    if (body.timeSlots && body.timeSlots.length > 0) where.timeSlot = { in: body.timeSlots }
+
+    const result = await prisma.aTCSchedule.deleteMany({ where })
+    return reply.send({ deleted: result.count })
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return reply.status(400).send({ error: 'Invalid input', details: err.issues })
+    }
     console.error(err)
     return reply.status(500).send({ error: 'Internal server error' })
   }
@@ -264,6 +313,7 @@ export const getFlights = async (req: FastifyRequest, reply: FastifyReply) => {
     const mapped = flights.map(f => ({
       id: f.id,
       flightNumber: f.flightNumber,
+      aircraftType: f.aircraftType,
       depIcao: f.depIcao,
       arrIcao: f.arrIcao,
       depName: f.depName,

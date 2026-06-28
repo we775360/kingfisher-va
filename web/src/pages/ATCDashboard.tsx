@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Radio, Clock, Calendar, Plane,
   LogOut, Sun, Moon, Check, X, Users,
@@ -8,7 +8,7 @@ import {
   MapPin, Search, AlertTriangle,
   Headphones, BarChart3, CheckSquare, Square,
   ArrowRight, Loader, TowerControl, Map,
-  Airplay, Radar, Satellite
+  Airplay, Radar, Satellite, Trash2
 } from 'lucide-react'
 import { useThemeStore } from '../store/theme.store'
 import { useATCStore } from '../store/atc.store'
@@ -81,8 +81,10 @@ export default function ATCDashboard() {
   const [selectedDay, setSelectedDay] = useState(days[0].date)
   const [selectedPosition, setSelectedPosition] = useState('')
   const [selectedAirport, setSelectedAirport] = useState('DEP')
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState('')
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([])
   const [scheduleLoading, setScheduleLoading] = useState(false)
+  const [cancelTarget, setCancelTarget] = useState<any>(null)
+  const [cancelLoading, setCancelLoading] = useState(false)
 
   const [flightSearch, setFlightSearch] = useState('')
 
@@ -165,8 +167,8 @@ export default function ATCDashboard() {
   }, [fetchAll])
 
   const handleBookSchedule = async () => {
-    if (!selectedPosition || !selectedTimeSlot) {
-      setMsg('Please select a position and time slot')
+    if (!selectedPosition || selectedTimeSlots.length === 0) {
+      setMsg('Please select a position and at least one time slot')
       return
     }
     setScheduleLoading(true)
@@ -177,9 +179,10 @@ export default function ATCDashboard() {
         date: selectedDay,
         position: selectedPosition,
         airport: selectedAirport,
-        timeSlot: selectedTimeSlot,
+        timeSlots: selectedTimeSlots,
       }, { headers: { Authorization: `Bearer ${token}` } })
-      setMsg('Schedule booked!')
+      setMsg(`Booked ${selectedTimeSlots.length} slot(s)!`)
+      setSelectedTimeSlots([])
       fetchAll()
     } catch (err: any) {
       setMsg(err.response?.data?.error || 'Failed to book schedule')
@@ -189,12 +192,33 @@ export default function ATCDashboard() {
   }
 
   const handleCancelSchedule = async (id: string) => {
-    if (!confirm('Cancel this schedule booking?')) return
     try {
       const token = localStorage.getItem('kf_atc_token')
       await api.delete(`/atc/schedule/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+      setCancelTarget(null)
       fetchAll()
     } catch (err) { console.error(err) }
+  }
+
+  const handleBatchCancel = async () => {
+    if (!cancelTarget) return
+    setCancelLoading(true)
+    try {
+      const token = localStorage.getItem('kf_atc_token')
+      if (cancelTarget.type === 'single') {
+        await api.delete(`/atc/schedule/${cancelTarget.id}`, { headers: { Authorization: `Bearer ${token}` } })
+      } else {
+        await api.post('/atc/schedule/batch-cancel', cancelTarget.body, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      }
+      setCancelTarget(null)
+      fetchAll()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setCancelLoading(false)
+    }
   }
 
   const handleToggleFlight = async (flightId: string, field: 'depConfirmed' | 'arrConfirmed') => {
@@ -416,7 +440,7 @@ export default function ATCDashboard() {
                             <div className="text-xs" style={{ color: t.textSub }}>{s.timeSlot} UTC</div>
                           </div>
                         </div>
-                        <button onClick={() => handleCancelSchedule(s.id)}
+                        <button onClick={() => setCancelTarget({ type: 'single', id: s.id })}
                           className="p-1.5 rounded-lg flex-shrink-0"
                           style={{ background: t.error, color: '#ef4444' }}>
                           <X size={13} />
@@ -520,45 +544,77 @@ export default function ATCDashboard() {
                   {POSITIONS.map(pos => {
                     const pc = positionColor(pos)
                     const isBookedByMe = myBookedPositions.includes(`${selectedAirport}-${pos}`)
+                    const mySchedForPos = mySchedule.filter(s => s.date === selectedDay && s.airport === selectedAirport && s.position === pos)
                     return (
-                      <button key={pos}
-                        onClick={() => setSelectedPosition(pos)}
-                        className="py-3 rounded-xl text-sm font-bold transition-all"
-                        style={{
-                          background: isBookedByMe ? 'rgba(192,18,30,0.08)' : selectedPosition === pos ? pc.bg : t.input,
-                          border: `1px solid ${isBookedByMe ? 'rgba(192,18,30,0.3)' : selectedPosition === pos ? pc.color + '60' : t.border}`,
-                          color: isBookedByMe ? '#c0121e' : selectedPosition === pos ? pc.color : t.textSub,
-                          opacity: isBookedByMe ? 0.6 : 1,
-                          cursor: isBookedByMe ? 'not-allowed' : 'pointer',
-                        }}
-                        title={isBookedByMe ? 'Already booked' : POSITION_LABELS[pos]}>
-                        {pos}
-                        {isBookedByMe && <div className="text-[9px] opacity-70">Booked</div>}
-                      </button>
+                      <div key={pos} className="relative">
+                        <button
+                          onClick={() => isBookedByMe ? null : setSelectedPosition(pos)}
+                          className="w-full py-3 rounded-xl text-sm font-bold transition-all"
+                          style={{
+                            background: isBookedByMe ? 'rgba(192,18,30,0.08)' : selectedPosition === pos ? pc.bg : t.input,
+                            border: `1px solid ${isBookedByMe ? 'rgba(192,18,30,0.3)' : selectedPosition === pos ? pc.color + '60' : t.border}`,
+                            color: isBookedByMe ? '#c0121e' : selectedPosition === pos ? pc.color : t.textSub,
+                            opacity: isBookedByMe ? 0.6 : 1,
+                            cursor: isBookedByMe ? 'default' : 'pointer',
+                          }}
+                          title={isBookedByMe ? 'Already booked — click X to cancel' : POSITION_LABELS[pos]}>
+                          {pos}
+                          {isBookedByMe && <div className="text-[9px] opacity-70">Booked</div>}
+                        </button>
+                        {isBookedByMe && mySchedForPos.length > 0 && (
+                          <button onClick={() => setCancelTarget({
+                            type: 'batch',
+                            body: { date: selectedDay, airport: selectedAirport, timeSlots: mySchedForPos.map((s: any) => s.timeSlot) }
+                          })}
+                            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-white"
+                            style={{ background: '#ef4444', fontSize: '10px' }}
+                            title="Cancel all booked slots for this position">
+                            <X size={10} />
+                          </button>
+                        )}
+                      </div>
                     )
                   })}
                 </div>
               </div>
 
-              {/* Time slot selector - 30-min */}
+              {/* Time slot selector - 30-min (multi-select) */}
               <div className="mb-5">
                 <label className="block text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: t.textMuted }}>
-                  SELECT TIME SLOT (30-min blocks — UTC)
+                  SELECT TIME SLOTS (30-min blocks — UTC) — {selectedTimeSlots.length} selected
                 </label>
+                {selectedTimeSlots.length > 0 && (
+                  <div className="flex items-center gap-2 mb-2">
+                    <button onClick={() => setSelectedTimeSlots([])}
+                      className="px-2 py-1 rounded-lg text-[10px] font-semibold"
+                      style={{ background: t.error, color: '#ef4444' }}>
+                      Clear ({selectedTimeSlots.length})
+                    </button>
+                    <span className="text-xs" style={{ color: t.textMuted }}>
+                      {selectedTimeSlots[0]} — {selectedTimeSlots[selectedTimeSlots.length - 1]}
+                    </span>
+                  </div>
+                )}
                 <div className="grid grid-cols-4 md:grid-cols-6 gap-1.5 max-h-48 overflow-y-auto"
                   style={{ scrollbarWidth: 'thin' }}>
                   {TIME_SLOTS.map(slot => {
                     const status = positionStatus.find(ps => ps.timeSlot === slot && ps.airport === selectedAirport)
                     const posStatus = status?.positions?.find((p: any) => p.position === selectedPosition)
                     const alreadyFilled = posStatus?.filled
+                    const isSelected = selectedTimeSlots.includes(slot)
                     return (
                       <button key={slot}
-                        onClick={() => !alreadyFilled && setSelectedTimeSlot(prev => prev === slot ? '' : slot)}
+                        onClick={() => {
+                          if (alreadyFilled) return
+                          setSelectedTimeSlots(prev =>
+                            prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot].sort()
+                          )
+                        }}
                         className="py-2 rounded-lg text-[11px] font-medium transition-all"
                         style={{
-                          background: selectedTimeSlot === slot ? 'rgba(192,18,30,0.15)' : alreadyFilled ? 'rgba(16,185,129,0.08)' : t.input,
-                          border: `1px solid ${selectedTimeSlot === slot ? 'rgba(192,18,30,0.4)' : alreadyFilled ? 'rgba(16,185,129,0.2)' : t.border}`,
-                          color: selectedTimeSlot === slot ? '#c0121e' : alreadyFilled ? '#10b981' : t.textSub,
+                          background: isSelected ? 'rgba(192,18,30,0.15)' : alreadyFilled ? 'rgba(16,185,129,0.08)' : t.input,
+                          border: `1px solid ${isSelected ? 'rgba(192,18,30,0.4)' : alreadyFilled ? 'rgba(16,185,129,0.2)' : t.border}`,
+                          color: isSelected ? '#c0121e' : alreadyFilled ? '#10b981' : t.textSub,
                           opacity: alreadyFilled ? 0.6 : 1,
                           cursor: alreadyFilled ? 'not-allowed' : 'pointer',
                         }}
@@ -582,13 +638,13 @@ export default function ATCDashboard() {
               )}
 
               <button onClick={handleBookSchedule}
-                disabled={scheduleLoading}
+                disabled={scheduleLoading || selectedTimeSlots.length === 0}
                 className="w-full py-3.5 rounded-xl text-sm font-bold text-white transition-all"
                 style={{
                   background: scheduleLoading ? 'rgba(192,18,30,0.5)' : 'linear-gradient(135deg, #c0121e, #8b0000)',
                   boxShadow: scheduleLoading ? 'none' : '0 0 20px rgba(192,18,30,0.3)',
                 }}>
-                {scheduleLoading ? 'Booking...' : `Book ${selectedPosition || 'Position'} @ ${selectedAirport} — ${selectedTimeSlot || 'Select Slot'}`}
+                {scheduleLoading ? 'Booking...' : `Book ${selectedPosition || 'Position'} @ ${selectedAirport} — ${selectedTimeSlots.length} slot(s) selected`}
               </button>
             </div>
 
@@ -685,28 +741,39 @@ export default function ATCDashboard() {
                 <div className="divide-y" style={{ borderColor: t.border }}>
                   {mySchedule.map((s: any) => {
                     const pc = positionColor(s.position)
+                    const isExpired = s.status === 'EXPIRED'
                     return (
-                      <div key={s.id} className="px-5 py-3.5 flex items-center justify-between gap-4">
+                      <div key={s.id} className="px-5 py-3.5 flex items-center justify-between gap-4" style={{ opacity: isExpired ? 0.5 : 1 }}>
                         <div className="flex items-center gap-3">
                           <span className="px-2 py-0.5 rounded-lg text-xs font-bold font-mono"
-                            style={{ background: pc.bg, color: pc.color }}>
+                            style={{ background: isExpired ? 'rgba(107,114,128,0.1)' : pc.bg, color: isExpired ? '#6b7280' : pc.color }}>
                             {s.position}
                           </span>
                           <div>
-                            <div className="text-sm font-medium" style={{ color: t.text }}>
-                              {new Date(s.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
-                              <span className="ml-2 text-xs" style={{ color: s.airport === 'DEP' ? '#10b981' : '#3b82f6' }}>
-                                {s.airport === 'DEP' ? `${dailyHub?.depIcao || 'DEP'}` : `${dailyHub?.arrIcao || 'ARR'}`}
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium" style={{ color: isExpired ? t.textMuted : t.text }}>
+                                {new Date(s.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                                <span className="ml-2 text-xs" style={{ color: isExpired ? t.textMuted : (s.airport === 'DEP' ? '#10b981' : '#3b82f6') }}>
+                                  {s.airport === 'DEP' ? `${dailyHub?.depIcao || 'DEP'}` : `${dailyHub?.arrIcao || 'ARR'}`}
+                                </span>
                               </span>
+                              {isExpired && (
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold"
+                                  style={{ background: 'rgba(107,114,128,0.1)', color: '#6b7280' }}>
+                                  EXPIRED
+                                </span>
+                              )}
                             </div>
-                            <div className="text-xs" style={{ color: t.textSub }}>{s.timeSlot} UTC</div>
+                            <div className="text-xs" style={{ color: isExpired ? t.textMuted : t.textSub }}>{s.timeSlot} UTC</div>
                           </div>
                         </div>
-                        <button onClick={() => handleCancelSchedule(s.id)}
-                          className="p-1.5 rounded-lg flex-shrink-0"
-                          style={{ background: t.error, color: '#ef4444' }}>
-                          <X size={13} />
-                        </button>
+                        {!isExpired && (
+                          <button onClick={() => setCancelTarget({ type: 'single', id: s.id })}
+                            className="p-1.5 rounded-lg flex-shrink-0"
+                            style={{ background: t.error, color: '#ef4444' }}>
+                            <X size={13} />
+                          </button>
+                        )}
                       </div>
                     )
                   })}
@@ -1185,6 +1252,55 @@ export default function ATCDashboard() {
           </div>
         </footer>
       </main>
+
+      {/* ── CANCEL CONFIRMATION MODAL ── */}
+      <AnimatePresence>
+        {cancelTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+            onClick={e => { if (e.target === e.currentTarget) setCancelTarget(null) }}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-md rounded-2xl"
+              style={{ background: t.card, border: `1px solid ${t.border}` }}>
+              <div className="px-6 py-5 text-center">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+                  style={{ background: 'rgba(239,68,68,0.1)' }}>
+                  <AlertTriangle size={28} style={{ color: '#ef4444' }} />
+                </div>
+                <div className="text-lg font-bold mb-2" style={{ color: t.text }}>Cancel Schedule?</div>
+                <div className="text-sm mb-4" style={{ color: t.textSub }}>
+                  {cancelTarget.type === 'single'
+                    ? 'This schedule booking will be removed.'
+                    : `All ${cancelTarget.body?.timeSlots?.length || ''} selected schedules will be removed.`
+                  }
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setCancelTarget(null)}
+                    className="flex-1 py-3 rounded-xl text-sm font-semibold"
+                    style={{ background: t.badge, color: t.textSub }}>
+                    Keep
+                  </button>
+                  <button onClick={handleBatchCancel}
+                    disabled={cancelLoading}
+                    className="flex-1 py-3 rounded-xl text-sm font-semibold text-white"
+                    style={{
+                      background: cancelLoading ? 'rgba(239,68,68,0.5)' : '#ef4444',
+                    }}>
+                    {cancelLoading ? 'Cancelling...' : 'Confirm Cancel'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
