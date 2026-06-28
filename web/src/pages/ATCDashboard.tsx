@@ -43,18 +43,9 @@ const NAV_ITEMS = [
   { icon: Users, label: 'Staff', id: 'staff' },
 ]
 
-function generateNext14Days() {
-  const days = []
-  const today = new Date()
-  for (let i = 0; i < 14; i++) {
-    const d = new Date(today)
-    d.setDate(d.getDate() + i)
-    days.push({
-      date: d.toISOString().split('T')[0],
-      label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-    })
-  }
-  return days
+function getToday() {
+  const d = new Date()
+  return [{ date: d.toISOString().split('T')[0], label: 'Today' }]
 }
 
 export default function ATCDashboard() {
@@ -77,7 +68,7 @@ export default function ATCDashboard() {
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState('')
 
-  const days = generateNext14Days()
+  const days = getToday()
   const [selectedDay, setSelectedDay] = useState(days[0].date)
   const [selectedPosition, setSelectedPosition] = useState('')
   const [selectedAirport, setSelectedAirport] = useState('DEP')
@@ -471,24 +462,14 @@ export default function ATCDashboard() {
                 </div>
               </div>
 
-              {/* Day selector */}
+              {/* Today's date (booking only available for today) */}
               <div className="mb-5">
                 <label className="block text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: t.textMuted }}>
-                  SELECT DAY
+                  TODAY
                 </label>
-                <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-                  {days.map(d => (
-                    <button key={d.date}
-                      onClick={() => setSelectedDay(d.date)}
-                      className="flex-shrink-0 px-4 py-3 rounded-xl text-xs font-semibold transition-all"
-                      style={{
-                        background: selectedDay === d.date ? 'rgba(192,18,30,0.15)' : t.input,
-                        border: `1px solid ${selectedDay === d.date ? 'rgba(192,18,30,0.4)' : t.border}`,
-                        color: selectedDay === d.date ? '#c0121e' : t.textSub,
-                      }}>
-                      {d.label}
-                    </button>
-                  ))}
+                <div className="px-4 py-3 rounded-xl text-sm font-semibold"
+                  style={{ background: 'rgba(192,18,30,0.08)', border: '1px solid rgba(192,18,30,0.2)', color: '#c0121e' }}>
+                  {new Date(selectedDay).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                 </div>
               </div>
 

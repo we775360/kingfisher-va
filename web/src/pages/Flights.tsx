@@ -326,6 +326,14 @@ export default function Flights() {
         {/* ── MY BOOKINGS ── */}
         {view === 'mybookings' && (
           <div className="space-y-4">
+            <div className="flex gap-2.5 p-3.5 rounded-xl"
+              style={{ background: 'rgba(192,18,30,0.06)', border: '1px solid rgba(192,18,30,0.12)' }}>
+              <Info size={14} style={{ color: '#c0121e', flexShrink: 0, marginTop: '1px' }} />
+              <div className="text-xs leading-relaxed" style={{ color: '#c0121e' }}>
+                Realistic Ops flights are for today only and generated daily based on ATC staff availability.
+                Standard schedule bookings can be made on any active route.
+              </div>
+            </div>
             {myBookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <Plane size={40} style={{ color: t.textMuted, marginBottom: '12px' }} strokeWidth={1.5} />

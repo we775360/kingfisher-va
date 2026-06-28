@@ -221,7 +221,7 @@ export default function RealisticFlights() {
               style={{ background: 'rgba(192,18,30,0.06)', border: '1px solid rgba(192,18,30,0.12)' }}>
               <Shield size={16} style={{ color: '#c0121e', flexShrink: 0, marginTop: 2 }} />
               <div className="text-xs leading-relaxed" style={{ color: t.textSub }}>
-                <span className="font-semibold" style={{ color: '#c0121e' }}>Full ATC Coverage</span> — These flights operate on fixed schedules with gate-to-gate ATC coverage on the selected network.
+                <span className="font-semibold" style={{ color: '#c0121e' }}>Full ATC Coverage</span> — Flights are for today only and generated daily based on ATC staff availability.
                 Only book if you can fly during the scheduled time. Ground controllers at both airports will confirm your flight.
               </div>
             </div>
@@ -231,7 +231,7 @@ export default function RealisticFlights() {
               <div className="flex flex-col items-center justify-center py-20">
                 <Plane size={40} style={{ color: t.textMuted, marginBottom: 12 }} strokeWidth={1.5} />
                 <div className="text-sm font-medium mb-1" style={{ color: t.textSub }}>No flights available</div>
-                <div className="text-xs" style={{ color: t.textMuted }}>Check back when ATC slots are fully staffed</div>
+                <div className="text-xs" style={{ color: t.textMuted }}>Check back tomorrow when ATC slots are fully staffed</div>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -344,7 +344,7 @@ export default function RealisticFlights() {
               <div className="flex flex-col items-center justify-center py-20">
                 <Plane size={40} style={{ color: t.textMuted, marginBottom: 12 }} strokeWidth={1.5} />
                 <div className="text-sm font-medium mb-1" style={{ color: t.textSub }}>No bookings yet</div>
-                <div className="text-xs mb-4" style={{ color: t.textMuted }}>Browse available realistic flights and book one!</div>
+                <div className="text-xs mb-4" style={{ color: t.textMuted }}>Browse today's available flights and book one!</div>
                 <button onClick={() => setView('browse')}
                   className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
                   style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
