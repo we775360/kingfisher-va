@@ -102,20 +102,20 @@ export const getDailyHub = async (_req: FastifyRequest, reply: FastifyReply) => 
   }
 }
 
-// ── GET MY SCHEDULE (past dates auto-expired) ──
+// ── GET MY SCHEDULE (past dates auto-deleted) ──
 export const getMySchedule = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const controllerId = (req as any).controllerId
     const today = new Date().toISOString().split('T')[0]
+    // Auto-delete past schedules so slots free up for future
+    await prisma.aTCSchedule.deleteMany({
+      where: { staffId: controllerId, date: { lt: today } },
+    })
     const schedules = await prisma.aTCSchedule.findMany({
       where: { staffId: controllerId },
       orderBy: [{ date: 'asc' }, { timeSlot: 'asc' }],
     })
-    const mapped = schedules.map(s => ({
-      ...s,
-      status: s.date < today ? 'EXPIRED' : s.status,
-    }))
-    return reply.send(mapped)
+    return reply.send(schedules)
   } catch (err) {
     console.error(err)
     return reply.status(500).send({ error: 'Internal server error' })
@@ -125,6 +125,9 @@ export const getMySchedule = async (req: FastifyRequest, reply: FastifyReply) =>
 // ── GET ALL SCHEDULES ──
 export const getAllSchedules = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
+    const today = new Date().toISOString().split('T')[0]
+    // Auto-delete past schedules so slots free up for future bookings
+    await prisma.aTCSchedule.deleteMany({ where: { date: { lt: today } } })
     const schedules = await prisma.aTCSchedule.findMany({
       include: {
         staff: { select: { id: true, firstName: true, lastName: true, position: true } },

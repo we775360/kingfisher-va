@@ -42,7 +42,11 @@ export const publicRoutes = async (app: FastifyInstance) => {
   })
 
   app.get('/public/live-flights', async () => {
+    const stale = new Date(Date.now() - 3 * 60 * 1000)
+    // Clean up stale flights
+    await prisma.liveFlight.deleteMany({ where: { lastUpdate: { lt: stale } } })
     return prisma.liveFlight.findMany({
+      where: { lastUpdate: { gte: stale } },
       include: {
         pilot: {
           select: { pilotId: true, firstName: true, lastName: true, rank: true }

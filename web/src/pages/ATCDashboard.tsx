@@ -741,39 +741,30 @@ export default function ATCDashboard() {
                 <div className="divide-y" style={{ borderColor: t.border }}>
                   {mySchedule.map((s: any) => {
                     const pc = positionColor(s.position)
-                    const isExpired = s.status === 'EXPIRED'
                     return (
-                      <div key={s.id} className="px-5 py-3.5 flex items-center justify-between gap-4" style={{ opacity: isExpired ? 0.5 : 1 }}>
+                      <div key={s.id} className="px-5 py-3.5 flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                           <span className="px-2 py-0.5 rounded-lg text-xs font-bold font-mono"
-                            style={{ background: isExpired ? 'rgba(107,114,128,0.1)' : pc.bg, color: isExpired ? '#6b7280' : pc.color }}>
+                            style={{ background: pc.bg, color: pc.color }}>
                             {s.position}
                           </span>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium" style={{ color: isExpired ? t.textMuted : t.text }}>
+                              <span className="text-sm font-medium" style={{ color: t.text }}>
                                 {new Date(s.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
-                                <span className="ml-2 text-xs" style={{ color: isExpired ? t.textMuted : (s.airport === 'DEP' ? '#10b981' : '#3b82f6') }}>
+                                <span className="ml-2 text-xs" style={{ color: s.airport === 'DEP' ? '#10b981' : '#3b82f6' }}>
                                   {s.airport === 'DEP' ? `${dailyHub?.depIcao || 'DEP'}` : `${dailyHub?.arrIcao || 'ARR'}`}
                                 </span>
                               </span>
-                              {isExpired && (
-                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold"
-                                  style={{ background: 'rgba(107,114,128,0.1)', color: '#6b7280' }}>
-                                  EXPIRED
-                                </span>
-                              )}
                             </div>
-                            <div className="text-xs" style={{ color: isExpired ? t.textMuted : t.textSub }}>{s.timeSlot} UTC</div>
+                            <div className="text-xs" style={{ color: t.textSub }}>{s.timeSlot} UTC</div>
                           </div>
                         </div>
-                        {!isExpired && (
-                          <button onClick={() => setCancelTarget({ type: 'single', id: s.id })}
-                            className="p-1.5 rounded-lg flex-shrink-0"
-                            style={{ background: t.error, color: '#ef4444' }}>
-                            <X size={13} />
-                          </button>
-                        )}
+                        <button onClick={() => setCancelTarget({ type: 'single', id: s.id })}
+                          className="p-1.5 rounded-lg flex-shrink-0"
+                          style={{ background: t.error, color: '#ef4444' }}>
+                          <X size={13} />
+                        </button>
                       </div>
                     )
                   })}
