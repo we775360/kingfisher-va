@@ -159,8 +159,8 @@ export const posrep = async (req: FastifyRequest, reply: FastifyReply) => {
   }
 
   const phase = onground === '1'
-    ? (gskts !== undefined && gskts > 30 ? 'TAXIIN' : 'LANDING')
-    : 'CRUISE'
+    ? 'TAXIIN'
+    : (msl !== undefined && msl < 10000 ? 'APPROACH' : 'CRUISE')
 
   const existing = await prisma.liveFlight.findUnique({
     where: { pilotId: pilot.id },
