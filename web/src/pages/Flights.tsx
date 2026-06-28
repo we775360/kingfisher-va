@@ -429,10 +429,11 @@ export default function Flights() {
                           </>
                         )}
                         {booking.status === 'UPCOMING' && (
-                          <button onClick={() => handleCancel(booking)}
-                            className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
-                            style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
-                            Cancel
+                          <>
+                            <button onClick={() => handleCancel(booking)}
+                              className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
+                              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                              Cancel
                             </button>
                           </>
                         )}
