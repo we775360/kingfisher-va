@@ -150,7 +150,8 @@ export default function BookingInfo() {
         }))
       }
     } catch (err: any) {
-      const msg = err.response?.data?.error || err.message || 'Unknown error'
+      const data = err.response?.data
+      const msg = data?.detail || data?.error || err.message || 'Unknown error'
       alert('OFP Generation: ' + msg)
     } finally {
       setOfpLoading(false)

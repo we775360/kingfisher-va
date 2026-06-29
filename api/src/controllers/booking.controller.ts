@@ -228,78 +228,102 @@ export const getBookingById = async (req: FastifyRequest, reply: FastifyReply) =
 
 // ── GENERATE SIMBRIEF OFP ──
 export const generateOFP = async (req: FastifyRequest, reply: FastifyReply) => {
+  const { userId } = req.user as { userId: string }
+  const { id } = req.params as { id: string }
+
+  const pilot = await prisma.pilot.findUnique({ where: { userId } })
+  if (!pilot) return reply.status(404).send({ error: 'Pilot not found' })
+  if (!pilot.simbriefUsername) return reply.status(400).send({ error: 'No SimBrief username set. Add one in Settings.' })
+
+  const booking = await prisma.booking.findUnique({
+    where: { id },
+    include: { route: true, aircraft: true }
+  })
+  if (!booking) return reply.status(404).send({ error: 'Booking not found' })
+  if (booking.pilotId !== pilot.id) return reply.status(403).send({ error: 'Not your booking' })
+
+  // Build SimBrief dispatch URL with auto=1
+  const dep = booking.route.depIcao
+  const arr = booking.route.arrIcao
+  const type = booking.aircraft.icao
+  const reg = booking.aircraft.registration
+  const fltnum = booking.route.flightNumber.replace('KFR', '').replace('IT', '')
+  const airline = 'KFR'
+
+  const dispatchUrl = `https://www.simbrief.com/system/dispatch.php?orig=${dep}&dest=${arr}&type=${type}&reg=${reg}&airline=${airline}&fltnum=${fltnum}&units=kgs&navlog=1&etops=1&stepclimbs=1&tlr=1&notams=1&firnot=1&auto=1`
+
+  let ofpData: any = null
+
+  // Step 1: Try to fetch existing OFP from SimBrief first
   try {
-    const { userId } = req.user as { userId: string }
-    const { id } = req.params as { id: string }
-
-    const pilot = await prisma.pilot.findUnique({ where: { userId } })
-    if (!pilot) return reply.status(404).send({ error: 'Pilot not found' })
-    if (!pilot.simbriefUsername) return reply.status(400).send({ error: 'No SimBrief username set. Add one in Settings.' })
-
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-      include: { route: true, aircraft: true }
-    })
-    if (!booking) return reply.status(404).send({ error: 'Booking not found' })
-    if (booking.pilotId !== pilot.id) return reply.status(403).send({ error: 'Not your booking' })
-
-    // Generate SimBrief dispatch URL with auto=1
-    const dep = booking.route.depIcao
-    const arr = booking.route.arrIcao
-    const type = booking.aircraft.icao
-    const reg = booking.aircraft.registration
-    const fltnum = booking.route.flightNumber.replace('KFR', '').replace('IT', '')
-    const airline = 'KFR'
-
-    const dispatchUrl = `https://www.simbrief.com/system/dispatch.php?orig=${dep}&dest=${arr}&type=${type}&reg=${reg}&airline=${airline}&fltnum=${fltnum}&units=kgs&navlog=1&etops=1&stepclimbs=1&tlr=1&notams=1&firnot=1&auto=1`
-
-    // Hit SimBrief dispatch to generate OFP (server side, follow redirects)
-    await axios.get(dispatchUrl, { maxRedirects: 5, timeout: 20000 })
-
-    // Fetch the generated OFP data
-    const ofpResponse = await axios.get(
+    const existing = await axios.get(
       `https://www.simbrief.com/api/xml.fetcher.php?username=${pilot.simbriefUsername}&json=1`,
       { timeout: 15000 }
     )
-
-    const ofpData = ofpResponse.data
-    if (!ofpData || ofpData.fetch?.status === 'error') {
-      return reply.status(502).send({
-        error: 'Failed to fetch OFP from SimBrief. Check your username is correct in Settings.',
-        simbriefDetail: ofpData?.fetch?.status || 'No data'
-      })
+    if (existing.data && existing.data.fetch?.status !== 'error') {
+      ofpData = existing.data
     }
-
-    // Extract relevant fields
-    const pdfUrl = ofpData?.fetch?.pdf_url || ofpData?.pdf_url || ''
-    const staticId = ofpData?.fetch?.params?.static_id || ofpData?.params?.static_id || ''
-    const userId_sb = ofpData?.fetch?.params?.user_id || ofpData?.params?.user_id || ''
-
-    // Save OFP data to booking (non-critical — don't fail if column missing)
-    try {
-      await prisma.booking.update({
-        where: { id },
-        data: {
-          simbriefOfpData: JSON.stringify(ofpData),
-          simbriefPdfUrl: pdfUrl,
-          simbriefStaticId: staticId,
-          simbriefUserId: String(userId_sb || ''),
-        }
-      })
-    } catch (saveErr: any) {
-      console.error('OFP Save Warning (DB schema may need update):', saveErr.message)
-    }
-
-    return reply.send({
-      success: true,
-      ofpData,
-      pdfUrl,
-    })
-  } catch (err: any) {
-    console.error('OFP Generation Error:', err.message, err.response?.data || '')
-    const detail = err.response?.data ? String(err.response.data).slice(0, 200) : err.message
-    return reply.status(500).send({ error: 'OFP generation failed: ' + detail })
+  } catch (fetchErr: any) {
+    console.log('No existing OFP found, will generate new one:', fetchErr.message)
   }
+
+  // Step 2: If no OFP exists, generate one via dispatch
+  if (!ofpData) {
+    try {
+      console.log('Dispatching to SimBrief:', dispatchUrl)
+      await axios.get(dispatchUrl, { maxRedirects: 5, timeout: 20000 })
+      console.log('Dispatch succeeded, fetching OFP...')
+    } catch (dispatchErr: any) {
+      console.error('Dispatch failed:', dispatchErr.message)
+      return reply.status(502).send({
+        error: 'SimBrief dispatch failed',
+        detail: dispatchErr.message,
+      })
+    }
+
+    // Step 3: Fetch the generated OFP
+    try {
+      const fetched = await axios.get(
+        `https://www.simbrief.com/api/xml.fetcher.php?username=${pilot.simbriefUsername}&json=1`,
+        { timeout: 15000 }
+      )
+      ofpData = fetched.data
+    } catch (fetchErr: any) {
+      console.error('OFP fetch failed after dispatch:', fetchErr.message)
+      return reply.status(502).send({
+        error: 'OFP was generated but could not be fetched',
+        detail: fetchErr.message,
+      })
+    }
+  }
+
+  if (!ofpData || ofpData.fetch?.status === 'error') {
+    return reply.status(502).send({
+      error: 'SimBrief returned an error. Is your username correct in Settings?',
+      simbriefDetail: ofpData?.fetch?.status || 'No data returned',
+    })
+  }
+
+  // Step 4: Extract and save
+  const pdfUrl = ofpData?.fetch?.pdf_url || ofpData?.pdf_url || ''
+  const staticId = ofpData?.fetch?.params?.static_id || ofpData?.params?.static_id || ''
+  const userId_sb = ofpData?.fetch?.params?.user_id || ofpData?.params?.user_id || ''
+
+  try {
+    await prisma.booking.update({
+      where: { id },
+      data: {
+        simbriefOfpData: JSON.stringify(ofpData),
+        simbriefPdfUrl: pdfUrl,
+        simbriefStaticId: staticId,
+        simbriefUserId: String(userId_sb || ''),
+      }
+    })
+  } catch (saveErr: any) {
+    console.error('OFP DB save warning:', saveErr.message)
+  }
+
+  return reply.send({ success: true, ofpData, pdfUrl })
 }
 
 // ── CHANGE NETWORK ──
@@ -418,13 +442,15 @@ async function generateOFPAuto(
   const staticId = ofpData?.fetch?.params?.static_id || ofpData?.params?.static_id || ''
   const userId_sb = ofpData?.fetch?.params?.user_id || ofpData?.params?.user_id || ''
 
-  await prisma.booking.update({
-    where: { id: bookingId },
-    data: {
-      simbriefOfpData: JSON.stringify(ofpData),
-      simbriefPdfUrl: pdfUrl,
-      simbriefStaticId: staticId,
-      simbriefUserId: String(userId_sb || ''),
-    }
-  })
+  try {
+    await prisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        simbriefOfpData: JSON.stringify(ofpData),
+        simbriefPdfUrl: pdfUrl,
+        simbriefStaticId: staticId,
+        simbriefUserId: String(userId_sb || ''),
+      }
+    })
+  } catch { /* non-critical save */ }
 }
