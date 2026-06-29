@@ -114,9 +114,8 @@ export default function BookingInfo() {
 
   const fetchMETAR = async (icao: string, setter: (v: string) => void) => {
     try {
-      const res = await fetch(`https://aviationweather.gov/api/data/metar?ids=${icao}&format=raw`)
-      const text = await res.text()
-      setter(text.trim())
+      const res = await api.get(`/public/weather/metar/${icao}`, { responseType: 'text' })
+      setter((res.data || '').trim() || 'METAR unavailable')
     } catch {
       setter('METAR unavailable')
     }
@@ -124,8 +123,8 @@ export default function BookingInfo() {
 
   const fetchNOTAMs = async (icao: string, setter: (v: string[]) => void) => {
     try {
-      const res = await fetch(`https://www.aviationweather.gov/api/data/notam?ids=${icao}&format=raw`)
-      const text = await res.text()
+      const res = await api.get(`/public/weather/notam/${icao}`, { responseType: 'text' })
+      const text = (res.data || '') as string
       const lines = text.split('\n').filter(l => l.trim().length > 0).slice(0, 5)
       setter(lines.length > 0 ? lines : ['No active NOTAMs'])
     } catch {
@@ -151,7 +150,8 @@ export default function BookingInfo() {
         }))
       }
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to generate OFP')
+      const msg = err.response?.data?.error || err.message || 'Unknown error'
+      alert('OFP Generation: ' + msg)
     } finally {
       setOfpLoading(false)
     }

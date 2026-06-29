@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import prisma from '../utils/prisma.js'
 import { positionBus } from '../utils/position-bus.js'
+import axios from 'axios'
 
 export const publicRoutes = async (app: FastifyInstance) => {
 
@@ -60,6 +61,27 @@ export const publicRoutes = async (app: FastifyInstance) => {
       orderBy: { createdAt: 'desc' },
       take: 5
     })
+  })
+
+  // ── WEATHER PROXY (aviationweather.gov blocks CORS from browsers) ──
+  app.get('/public/weather/metar/:icao', async (req, reply) => {
+    try {
+      const { icao } = req.params as { icao: string }
+      const res = await axios.get(`https://aviationweather.gov/api/data/metar?ids=${icao}&format=raw`, { timeout: 8000 })
+      return reply.type('text/plain').send(res.data)
+    } catch {
+      return reply.type('text/plain').send('METAR unavailable')
+    }
+  })
+
+  app.get('/public/weather/notam/:icao', async (req, reply) => {
+    try {
+      const { icao } = req.params as { icao: string }
+      const res = await axios.get(`https://www.aviationweather.gov/api/data/notam?ids=${icao}&format=raw`, { timeout: 8000 })
+      return reply.type('text/plain').send(res.data)
+    } catch {
+      return reply.type('text/plain').send('NOTAMs unavailable')
+    }
   })
 
   app.get('/public/live-flights/stream', async (_req, reply) => {

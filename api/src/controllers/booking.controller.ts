@@ -254,17 +254,20 @@ export const generateOFP = async (req: FastifyRequest, reply: FastifyReply) => {
     const dispatchUrl = `https://www.simbrief.com/system/dispatch.php?orig=${dep}&dest=${arr}&type=${type}&reg=${reg}&airline=${airline}&fltnum=${fltnum}&units=kgs&navlog=1&etops=1&stepclimbs=1&tlr=1&notams=1&firnot=1&auto=1`
 
     // Hit SimBrief dispatch to generate OFP (server side, follow redirects)
-    await axios.get(dispatchUrl, { maxRedirects: 5, timeout: 15000 })
+    await axios.get(dispatchUrl, { maxRedirects: 5, timeout: 20000 })
 
     // Fetch the generated OFP data
     const ofpResponse = await axios.get(
       `https://www.simbrief.com/api/xml.fetcher.php?username=${pilot.simbriefUsername}&json=1`,
-      { timeout: 10000 }
+      { timeout: 15000 }
     )
 
     const ofpData = ofpResponse.data
     if (!ofpData || ofpData.fetch?.status === 'error') {
-      return reply.status(502).send({ error: 'Failed to fetch OFP from SimBrief. Check your username.' })
+      return reply.status(502).send({
+        error: 'Failed to fetch OFP from SimBrief. Check your username is correct in Settings.',
+        simbriefDetail: ofpData?.fetch?.status || 'No data'
+      })
     }
 
     // Extract relevant fields
@@ -272,15 +275,20 @@ export const generateOFP = async (req: FastifyRequest, reply: FastifyReply) => {
     const staticId = ofpData?.fetch?.params?.static_id || ofpData?.params?.static_id || ''
     const userId_sb = ofpData?.fetch?.params?.user_id || ofpData?.params?.user_id || ''
 
-    await prisma.booking.update({
-      where: { id },
-      data: {
-        simbriefOfpData: JSON.stringify(ofpData),
-        simbriefPdfUrl: pdfUrl,
-        simbriefStaticId: staticId,
-        simbriefUserId: String(userId_sb || ''),
-      }
-    })
+    // Save OFP data to booking (non-critical — don't fail if column missing)
+    try {
+      await prisma.booking.update({
+        where: { id },
+        data: {
+          simbriefOfpData: JSON.stringify(ofpData),
+          simbriefPdfUrl: pdfUrl,
+          simbriefStaticId: staticId,
+          simbriefUserId: String(userId_sb || ''),
+        }
+      })
+    } catch (saveErr: any) {
+      console.error('OFP Save Warning (DB schema may need update):', saveErr.message)
+    }
 
     return reply.send({
       success: true,
@@ -288,8 +296,9 @@ export const generateOFP = async (req: FastifyRequest, reply: FastifyReply) => {
       pdfUrl,
     })
   } catch (err: any) {
-    console.error('OFP Generation Error:', err.message)
-    return reply.status(500).send({ error: 'Failed to generate OFP: ' + (err.message || 'Unknown error') })
+    console.error('OFP Generation Error:', err.message, err.response?.data || '')
+    const detail = err.response?.data ? String(err.response.data).slice(0, 200) : err.message
+    return reply.status(500).send({ error: 'OFP generation failed: ' + detail })
   }
 }
 
