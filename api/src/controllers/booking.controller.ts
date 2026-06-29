@@ -242,69 +242,37 @@ export const generateOFP = async (req: FastifyRequest, reply: FastifyReply) => {
   if (!booking) return reply.status(404).send({ error: 'Booking not found' })
   if (booking.pilotId !== pilot.id) return reply.status(403).send({ error: 'Not your booking' })
 
-  // Build SimBrief dispatch URL with auto=1
   const dep = booking.route.depIcao
   const arr = booking.route.arrIcao
   const type = booking.aircraft.icao
   const reg = booking.aircraft.registration
   const fltnum = booking.route.flightNumber.replace('KFR', '').replace('IT', '')
   const airline = 'KFR'
+  const username = pilot.simbriefUsername
+  const fetchUrl = `https://www.simbrief.com/api/xml.fetcher.php?username=${encodeURIComponent(username)}&json=1`
 
   const dispatchUrl = `https://www.simbrief.com/system/dispatch.php?orig=${dep}&dest=${arr}&type=${type}&reg=${reg}&airline=${airline}&fltnum=${fltnum}&units=kgs&navlog=1&etops=1&stepclimbs=1&tlr=1&notams=1&firnot=1&auto=1`
 
+  // Try to fetch existing OFP from SimBrief
   let ofpData: any = null
-
-  // Step 1: Try to fetch existing OFP from SimBrief first
   try {
-    const existing = await axios.get(
-      `https://www.simbrief.com/api/xml.fetcher.php?username=${pilot.simbriefUsername}&json=1`,
-      { timeout: 15000 }
-    )
-    if (existing.data && existing.data.fetch?.status !== 'error') {
-      ofpData = existing.data
-    }
-  } catch (fetchErr: any) {
-    console.log('No existing OFP found, will generate new one:', fetchErr.message)
+    const res = await axios.get(fetchUrl, { timeout: 15000 })
+    if (res.data && res.data.fetch?.status !== 'error') ofpData = res.data
+  } catch (err: any) {
+    console.log('SimBrief fetch error:', err.message)
   }
 
-  // Step 2: If no OFP exists, generate one via dispatch
   if (!ofpData) {
-    try {
-      console.log('Dispatching to SimBrief:', dispatchUrl)
-      await axios.get(dispatchUrl, { maxRedirects: 5, timeout: 20000 })
-      console.log('Dispatch succeeded, fetching OFP...')
-    } catch (dispatchErr: any) {
-      console.error('Dispatch failed:', dispatchErr.message)
-      return reply.status(502).send({
-        error: 'SimBrief dispatch failed',
-        detail: dispatchErr.message,
-      })
-    }
-
-    // Step 3: Fetch the generated OFP
-    try {
-      const fetched = await axios.get(
-        `https://www.simbrief.com/api/xml.fetcher.php?username=${pilot.simbriefUsername}&json=1`,
-        { timeout: 15000 }
-      )
-      ofpData = fetched.data
-    } catch (fetchErr: any) {
-      console.error('OFP fetch failed after dispatch:', fetchErr.message)
-      return reply.status(502).send({
-        error: 'OFP was generated but could not be fetched',
-        detail: fetchErr.message,
-      })
-    }
-  }
-
-  if (!ofpData || ofpData.fetch?.status === 'error') {
-    return reply.status(502).send({
-      error: 'SimBrief returned an error. Is your username correct in Settings?',
-      simbriefDetail: ofpData?.fetch?.status || 'No data returned',
+    // No OFP exists — return the dispatch URL so frontend can open it in a hidden iframe
+    return reply.send({
+      success: false,
+      needsDispatch: true,
+      dispatchUrl,
+      message: 'No flight plan found on SimBrief. Opening generator...',
     })
   }
 
-  // Step 4: Extract and save
+  // Save and return
   const pdfUrl = ofpData?.fetch?.pdf_url || ofpData?.pdf_url || ''
   const staticId = ofpData?.fetch?.params?.static_id || ofpData?.params?.static_id || ''
   const userId_sb = ofpData?.fetch?.params?.user_id || ofpData?.params?.user_id || ''
@@ -319,11 +287,53 @@ export const generateOFP = async (req: FastifyRequest, reply: FastifyReply) => {
         simbriefUserId: String(userId_sb || ''),
       }
     })
-  } catch (saveErr: any) {
-    console.error('OFP DB save warning:', saveErr.message)
-  }
+  } catch { }
 
   return reply.send({ success: true, ofpData, pdfUrl })
+}
+
+// ── FETCH OFP (after dispatch via iframe) ──
+export const fetchOFP = async (req: FastifyRequest, reply: FastifyReply) => {
+  const { userId } = req.user as { userId: string }
+  const { id } = req.params as { id: string }
+
+  const pilot = await prisma.pilot.findUnique({ where: { userId } })
+  if (!pilot) return reply.status(404).send({ error: 'Pilot not found' })
+  if (!pilot.simbriefUsername) return reply.status(400).send({ error: 'No SimBrief username set.' })
+
+  const booking = await prisma.booking.findUnique({ where: { id } })
+  if (!booking) return reply.status(404).send({ error: 'Booking not found' })
+  if (booking.pilotId !== pilot.id) return reply.status(403).send({ error: 'Not your booking' })
+
+  const fetchUrl = `https://www.simbrief.com/api/xml.fetcher.php?username=${encodeURIComponent(pilot.simbriefUsername)}&json=1`
+
+  try {
+    const res = await axios.get(fetchUrl, { timeout: 15000 })
+    const ofpData = res.data
+    if (!ofpData || ofpData.fetch?.status === 'error') {
+      return reply.status(404).send({ error: 'No OFP found yet. Make sure you are logged into SimBrief and try again.' })
+    }
+
+    const pdfUrl = ofpData?.fetch?.pdf_url || ofpData?.pdf_url || ''
+    const staticId = ofpData?.fetch?.params?.static_id || ofpData?.params?.static_id || ''
+    const userId_sb = ofpData?.fetch?.params?.user_id || ofpData?.params?.user_id || ''
+
+    try {
+      await prisma.booking.update({
+        where: { id },
+        data: {
+          simbriefOfpData: JSON.stringify(ofpData),
+          simbriefPdfUrl: pdfUrl,
+          simbriefStaticId: staticId,
+          simbriefUserId: String(userId_sb || ''),
+        }
+      })
+    } catch { }
+
+    return reply.send({ success: true, ofpData, pdfUrl })
+  } catch {
+    return reply.status(502).send({ error: 'Could not reach SimBrief. Try again.' })
+  }
 }
 
 // ── CHANGE NETWORK ──

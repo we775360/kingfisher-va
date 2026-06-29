@@ -10,6 +10,7 @@ import {
   getWallet,
   getBookingById,
   generateOFP,
+  fetchOFP,
   changeBookingNetwork,
   updateSimBriefUsername,
 } from '../controllers/booking.controller.js'
@@ -21,6 +22,7 @@ export const bookingRoutes = async (app: FastifyInstance) => {
   app.get('/bookings/my', { preHandler: authenticate }, getMyBookings)
   app.get('/bookings/:id', { preHandler: authenticate }, getBookingById)
   app.post('/bookings/:id/generate-ofp', { preHandler: authenticate }, generateOFP)
+  app.post('/bookings/:id/fetch-ofp', { preHandler: authenticate }, fetchOFP)
   app.patch('/bookings/:id/network', { preHandler: authenticate }, changeBookingNetwork)
   app.patch('/bookings/:id/cancel', { preHandler: authenticate }, cancelBooking)
   app.patch('/pilot/simbrief', { preHandler: authenticate }, updateSimBriefUsername)

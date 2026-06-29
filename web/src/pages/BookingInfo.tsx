@@ -140,20 +140,52 @@ export default function BookingInfo() {
     setOfpLoading(true)
     try {
       const res = await api.post(`/bookings/${id}/generate-ofp`)
-      const rawOfp = res.data?.ofpData
-      if (rawOfp) {
-        setOfpData(rawOfp)
+      const data = res.data
+
+      if (data.needsDispatch) {
+        const sbWin = window.open(data.dispatchUrl, 'simbrief_gen', 'width=500,height=700,menubar=no,toolbar=no')
+        const startTime = Date.now()
+        const maxWait = 45000
+
+        const poll = async () => {
+          if (Date.now() - startTime > maxWait) {
+            setOfpLoading(false)
+            alert('Timed out waiting for SimBrief. Please ensure you are logged into SimBrief and try again.')
+            return
+          }
+          try {
+            const fetchRes = await api.post(`/bookings/${id}/fetch-ofp`)
+            if (fetchRes.data?.ofpData) {
+              setOfpData(fetchRes.data.ofpData)
+              setBooking((prev: any) => ({
+                ...prev,
+                simbriefOfpData: JSON.stringify(fetchRes.data.ofpData),
+                simbriefPdfUrl: fetchRes.data.pdfUrl,
+              }))
+              setOfpLoading(false)
+              if (sbWin && !sbWin.closed) sbWin.close()
+              return
+            }
+          } catch { }
+          setTimeout(poll, 3000)
+        }
+
+        setTimeout(poll, 5000)
+      } else if (data.ofpData) {
+        setOfpData(data.ofpData)
         setBooking((prev: any) => ({
           ...prev,
-          simbriefOfpData: JSON.stringify(rawOfp),
-          simbriefPdfUrl: res.data.pdfUrl,
+          simbriefOfpData: JSON.stringify(data.ofpData),
+          simbriefPdfUrl: data.pdfUrl,
         }))
+        setOfpLoading(false)
+      } else {
+        setOfpLoading(false)
       }
     } catch (err: any) {
       const data = err.response?.data
       const msg = data?.detail || data?.error || err.message || 'Unknown error'
       alert('OFP Generation: ' + msg)
-    } finally {
       setOfpLoading(false)
     }
   }
