@@ -9,7 +9,7 @@ import {
   Plane, Navigation, Clock, X, Calendar, Globe, Radio,
   DollarSign, Info, Check, ArrowRight, MapPin, Download,
   FileText, AlertTriangle, ExternalLink, Zap, Loader,
-  RefreshCw, Shield, Users, Fuel, Gauge, Thermometer,
+  Shield, Users, Fuel, Gauge, Thermometer,
   Wind, Cloud, Eye, Ban, ArrowLeft, Edit3
 } from 'lucide-react'
 import { useThemeStore } from '../store/theme.store'
@@ -140,8 +140,8 @@ export default function BookingInfo() {
       const res = await fetch(sbUrl)
       if (!res.ok) return
       const data = await res.json()
-      const status = data?.fetch?.status || ''
-      if (data && !status.includes('error') && !status.includes('No records')) {
+      const status = (data?.fetch?.status || '').toLowerCase()
+      if (data && !status.includes('error') && !status.includes('no records') && !status.includes('unknown')) {
         setOfpData(data)
         setBooking((prev: any) => ({ ...prev, simbriefOfpData: JSON.stringify(data) }))
       }
@@ -176,7 +176,7 @@ export default function BookingInfo() {
     }
   }, [booking, simbriefUsername, ofpData])
 
-  const buildDispatchUrl = (extra: string) => {
+  const buildDispatchUrl = (extra: string, auto: string) => {
     const dep = booking?.route?.depIcao || booking?.depIcao || ''
     const arr = booking?.route?.arrIcao || booking?.arrIcao || ''
     const type = booking?.aircraft?.icao || 'A320'
@@ -195,12 +195,12 @@ export default function BookingInfo() {
       }
     }
 
-    return `https://www.simbrief.com/system/dispatch.php?orig=${encodeURIComponent(dep)}&dest=${encodeURIComponent(arr)}&type=${encodeURIComponent(type)}&reg=${encodeURIComponent(reg)}&airline=KFR&fltnum=${encodeURIComponent(fn)}&etd=${etd}&units=kgs&navlog=1&etops=1&stepclimbs=1&tlr=1&notams=1&firnot=1${extra}&auto=1`
+    return `https://www.simbrief.com/system/dispatch.php?orig=${encodeURIComponent(dep)}&dest=${encodeURIComponent(arr)}&type=${encodeURIComponent(type)}&reg=${encodeURIComponent(reg)}&airline=KFR&fltnum=${encodeURIComponent(fn)}&etd=${etd}&units=kgs&navlog=1&etops=1&stepclimbs=1&tlr=1&notams=1&firnot=1${extra}${auto}`
   }
 
   const handleGenerateOFP = () => {
     const networkParam = bookingNetwork === 'IVAO' ? '&ivao=1&remarks=RMK%2FIVAOVA%2FKFR' : bookingNetwork === 'VATSIM' ? '&vatsim=1' : ''
-    window.location.href = buildDispatchUrl(networkParam)
+    window.location.href = buildDispatchUrl(networkParam, '&auto=1')
   }
 
   const handleNetworkChange = async (network: string) => {
@@ -237,11 +237,11 @@ export default function BookingInfo() {
   }
 
   const handleFileToIVAO = () => {
-    window.location.href = buildDispatchUrl('&ivao=1&remarks=RMK%2FIVAOVA%2FKFR')
+    window.location.href = buildDispatchUrl('&ivao=1&remarks=RMK%2FIVAOVA%2FKFR', '')
   }
 
   const handleFileToVATSIM = () => {
-    window.location.href = buildDispatchUrl('&vatsim=1')
+    window.location.href = buildDispatchUrl('&vatsim=1', '')
   }
 
   const t = {
@@ -279,28 +279,25 @@ export default function BookingInfo() {
 
   const isUpcoming = bookingStatus === 'UPCOMING' || bookingStatus === 'BOOKED'
 
-  const extractOfpSection = (data: any, section: string) => {
-    if (!data) return null
-    return data.fetch?.text?.flight?.airline?.flight?.find((f: any) => f.label === section)
-      || data.fetch?.text?.flight?.airline?.flight?.[section]
-      || data[section] || null
-  }
-
   const getOFPValue = (data: any, ...keys: string[]) => {
     if (!data) return ''
     for (const key of keys) {
-      const v = data.fetch?.text?.flight?.airline?.flight?.[0]?.[key]
+      const v = data.fetch?.params?.[key]
         || data.fetch?.text?.general?.[key]
-        || data.fetch?.params?.[key]
+        || data.fetch?.text?.flight?.airline?.flight?.[0]?.[key]
+        || data.fetch?.text?.atc?.[key]
+        || data.fetch?.text?.weather?.[key]
+        || data.fetch?.text?.navlog?.[key]
+        || data.params?.[key]
+        || data.text?.general?.[key]
         || data[key]
       if (v !== undefined && v !== null) return String(v)
     }
     return ''
   }
 
-  const ofpGeneral = ofpData?.fetch?.text?.general || ofpData?.general || {}
-  const ofpFlight = ofpData?.fetch?.text?.flight?.airline?.flight?.[0] || ofpData?.flight || {}
-  const ofpParams = ofpData?.fetch?.params || ofpData?.params || {}
+  const ofpGeneral = ofpData?.fetch?.text?.general || {}
+  const ofpParams = ofpData?.fetch?.params || {}
   const ofpRoutes = ofpData?.fetch?.text?.flight?.airline?.flight || []
   const ofpNavlog = ofpData?.fetch?.text?.navlog?.fix || []
 
@@ -597,21 +594,21 @@ export default function BookingInfo() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
                         <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Route</div>
-                        <div className="text-xs font-mono mt-1 truncate" style={{ color: t.text }} title={getOFPValue(ofpData, 'route', 'route_string') || ofpGeneral?.route || '—'}>
-                          {getOFPValue(ofpData, 'route', 'route_string') || ofpGeneral?.route || '—'}
+                        <div className="text-xs font-mono mt-1 truncate" style={{ color: t.text }} title={getOFPValue(ofpData, 'route', 'route_string', 'route_str') || '—'}>
+                          {getOFPValue(ofpData, 'route', 'route_string', 'route_str') || '—'}
                         </div>
                       </div>
                       <div>
                         <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Cruise Alt</div>
-                        <div className="text-xs font-mono mt-1" style={{ color: t.text }}>{ofpParams?.cruise_alt || ofpGeneral?.initial_altitude || '—'}</div>
+                        <div className="text-xs font-mono mt-1" style={{ color: t.text }}>{getOFPValue(ofpData, 'cruise_alt', 'initial_altitude', 'altitude') || '—'}</div>
                       </div>
                       <div>
                         <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Cost Index</div>
-                        <div className="text-xs font-mono mt-1" style={{ color: t.text }}>{ofpParams?.cost_index || ofpGeneral?.cost_index || '—'}</div>
+                        <div className="text-xs font-mono mt-1" style={{ color: t.text }}>{getOFPValue(ofpData, 'cost_index', 'ci') || '—'}</div>
                       </div>
                       <div>
                         <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Alternate</div>
-                        <div className="text-xs font-mono mt-1" style={{ color: t.text }}>{ofpGeneral?.alternate || getOFPValue(ofpData, 'alternate') || '—'}</div>
+                        <div className="text-xs font-mono mt-1" style={{ color: t.text }}>{getOFPValue(ofpData, 'alternate', 'altn', 'altn_icao') || '—'}</div>
                       </div>
                     </div>
 
@@ -623,7 +620,7 @@ export default function BookingInfo() {
                         <Users size={16} style={{ color: '#3b82f6' }} />
                         <div>
                           <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Passengers</div>
-                          <div className="text-sm font-bold" style={{ color: t.text }}>{getOFPValue(ofpData, 'pax', 'passengers') || '—'}</div>
+                          <div className="text-sm font-bold" style={{ color: t.text }}>{getOFPValue(ofpData, 'pax', 'passengers', 'num_pax', 'pax_count') || '—'}</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: t.input }}>
@@ -631,7 +628,7 @@ export default function BookingInfo() {
                         <div>
                           <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Fuel</div>
                           <div className="text-sm font-bold" style={{ color: t.text }}>
-                            {getOFPValue(ofpData, 'fuel', 'total_fuel') || ofpGeneral?.total_fuel || '—'} kg
+                            {getOFPValue(ofpData, 'total_fuel', 'fuel', 'fuel_total', 'burn', 'total_burn') || '—'} kg
                           </div>
                         </div>
                       </div>
@@ -640,7 +637,7 @@ export default function BookingInfo() {
                         <div>
                           <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Payload</div>
                           <div className="text-sm font-bold" style={{ color: t.text }}>
-                            {getOFPValue(ofpData, 'payload', 'payload') || ofpGeneral?.payload || '—'} kg
+                            {getOFPValue(ofpData, 'payload', 'total_payload', 'pay_load') || '—'} kg
                           </div>
                         </div>
                       </div>
@@ -649,7 +646,7 @@ export default function BookingInfo() {
                         <div>
                           <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Cargo</div>
                           <div className="text-sm font-bold" style={{ color: t.text }}>
-                            {getOFPValue(ofpData, 'cargo', 'cargo') || ofpGeneral?.cargo || '—'} kg
+                            {getOFPValue(ofpData, 'cargo', 'total_cargo', 'cargo_weight') || '—'} kg
                           </div>
                         </div>
                       </div>

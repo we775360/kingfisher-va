@@ -8,6 +8,7 @@ interface Pilot {
   rank: string
   totalHours: number
   status: string
+  simbriefUsername?: string
 }
 
 interface User {
