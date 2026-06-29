@@ -65,31 +65,32 @@ model Session {
 }
 
 model Pilot {
-  id            String      @id @default(cuid())
-  userId        String      @unique
-  pilotId       String      @unique
-  firstName     String
-  lastName      String
-  callsign      String?
-  avatar        String?
-  bio           String?
-  status        PilotStatus @default(ACTIVE)
-  rank          String      @default("Student Pilot")
-  totalHours    Float       @default(0)
-  totalFlights  Int         @default(0)
-  totalDistance Float       @default(0)
+  id              String      @id @default(cuid())
+  userId          String      @unique
+  pilotId         String      @unique
+  firstName       String
+  lastName        String
+  callsign        String?
+  avatar          String?
+  bio             String?
+  simbriefUsername String?
+  status          PilotStatus @default(ACTIVE)
+  rank            String      @default("Student Pilot")
+  totalHours      Float       @default(0)
+  totalFlights    Int         @default(0)
+  totalDistance   Float       @default(0)
   points          Int         @default(0)
   walletBalance   Float       @default(0)
   bookings        Booking[]
-  hub           String?
-  joinedAt      DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pireps        PIREP[]
-  awards        PilotAward[]
-  logbook       LogbookEntry[]
-  events        EventAttendee[]
-  liveFlight    LiveFlight?
+  hub             String?
+  joinedAt        DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pireps          PIREP[]
+  awards          PilotAward[]
+  logbook         LogbookEntry[]
+  events          EventAttendee[]
+  liveFlight      LiveFlight?
   realisticBookings RealisticFlight[]
 }
 
@@ -218,20 +219,24 @@ enum BookingStatus {
 }
 
 model Booking {
-  id         String        @id @default(cuid())
-  pilotId    String
-  routeId    String
-  aircraftId String
-  depTime    DateTime
-  network    String
-  status     BookingStatus @default(UPCOMING)
-  earnings   Float         @default(0)
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-  pilot      Pilot         @relation(fields: [pilotId], references: [id], onDelete: Cascade)
-  route      Route         @relation(fields: [routeId], references: [id])
-  aircraft   Aircraft      @relation(fields: [aircraftId], references: [id])
-  pirep      PIREP?
+  id              String        @id @default(cuid())
+  pilotId         String
+  routeId         String
+  aircraftId      String
+  depTime         DateTime
+  network         String
+  status          BookingStatus @default(UPCOMING)
+  earnings        Float         @default(0)
+  simbriefOfpData String?
+  simbriefPdfUrl  String?
+  simbriefStaticId String?
+  simbriefUserId  String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  pilot           Pilot         @relation(fields: [pilotId], references: [id], onDelete: Cascade)
+  route           Route         @relation(fields: [routeId], references: [id])
+  aircraft        Aircraft      @relation(fields: [aircraftId], references: [id])
+  pirep           PIREP?
 }
 
 

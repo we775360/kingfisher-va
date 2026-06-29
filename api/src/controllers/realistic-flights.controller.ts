@@ -135,6 +135,74 @@ export const cancelBooking = async (req: FastifyRequest, reply: FastifyReply) =>
   }
 }
 
+// ── GET REALISTIC FLIGHT BY ID ──
+export const getRealisticFlightById = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { userId } = req.user as { userId: string; role: string }
+    const { id } = req.params as { id: string }
+
+    const pilot = await prisma.pilot.findUnique({ where: { userId } })
+    if (!pilot) return reply.status(404).send({ error: 'Pilot not found' })
+
+    const flight = await prisma.realisticFlight.findUnique({
+      where: { id },
+      include: {
+        pilot: {
+          select: {
+            pilotId: true,
+            firstName: true,
+            lastName: true,
+            rank: true,
+            simbriefUsername: true,
+            callsign: true,
+          }
+        }
+      }
+    })
+    if (!flight) return reply.status(404).send({ error: 'Flight not found' })
+    if (flight.pilotId !== pilot.id) return reply.status(403).send({ error: 'Not your booking' })
+
+    return reply.send(flight)
+  } catch (err) {
+    console.error(err)
+    return reply.status(500).send({ error: 'Internal server error' })
+  }
+}
+
+// ── CHANGE REALISTIC FLIGHT NETWORK ──
+export const changeRealisticNetwork = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { userId } = req.user as { userId: string; role: string }
+    const { id } = req.params as { id: string }
+
+    const schema = z.object({
+      network: z.enum(['VATSIM', 'IVAO']),
+    })
+    const body = schema.parse(req.body)
+
+    const pilot = await prisma.pilot.findUnique({ where: { userId } })
+    if (!pilot) return reply.status(404).send({ error: 'Pilot not found' })
+
+    const flight = await prisma.realisticFlight.findUnique({ where: { id } })
+    if (!flight) return reply.status(404).send({ error: 'Flight not found' })
+    if (flight.pilotId !== pilot.id) return reply.status(403).send({ error: 'Not your booking' })
+    if (flight.status !== 'BOOKED') return reply.status(400).send({ error: 'Can only change network on booked flights' })
+
+    await prisma.realisticFlight.update({
+      where: { id },
+      data: { network: body.network }
+    })
+
+    return reply.send({ success: true, network: body.network })
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return reply.status(400).send({ error: 'Invalid input', details: err.issues })
+    }
+    console.error(err)
+    return reply.status(500).send({ error: 'Internal server error' })
+  }
+}
+
 // ── ATC CANCEL BOOKING (no penalty) ──
 export const atcCancelBooking = async (req: FastifyRequest, reply: FastifyReply) => {
   try {

@@ -8,6 +8,10 @@ import {
   getMyBookings,
   cancelBooking,
   getWallet,
+  getBookingById,
+  generateOFP,
+  changeBookingNetwork,
+  updateSimBriefUsername,
 } from '../controllers/booking.controller.js'
 
 export const bookingRoutes = async (app: FastifyInstance) => {
@@ -15,7 +19,11 @@ export const bookingRoutes = async (app: FastifyInstance) => {
   app.get('/aircraft', { preHandler: authenticate }, getAircraft)
   app.post('/bookings', { preHandler: authenticate }, createBooking)
   app.get('/bookings/my', { preHandler: authenticate }, getMyBookings)
+  app.get('/bookings/:id', { preHandler: authenticate }, getBookingById)
+  app.post('/bookings/:id/generate-ofp', { preHandler: authenticate }, generateOFP)
+  app.patch('/bookings/:id/network', { preHandler: authenticate }, changeBookingNetwork)
   app.patch('/bookings/:id/cancel', { preHandler: authenticate }, cancelBooking)
+  app.patch('/pilot/simbrief', { preHandler: authenticate }, updateSimBriefUsername)
   app.get('/wallet', { preHandler: authenticate }, getWallet)
   app.get('/roster', { preHandler: authenticate }, async (req, reply) => {
   const pilots = await prisma.pilot.findMany({

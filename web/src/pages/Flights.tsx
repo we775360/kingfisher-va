@@ -412,23 +412,16 @@ export default function Flights() {
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 flex-shrink-0">
+                        <button onClick={() => {
+                          const bkType = isRealisticOps ? 'realistic' : 'standard'
+                          navigate(`/booking/${bkType}/${booking.id}`)
+                        }}
+                          className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 justify-center"
+                          style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
+                          <Navigation size={11} /> Details
+                        </button>
                         {booking.status === 'UPCOMING' && !isRealisticOps && (
                           <>
-                            <button
-                              onClick={() => {
-                                const dep = booking.route?.depIcao || ''
-                                const arr = booking.route?.arrIcao || ''
-                                const type = booking.aircraft?.icao || 'A320'
-                                const reg = booking.aircraft?.registration || ''
-                                const airline = 'KFR'
-                                const fltnum = booking.route?.flightNumber?.replace('IT', '') || '101'
-                                const url = `https://www.simbrief.com/system/dispatch.php?orig=${dep}&dest=${arr}&type=${type}&reg=${reg}&airline=${airline}&fltnum=${fltnum}&units=kgs&navlog=1&etops=1&stepclimbs=1&tlr=1&notams=1&firnot=1&auto=1`
-                                window.open(url, '_blank')
-                              }}
-                              className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5"
-                              style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.2)' }}>
-                              <Navigation size={11} /> SimBrief OFP
-                            </button>
                             <Link to="/pirep"
                               className="px-3 py-2 rounded-xl text-xs font-semibold text-white text-center"
                               style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)', textDecoration: 'none' }}>
@@ -521,10 +514,17 @@ export default function Flights() {
                     Estimated earnings: ${estimatedEarnings(selectedRoute)}
                   </div>
                   <div className="flex gap-3 justify-center">
-                    <button onClick={() => { setSelectedRoute(null); setView('mybookings') }}
+                    <button
+                      onClick={async () => {
+                        setSelectedRoute(null);
+                        const b = await api.get('/bookings/my').then(r => r.data);
+                        const newest = b?.[0];
+                        if (newest?.id) navigate(`/booking/standard/${newest.id}`);
+                        else navigate('/flights');
+                      }}
                       className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
                       style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
-                      View My Flights
+                      View Booking Details
                     </button>
                     <button onClick={() => setSelectedRoute(null)}
                       className="px-5 py-2.5 rounded-xl text-sm font-semibold"

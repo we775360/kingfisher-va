@@ -1,19 +1,48 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Settings, Sun, Moon, LogOut, Shield, User, Bell, Key, Trash2, Check } from 'lucide-react'
+import { Settings, Sun, Moon, LogOut, Shield, User, Bell, Key, Trash2, Check, Navigation, ExternalLink } from 'lucide-react'
 import { useThemeStore } from '../store/theme.store'
 import { useAuthStore } from '../store/auth.store'
 import api from '../lib/axios'
 
 export default function SettingsPage() {
   const { isDark, toggle } = useThemeStore()
-  const { logout } = useAuthStore()
+  const { logout, user } = useAuthStore()
   const navigate = useNavigate()
 
   const [passwordForm, setPasswordForm] = useState({ current: '', newPass: '', confirm: '' })
+  const [simbriefUsername, setSimbriefUsername] = useState('')
+  const [simbriefSaving, setSimbriefSaving] = useState(false)
+  const [simbriefMsg, setSimbriefMsg] = useState('')
   const [msg, setMsg] = useState('')
   const [msgType, setMsgType] = useState<'success' | 'error'>('success')
+
+  useEffect(() => {
+    fetchSimBriefUsername()
+  }, [])
+
+  const fetchSimBriefUsername = async () => {
+    try {
+      const me = await api.get('/auth/me')
+      const username = me.data?.pilot?.simbriefUsername || ''
+      setSimbriefUsername(username)
+    } catch {}
+  }
+
+  const handleSaveSimBrief = async () => {
+    setSimbriefSaving(true)
+    setSimbriefMsg('')
+    try {
+      await api.patch('/pilot/simbrief', { simbriefUsername: simbriefUsername.trim() })
+      setSimbriefMsg('SimBrief account linked successfully!')
+      setTimeout(() => setSimbriefMsg(''), 3000)
+    } catch (err: any) {
+      setSimbriefMsg(err.response?.data?.error || 'Failed to save SimBrief username')
+    } finally {
+      setSimbriefSaving(false)
+    }
+  }
 
   const t = {
     bg: isDark ? '#0f0f0f' : '#f0f2f5',
@@ -129,9 +158,58 @@ export default function SettingsPage() {
           </div>
         </motion.div>
 
+        {/* SimBrief Integration */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
+          className="rounded-2xl overflow-hidden"
+          style={{ background: t.card, border: `1px solid ${t.border}` }}>
+          <div className="flex items-center gap-2.5 px-5 py-4"
+            style={{ borderBottom: `1px solid ${t.border}` }}>
+            <Navigation size={15} style={{ color: '#3b82f6' }} />
+            <span className="text-sm font-semibold" style={{ color: t.text }}>SimBrief Integration</span>
+          </div>
+          <div className="px-5 py-4 space-y-3">
+            <div className="flex items-start gap-2.5 p-3.5 rounded-xl"
+              style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.12)' }}>
+              <ExternalLink size={13} style={{ color: '#3b82f6', flexShrink: 0, marginTop: 1 }} />
+              <div className="text-xs leading-relaxed" style={{ color: t.textSub }}>
+                Link your SimBrief account to auto-generate flight plans when booking.
+                All OFP data (route, waypoints, passengers, fuel, cargo) will be displayed inline on the Booking Checkout page.
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs mb-1.5" style={{ color: t.textMuted }}>SIMBRIEF USERNAME</label>
+              <div className="flex gap-2">
+                <input
+                  value={simbriefUsername}
+                  onChange={e => setSimbriefUsername(e.target.value)}
+                  placeholder="Enter your SimBrief username..."
+                  style={{ ...inputStyle, flex: 1 }} />
+                <button onClick={handleSaveSimBrief}
+                  disabled={simbriefSaving}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white flex-shrink-0"
+                  style={{
+                    background: simbriefSaving ? 'rgba(59,130,246,0.5)' : '#3b82f6',
+                  }}>
+                  {simbriefSaving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+            {simbriefMsg && (
+              <div className="px-4 py-2.5 rounded-xl text-xs flex items-center gap-2"
+                style={{
+                  background: simbriefMsg.includes('success') ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                  color: simbriefMsg.includes('success') ? '#10b981' : '#ef4444',
+                }}>
+                <Check size={13} /> {simbriefMsg}
+              </div>
+            )}
+          </div>
+        </motion.div>
+
         {/* Password */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.14 }}
           className="rounded-2xl overflow-hidden"
           style={{ background: t.card, border: `1px solid ${t.border}` }}>
           <div className="flex items-center gap-2.5 px-5 py-4"

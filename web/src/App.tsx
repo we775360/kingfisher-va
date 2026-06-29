@@ -26,6 +26,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy'
 import Handbook from './pages/Handbook'
 import LiveMap from './pages/LiveMap'
 import FSACARS from './pages/FSACARS'
+import BookingInfo from './pages/BookingInfo'
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
       <Route path="/atc" element={<ATCVSO />} />
       <Route path="/atc/login" element={<ATCLogin />} />
       <Route path="/fsacars" element={<FSACARS />} />
+      <Route path="/booking/:type/:id" element={<BookingInfo />} />
       <Route path="/atc/dashboard" element={
         <ATCRoute>
           <ATCDashboard />

@@ -403,6 +403,11 @@ export default function RealisticFlights() {
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 flex-shrink-0">
+                        <button onClick={() => navigate(`/booking/realistic/${booking.id}`)}
+                          className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
+                          style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
+                          <Navigation size={11} /> Details
+                        </button>
                         {booking.status === 'BOOKED' && (
                           <button onClick={() => setCancelTarget(booking)}
                             className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
@@ -484,10 +489,17 @@ export default function RealisticFlights() {
                     Off-block: {selectedFlight.offBlock} | Network: {selectedFlight.network}
                   </div>
                   <div className="flex gap-3 justify-center">
-                    <button onClick={() => { setSelectedFlight(null); setView('mybookings') }}
+                    <button
+                      onClick={async () => {
+                        setSelectedFlight(null);
+                        const b = await api.get('/realistic-flights/my').then(r => r.data);
+                        const newest = b?.[0];
+                        if (newest?.id) navigate(`/booking/realistic/${newest.id}`);
+                        else navigate('/realistic-flights');
+                      }}
                       className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
                       style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
-                      View My Bookings
+                      View Booking Details
                     </button>
                     <button onClick={() => setSelectedFlight(null)}
                       className="px-5 py-2.5 rounded-xl text-sm font-semibold"
