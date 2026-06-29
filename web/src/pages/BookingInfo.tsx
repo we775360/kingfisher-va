@@ -128,7 +128,7 @@ export default function BookingInfo() {
       const lines = text.split('\n').filter(l => l.trim().length > 0).slice(0, 5)
       setter(lines.length > 0 ? lines : ['No active NOTAMs'])
     } catch {
-      setter(['NOTAMs unavailable'])
+      setter([])
     }
   }
 
@@ -790,7 +790,7 @@ export default function BookingInfo() {
                       <div key={i} className="text-[10px] font-mono leading-relaxed px-2 py-1 rounded" style={{ background: t.input, color: t.textSub }}>
                         {n}
                       </div>
-                    )) : <div className="text-[10px]" style={{ color: t.textMuted }}>Loading...</div>}
+                    )) : <div className="text-[10px]" style={{ color: t.textMuted }}>No active NOTAMs</div>}
                   </div>
                 </div>
                 <div className="h-px" style={{ background: t.border }} />
@@ -804,7 +804,7 @@ export default function BookingInfo() {
                       <div key={i} className="text-[10px] font-mono leading-relaxed px-2 py-1 rounded" style={{ background: t.input, color: t.textSub }}>
                         {n}
                       </div>
-                    )) : <div className="text-[10px]" style={{ color: t.textMuted }}>Loading...</div>}
+                    )) : <div className="text-[10px]" style={{ color: t.textMuted }}>No active NOTAMs</div>}
                   </div>
                 </div>
               </div>

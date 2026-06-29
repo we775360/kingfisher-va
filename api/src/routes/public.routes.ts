@@ -80,7 +80,7 @@ export const publicRoutes = async (app: FastifyInstance) => {
       const res = await axios.get(`https://www.aviationweather.gov/api/data/notam?ids=${icao}&format=raw`, { timeout: 8000 })
       return reply.type('text/plain').send(res.data)
     } catch {
-      return reply.type('text/plain').send('NOTAMs unavailable')
+      return reply.code(204).send()
     }
   })
 
