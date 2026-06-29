@@ -105,11 +105,9 @@ export const createBooking = async (req: FastifyRequest, reply: FastifyReply) =>
       booking.route.arrIcao
     ).catch(err => console.error('Discord Notify Error:', err))
 
-    // Auto-generate SimBrief OFP if pilot has username set (non-blocking)
+    // Auto-fetch SimBrief OFP if pilot has username set (non-blocking, expected to fail server-side — browser fetches directly)
     if (pilot.simbriefUsername) {
-      generateOFPAuto(booking.id, pilot.simbriefUsername, booking.route, booking.aircraft).catch(err =>
-        console.error('Auto OFP Generation Error:', err.message)
-      )
+      generateOFPAuto(booking.id, pilot.simbriefUsername, booking.route, booking.aircraft).catch(() => {})
     }
 
     return reply.status(201).send(booking)
