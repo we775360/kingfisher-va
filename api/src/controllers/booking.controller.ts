@@ -292,7 +292,7 @@ export const generateOFP = async (req: FastifyRequest, reply: FastifyReply) => {
   return reply.send({ success: true, ofpData, pdfUrl })
 }
 
-// ── FETCH OFP (after dispatch via iframe) ──
+// ── FETCH OFP (after user generates on SimBrief) ──
 export const fetchOFP = async (req: FastifyRequest, reply: FastifyReply) => {
   const { userId } = req.user as { userId: string }
   const { id } = req.params as { id: string }
@@ -308,10 +308,19 @@ export const fetchOFP = async (req: FastifyRequest, reply: FastifyReply) => {
   const fetchUrl = `https://www.simbrief.com/api/xml.fetcher.php?username=${encodeURIComponent(pilot.simbriefUsername)}&json=1`
 
   try {
-    const res = await axios.get(fetchUrl, { timeout: 15000 })
+    const res = await axios.get(fetchUrl, {
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'KingfisherVA/1.0',
+        'Accept': 'application/json',
+      }
+    })
     const ofpData = res.data
-    if (!ofpData || ofpData.fetch?.status === 'error') {
-      return reply.status(404).send({ error: 'No OFP found yet. Make sure you are logged into SimBrief and try again.' })
+
+    // SimBrief returns status 'error' when no OFP or user not found
+    const sbStatus = ofpData?.fetch?.status || ''
+    if (!ofpData || sbStatus.includes('error') || sbStatus.includes('No records')) {
+      return reply.status(404).send({ error: 'No OFP found on SimBrief', sbStatus })
     }
 
     const pdfUrl = ofpData?.fetch?.pdf_url || ofpData?.pdf_url || ''
@@ -328,11 +337,18 @@ export const fetchOFP = async (req: FastifyRequest, reply: FastifyReply) => {
           simbriefUserId: String(userId_sb || ''),
         }
       })
-    } catch { }
+    } catch (dbErr: any) {
+      console.error('DB save warning (fetchOFP):', dbErr.message)
+    }
 
     return reply.send({ success: true, ofpData, pdfUrl })
-  } catch {
-    return reply.status(502).send({ error: 'Could not reach SimBrief. Try again.' })
+  } catch (err: any) {
+    console.error('fetchOFP error:', err.message, err.code)
+    return reply.status(502).send({
+      error: 'Could not reach SimBrief from server.',
+      detail: err.message,
+      code: err.code,
+    })
   }
 }
 

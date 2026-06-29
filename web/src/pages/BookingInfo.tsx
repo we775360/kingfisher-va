@@ -139,39 +139,11 @@ export default function BookingInfo() {
     }
     setOfpLoading(true)
     try {
+      // Try our backend proxy first
       const res = await api.post(`/bookings/${id}/generate-ofp`)
       const data = res.data
 
-      if (data.needsDispatch) {
-        const sbWin = window.open(data.dispatchUrl, 'simbrief_gen', 'width=500,height=700,menubar=no,toolbar=no')
-        const startTime = Date.now()
-        const maxWait = 45000
-
-        const poll = async () => {
-          if (Date.now() - startTime > maxWait) {
-            setOfpLoading(false)
-            alert('Timed out waiting for SimBrief. Please ensure you are logged into SimBrief and try again.')
-            return
-          }
-          try {
-            const fetchRes = await api.post(`/bookings/${id}/fetch-ofp`)
-            if (fetchRes.data?.ofpData) {
-              setOfpData(fetchRes.data.ofpData)
-              setBooking((prev: any) => ({
-                ...prev,
-                simbriefOfpData: JSON.stringify(fetchRes.data.ofpData),
-                simbriefPdfUrl: fetchRes.data.pdfUrl,
-              }))
-              setOfpLoading(false)
-              if (sbWin && !sbWin.closed) sbWin.close()
-              return
-            }
-          } catch { }
-          setTimeout(poll, 3000)
-        }
-
-        setTimeout(poll, 5000)
-      } else if (data.ofpData) {
+      if (data.ofpData) {
         setOfpData(data.ofpData)
         setBooking((prev: any) => ({
           ...prev,
@@ -179,13 +151,59 @@ export default function BookingInfo() {
           simbriefPdfUrl: data.pdfUrl,
         }))
         setOfpLoading(false)
-      } else {
+        return
+      }
+
+      // No OFP on backend — try direct browser fetch from SimBrief
+      if (data.needsDispatch) {
+        const directUrl = `https://www.simbrief.com/api/xml.fetcher.php?username=${encodeURIComponent(simbriefUsername)}&json=1`
+        try {
+          const directRes = await fetch(directUrl)
+          const directData = await directRes.json()
+          const sbStatus = directData?.fetch?.status || ''
+          if (directData && !sbStatus.includes('error') && !sbStatus.includes('No records')) {
+            setOfpData(directData)
+            setBooking((prev: any) => ({
+              ...prev,
+              simbriefOfpData: JSON.stringify(directData),
+            }))
+            setOfpLoading(false)
+            return
+          }
+        } catch { /* CORS or network error — expected */ }
+
+        // No OFP anywhere — show the dispatch link
         setOfpLoading(false)
+        const sbLink = data.dispatchUrl
+        if (confirm('No flight plan found on SimBrief. Would you like to open SimBrief to generate one? (This is a one-time step)')) {
+          window.open(sbLink, '_blank')
+        }
       }
     } catch (err: any) {
-      const data = err.response?.data
-      const msg = data?.detail || data?.error || err.message || 'Unknown error'
-      alert('OFP Generation: ' + msg)
+      const msg = err.response?.data?.detail || err.response?.data?.error || err.message || 'Unknown error'
+      alert(msg)
+      setOfpLoading(false)
+    }
+  }
+
+  const handleRefreshOFP = async () => {
+    setOfpLoading(true)
+    try {
+      const res = await api.post(`/bookings/${id}/fetch-ofp`)
+      if (res.data?.ofpData) {
+        setOfpData(res.data.ofpData)
+        setBooking((prev: any) => ({
+          ...prev,
+          simbriefOfpData: JSON.stringify(res.data.ofpData),
+          simbriefPdfUrl: res.data.pdfUrl,
+        }))
+      } else {
+        alert(res.data?.error || 'Still no OFP found')
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || err.response?.data?.error || err.message || 'Could not reach SimBrief'
+      alert(msg)
+    } finally {
       setOfpLoading(false)
     }
   }
@@ -690,25 +708,37 @@ export default function BookingInfo() {
                     </div>
                   </div>
                 ) : (
-                  /* Generate OFP button */
+                  /* Generate/Refresh OFP buttons */
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <Zap size={16} style={{ color: '#3b82f6' }} />
                       <div>
-                        <div className="text-sm font-semibold" style={{ color: t.text }}>Ready to Generate</div>
-                        <div className="text-xs mt-0.5" style={{ color: t.textSub }}>Your flight plan will be auto-generated via SimBrief.</div>
+                        <div className="text-sm font-semibold" style={{ color: t.text }}>No Flight Plan Yet</div>
+                        <div className="text-xs mt-0.5" style={{ color: t.textSub }}>
+                          Create one on SimBrief for {flightNumber}, then click fetch.
+                        </div>
                       </div>
                     </div>
-                    <button
-                      onClick={handleGenerateOFP}
-                      disabled={ofpLoading}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white flex-shrink-0 transition-all"
-                      style={{
-                        background: ofpLoading ? 'rgba(59,130,246,0.5)' : '#3b82f6',
-                      }}
-                    >
-                      {ofpLoading ? <><Loader size={13} className="animate-spin" /> Generating...</> : <><Zap size={13} /> Generate OFP</>}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleGenerateOFP}
+                        disabled={ofpLoading}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white flex-shrink-0 transition-all"
+                        style={{
+                          background: ofpLoading ? 'rgba(59,130,246,0.5)' : '#3b82f6',
+                        }}
+                      >
+                        {ofpLoading ? <><Loader size={13} className="animate-spin" /> Checking...</> : <><Zap size={13} /> Fetch OFP</>}
+                      </button>
+                      <button
+                        onClick={handleRefreshOFP}
+                        disabled={ofpLoading}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold flex-shrink-0 transition-all"
+                        style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.2)' }}
+                      >
+                        <RefreshCw size={13} /> Retry
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
