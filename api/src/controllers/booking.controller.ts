@@ -224,6 +224,32 @@ export const getBookingById = async (req: FastifyRequest, reply: FastifyReply) =
   }
 }
 
+// ── SAVE SIMBRIEF OFP (from browser fetch) ──
+export const saveOFP = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { userId } = req.user as { userId: string }
+    const { id } = req.params as { id: string }
+    const body = req.body as { ofpData?: string }
+
+    const pilot = await prisma.pilot.findUnique({ where: { userId } })
+    if (!pilot) return reply.status(404).send({ error: 'Pilot not found' })
+
+    const booking = await prisma.booking.findUnique({ where: { id } })
+    if (!booking) return reply.status(404).send({ error: 'Booking not found' })
+    if (booking.pilotId !== pilot.id) return reply.status(403).send({ error: 'Not your booking' })
+
+    const updated = await prisma.booking.update({
+      where: { id },
+      data: { simbriefOfpData: body.ofpData }
+    })
+
+    return reply.send({ success: true, simbriefOfpData: updated.simbriefOfpData })
+  } catch (err) {
+    console.error(err)
+    return reply.status(500).send({ error: 'Internal server error' })
+  }
+}
+
 // ── GENERATE SIMBRIEF OFP ──
 export const generateOFP = async (req: FastifyRequest, reply: FastifyReply) => {
   const { userId } = req.user as { userId: string }

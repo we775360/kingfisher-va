@@ -98,11 +98,15 @@ export default function BookingInfo() {
         : `/realistic-flights/${id}`
       const res = await api.get(endpoint)
       setBooking(res.data)
+      // Validate saved OFP before using it (old bug saved error responses)
       const rawOfp = res.data?.simbriefOfpData
       if (rawOfp) {
         try {
           const parsed = typeof rawOfp === 'string' ? JSON.parse(rawOfp) : rawOfp
-          setOfpData(parsed)
+          const status = (parsed?.fetch?.status || '').toLowerCase()
+          if (parsed?.fetch?.params && !status.includes('error') && !status.includes('no records') && !status.includes('unknown')) {
+            setOfpData(parsed)
+          }
         } catch { }
       }
     } catch (err: any) {
@@ -141,9 +145,11 @@ export default function BookingInfo() {
       if (!res.ok) return
       const data = await res.json()
       const status = (data?.fetch?.status || '').toLowerCase()
-      if (data && !status.includes('error') && !status.includes('no records') && !status.includes('unknown')) {
+      if (data?.fetch?.params && !status.includes('error') && !status.includes('no records') && !status.includes('unknown')) {
         setOfpData(data)
         setBooking((prev: any) => ({ ...prev, simbriefOfpData: JSON.stringify(data) }))
+        // Persist to backend so it survives page refresh
+        api.post(`/bookings/${id}/save-ofp`, { ofpData: JSON.stringify(data) }).catch(() => {})
       }
     } catch { }
   }
