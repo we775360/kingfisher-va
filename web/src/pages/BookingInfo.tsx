@@ -162,18 +162,45 @@ export default function BookingInfo() {
         fetchOFPFromSimBrief()
       }
     }
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted && simbriefUsername) {
+        setOfpLoading(true)
+        fetchOFPFromSimBrief().finally(() => setOfpLoading(false))
+      }
+    }
     window.addEventListener('focus', onFocus)
-    return () => window.removeEventListener('focus', onFocus)
+    window.addEventListener('pageshow', onPageShow)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      window.removeEventListener('pageshow', onPageShow)
+    }
   }, [booking, simbriefUsername, ofpData])
 
-  const handleGenerateOFP = () => {
+  const buildDispatchUrl = (extra: string) => {
     const dep = booking?.route?.depIcao || booking?.depIcao || ''
     const arr = booking?.route?.arrIcao || booking?.arrIcao || ''
     const type = booking?.aircraft?.icao || 'A320'
     const reg = booking?.aircraft?.registration || ''
     const fn = (booking?.route?.flightNumber || booking?.flightNumber || '101').replace('KFR', '').replace('IT', '')
-    const url = `https://www.simbrief.com/system/dispatch.php?orig=${dep}&dest=${arr}&type=${type}&reg=${reg}&airline=KFR&fltnum=${fn}&units=kgs&navlog=1&etops=1&stepclimbs=1&tlr=1&notams=1&firnot=1&auto=1`
-    window.open(url, '_blank')
+
+    // EOBT in HHMM Zulu
+    let etd = ''
+    if (depTime) {
+      if (isStandard) {
+        const d = new Date(depTime)
+        etd = d.getUTCHours().toString().padStart(2, '0') + d.getUTCMinutes().toString().padStart(2, '0')
+      } else {
+        const m = String(depTime).match(/(\d{1,2}):(\d{2})/)
+        if (m) etd = m[1].padStart(2, '0') + m[2]
+      }
+    }
+
+    return `https://www.simbrief.com/system/dispatch.php?orig=${encodeURIComponent(dep)}&dest=${encodeURIComponent(arr)}&type=${encodeURIComponent(type)}&reg=${encodeURIComponent(reg)}&airline=KFR&fltnum=${encodeURIComponent(fn)}&etd=${etd}&units=kgs&navlog=1&etops=1&stepclimbs=1&tlr=1&notams=1&firnot=1${extra}&auto=1`
+  }
+
+  const handleGenerateOFP = () => {
+    const networkParam = bookingNetwork === 'IVAO' ? '&ivao=1&remarks=RMK%2FIVAOVA%2FKFR' : bookingNetwork === 'VATSIM' ? '&vatsim=1' : ''
+    window.location.href = buildDispatchUrl(networkParam)
   }
 
   const handleNetworkChange = async (network: string) => {
@@ -210,13 +237,11 @@ export default function BookingInfo() {
   }
 
   const handleFileToIVAO = () => {
-    const url = `https://www.simbrief.com/system/dispatch.php?orig=${depIcao}&dest=${arrIcao}&airline=KFR&fltnum=${flightNumber.replace('KFR', '')}&ivao=1&auto=1`
-    window.open(url, '_blank')
+    window.location.href = buildDispatchUrl('&ivao=1&remarks=RMK%2FIVAOVA%2FKFR')
   }
 
   const handleFileToVATSIM = () => {
-    const url = `https://www.simbrief.com/system/dispatch.php?orig=${depIcao}&dest=${arrIcao}&airline=KFR&fltnum=${flightNumber.replace('KFR', '')}&vatsim=1&auto=1`
-    window.open(url, '_blank')
+    window.location.href = buildDispatchUrl('&vatsim=1')
   }
 
   const t = {
@@ -685,7 +710,7 @@ export default function BookingInfo() {
                           {ofpLoading ? 'Checking SimBrief...' : 'No Flight Plan Yet'}
                         </div>
                         <div className="text-xs mt-0.5" style={{ color: t.textSub }}>
-                          {ofpLoading ? '' : 'Generate one on SimBrief for ' + flightNumber + '.'}
+                          {ofpLoading ? '' : bookingNetwork === 'IVAO' ? 'Creates & files to IVAO with VA tracking remark.' : bookingNetwork === 'VATSIM' ? 'Creates & files to VATSIM.' : 'Creates flight plan on SimBrief.'}
                         </div>
                       </div>
                     </div>
@@ -697,7 +722,7 @@ export default function BookingInfo() {
                         className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white flex-shrink-0 transition-all"
                         style={{ background: '#3b82f6' }}
                       >
-                        <Zap size={13} /> Generate on SimBrief
+                        <Zap size={13} /> {bookingNetwork === 'IVAO' ? 'Generate & File to IVAO' : 'Generate Flight Plan'}
                       </button>
                     )}
                   </div>
