@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Plane, Navigation, Clock, Search,
+  Navigation, Clock, Search,
   ChevronRight, X, Calendar, Radio,
   DollarSign, Info, Check, ArrowRight,
   MapPin, Wrench, AlertTriangle, ChevronLeft
@@ -264,7 +264,7 @@ export default function Flights() {
             )}
             <div className="w-px h-4" style={{ background: t.border }} />
             <div className="flex items-center gap-2">
-              <Plane size={16} style={{ color: '#c0121e' }} />
+              <img src="/logo.png" alt="" className="inline-block" style={{ width: 16, height: 16 }} />
               <span className="font-bold text-base" style={{ color: t.text }}>
                 {view === 'family' ? 'Select Aircraft Family' :
                  view === 'aircraft' ? `Select ${selectedFamily}` :
@@ -320,7 +320,7 @@ export default function Flights() {
 
             {filteredFamilies.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
-                <Plane size={40} style={{ color: t.textMuted, marginBottom: '12px' }} strokeWidth={1.5} />
+                <img src="/logo.png" alt="" style={{ width: 40, height: 40, opacity: 0.5, marginBottom: '12px' }} />
                 <div className="text-sm font-medium mb-1" style={{ color: t.textSub }}>No aircraft families found</div>
                 <div className="text-xs" style={{ color: t.textMuted }}>Ask admin to add aircraft to the fleet</div>
               </div>
@@ -375,7 +375,7 @@ export default function Flights() {
 
             {filteredAircraft.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
-                <Plane size={40} style={{ color: t.textMuted, marginBottom: '12px' }} strokeWidth={1.5} />
+                <img src="/logo.png" alt="" style={{ width: 40, height: 40, opacity: 0.5, marginBottom: '12px' }} />
                 <div className="text-sm font-medium mb-1" style={{ color: t.textSub }}>No aircraft in this family</div>
                 <div className="text-xs" style={{ color: t.textMuted }}>Ask admin to add {selectedFamily} aircraft</div>
               </div>
@@ -399,7 +399,7 @@ export default function Flights() {
                         <div className="flex items-center gap-4 flex-1 min-w-0">
                           <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                             style={{ background: 'rgba(192,18,30,0.1)' }}>
-                            <Plane size={18} style={{ color: '#c0121e' }} />
+                            <img src="/logo.png" alt="" className="w-5 h-5 object-contain" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-3">
@@ -444,7 +444,7 @@ export default function Flights() {
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center"
                   style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
-                  <Plane size={18} style={{ color: 'white' }} />
+                  <img src="/logo.png" alt="" className="w-5 h-5 object-contain" />
                 </div>
                 <div>
                   <div className="text-sm font-bold" style={{ color: t.text }}>
@@ -507,7 +507,7 @@ export default function Flights() {
                       <span className="text-lg font-bold" style={{ color: t.text }}>{returnRoute.depIcao}</span>
                       <div className="flex-1 flex items-center gap-1">
                         <div className="flex-1 h-px" style={{ background: t.border }} />
-                        <Plane size={12} style={{ color: '#f59e0b' }} />
+                        <img src="/logo.png" alt="" style={{ width: 12, height: 12 }} />
                         <div className="flex-1 h-px" style={{ background: t.border }} />
                       </div>
                       <span className="text-lg font-bold" style={{ color: t.text }}>{returnRoute.arrIcao}</span>
@@ -592,7 +592,7 @@ export default function Flights() {
             </div>
             {myBookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
-                <Plane size={40} style={{ color: t.textMuted, marginBottom: '12px' }} strokeWidth={1.5} />
+                <img src="/logo.png" alt="" style={{ width: 40, height: 40, opacity: 0.5, marginBottom: '12px' }} />
                 <div className="text-sm font-medium mb-1" style={{ color: t.textSub }}>No flights yet</div>
                 <div className="text-xs mb-4" style={{ color: t.textMuted }}>Select an aircraft family and book your first flight!</div>
                 <button onClick={() => setView('family')}
@@ -633,7 +633,7 @@ export default function Flights() {
                         <div className="flex items-center gap-4 flex-wrap">
                           {!isRealisticOps && (
                             <span className="text-xs" style={{ color: t.textSub }}>
-                              <Plane size={11} style={{ display: 'inline', marginRight: 2 }} />
+                              <img src="/logo.png" alt="" className="inline-block" style={{ width: 11, height: 11, marginRight: 2 }} />
                               {booking.aircraft?.name} · {booking.aircraft?.registration}
                             </span>
                           )}
@@ -709,7 +709,7 @@ export default function Flights() {
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center"
                     style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
-                    <Plane size={16} style={{ color: 'white' }} />
+                    <img src="/logo.png" alt="" className="w-4 h-4 object-contain" />
                   </div>
                   <div>
                     <div className="font-bold text-sm" style={{ color: t.text }}>{selectedRoute.flightNumber}</div>
@@ -757,7 +757,7 @@ export default function Flights() {
                 <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
                   <div className="flex items-center gap-3 p-3 rounded-xl"
                     style={{ background: t.badge, border: `1px solid ${t.border}` }}>
-                    <Plane size={14} style={{ color: '#c0121e' }} />
+                    <img src="/logo.png" alt="" style={{ width: 14, height: 14 }} />
                     <div className="text-xs" style={{ color: t.textSub }}>
                       <span className="font-semibold" style={{ color: t.text }}>{selectedAircraft.name}</span>
                       {' · '}{selectedAircraft.registration} · From <strong>{selectedRoute.depIcao}</strong>
@@ -771,7 +771,7 @@ export default function Flights() {
                         <div className="text-xs" style={{ color: t.textSub }}>{selectedRoute.depName}</div>
                       </div>
                       <div className="flex flex-col items-center gap-1">
-                        <Plane size={14} style={{ color: '#c0121e' }} />
+                    <img src="/logo.png" alt="" style={{ width: 14, height: 14 }} />
                         <div className="text-xs" style={{ color: t.textMuted }}>{selectedRoute.distance || 0} nm</div>
                       </div>
                       <div className="text-center">
