@@ -73,9 +73,7 @@ export default function Register() {
         <div className="rounded-3xl p-8 md:p-10 backdrop-blur-xl bg-white/70 border border-white/40 shadow-xl shadow-slate-200/50">
           {/* Logo & Header */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-600/20">
-              <img src="/logo.png" alt="Kingfisher VA" className="w-10 h-10 object-contain brightness-0 invert" />
-            </div>
+            <img src="/logo.png" alt="Kingfisher VA" className="w-20 h-20 object-contain mx-auto mb-4" />
             <h1 className="text-2xl font-black italic tracking-tight text-slate-900 mb-1">
               Join the Crew
             </h1>
