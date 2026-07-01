@@ -65,6 +65,27 @@ export default function Admin() {
   // Form states
   const [aircraftForm, setAircraftForm] = useState({ icao: '', name: '', registration: '', type: '', engines: '', pax: '', range: '', cruiseSpeed: '', hub: '' })
   const [routeForm, setRouteForm] = useState({ flightNumber: '', depIcao: '', arrIcao: '', depName: '', arrName: '', distance: '', duration: '', route: '', fuel: '' })
+
+  const AIRPORT_MAP: Record<string, string> = {
+    VABB: 'Mumbai', VIDP: 'Delhi', VOMM: 'Chennai', VECC: 'Kolkata',
+    VOBL: 'Bengaluru', VOTR: 'Tiruchirappalli', VOCI: 'Kochi',
+    VAAH: 'Ahmedabad', VAPO: 'Pune', VEGT: 'Guwahati', VAGO: 'Goa',
+    VILK: 'Lucknow', VIBN: 'Varanasi', VIJP: 'Jaipur', VIST: 'Srinagar',
+    VABP: 'Bhopal', VANR: 'Nagpur', VEBS: 'Bhubaneswar', VORY: 'Prayagraj',
+    VNKT: 'Kathmandu', OPRN: 'Islamabad', OPKC: 'Karachi', OPLA: 'Lahore',
+    VGHS: 'Dhaka', VQPR: 'Paro', VYYY: 'Yangon', VTBD: 'Bangkok',
+    WSSS: 'Singapore', WMKK: 'Kuala Lumpur', WARR: 'Surabaya',
+    VHHH: 'Hong Kong', ZSSS: 'Shanghai', ZBAA: 'Beijing', RJTT: 'Tokyo',
+    RKSI: 'Seoul', OMDB: 'Dubai', OTHH: 'Doha', OEJN: 'Jeddah',
+    OERK: 'Riyadh', OBBI: 'Bahrain', DTTA: 'Tunis', HECA: 'Cairo',
+    LEMD: 'Madrid', LIRF: 'Rome', EDDF: 'Frankfurt', EGLL: 'London',
+    LFPG: 'Paris', EHAM: 'Amsterdam', UUEE: 'Moscow', KATL: 'Atlanta',
+    KJFK: 'New York', KLAX: 'Los Angeles', KORD: 'Chicago',
+    KDFW: 'Dallas', KDEN: 'Denver',
+    PHNL: 'Honolulu', YSSY: 'Sydney', YBBN: 'Brisbane',
+    NZAA: 'Auckland', FACT: 'Cape Town', FAOR: 'Johannesburg',
+    SBGR: 'São Paulo', SAEZ: 'Buenos Aires', SCEL: 'Santiago',
+  }
   const [hubForm, setHubForm] = useState({ icao: '', name: '', city: '', country: '' })
   const [eventForm, setEventForm] = useState({
     title: '', description: '', route: '', depIcao: '',
@@ -963,17 +984,29 @@ export default function Admin() {
                   { key: 'duration', label: 'Duration (min)', placeholder: '125' },
                   { key: 'route', label: 'Route (waypoints)', placeholder: 'DCT BOM DCT VIDP' },
                   { key: 'fuel', label: 'Fuel (kgs)', placeholder: '8500' },
-                ].map(field => (
-                  <div key={field.key}>
+                ].map(field => {
+                  const isIcao = field.key === 'depIcao' || field.key === 'arrIcao'
+                  const nameKey = field.key === 'depIcao' ? 'depName' : field.key === 'arrIcao' ? 'arrName' : null
+                  return (<div key={field.key}>
                     <label className="block text-xs mb-1.5" style={{ color: t.textMuted }}>{field.label}</label>
                     <input
                       value={(routeForm as any)[field.key]}
-                      onChange={e => setRouteForm({ ...routeForm, [field.key]: e.target.value })}
+                      onChange={e => {
+                        const val = e.target.value.toUpperCase()
+                        setRouteForm(prev => {
+                          const next = { ...prev, [field.key]: val }
+                          if (isIcao && nameKey && AIRPORT_MAP[val]) {
+                            next[nameKey] = AIRPORT_MAP[val]
+                          }
+                          return next
+                        })
+                      }}
                       placeholder={field.placeholder}
                       style={inputStyle}
+                      maxLength={isIcao ? 4 : undefined}
                     />
-                  </div>
-                ))}
+                  </div>)
+                })}
               </div>
 
               {/* Allowed aircraft types for this route */}
