@@ -144,21 +144,21 @@ export default function Flights() {
   const families = useMemo(() => {
     const map = new Map<string, any[]>()
     aircraft.forEach(ac => {
-      const type = ac.type || 'Unknown'
-      if (!map.has(type)) map.set(type, [])
-      map.get(type)!.push(ac)
+      const icao = ac.icao || 'Unknown'
+      if (!map.has(icao)) map.set(icao, [])
+      map.get(icao)!.push(ac)
     })
     return Array.from(map.entries())
-      .map(([type, list]) => ({ type, count: list.length, aircraft: list }))
-      .sort((a, b) => a.type.localeCompare(b.type))
+      .map(([icao, list]) => ({ icao, count: list.length, aircraft: list }))
+      .sort((a, b) => a.icao.localeCompare(b.icao))
   }, [aircraft])
 
   const filteredFamilies = families.filter(f =>
-    f.type.toLowerCase().includes(search.toLowerCase())
+    f.icao.toLowerCase().includes(search.toLowerCase())
   )
 
   const familyAircraft = selectedFamily
-    ? aircraft.filter(ac => ac.type === selectedFamily)
+    ? aircraft.filter(ac => ac.icao === selectedFamily)
     : []
 
   const filteredAircraft = familyAircraft.filter(ac =>
@@ -327,23 +327,20 @@ export default function Flights() {
             ) : (
               <div className="space-y-3">
                 {filteredFamilies.map((family, i) => (
-                  <motion.div key={family.type}
+                  <motion.div key={family.icao}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.25, delay: i * 0.03 }}
-                    onClick={() => handleSelectFamily(family.type)}
+                    onClick={() => handleSelectFamily(family.icao)}
                     className="p-5 rounded-2xl cursor-pointer transition-all duration-200 hover:scale-[1.01]"
                     style={{ background: t.card, border: `1px solid ${t.border}` }}
                     onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(192,18,30,0.4)'}
                     onMouseLeave={e => e.currentTarget.style.borderColor = t.border}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-                          style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
-                          <Plane size={20} style={{ color: 'white' }} />
-                        </div>
+                        <img src="/logo.png" alt="KFR" className="w-10 h-10 object-contain" />
                         <div>
-                          <div className="text-base font-bold" style={{ color: t.text }}>{family.type}</div>
+                          <div className="text-base font-bold" style={{ color: t.text }}>{family.icao}</div>
                           <div className="text-xs mt-0.5" style={{ color: t.textSub }}>
                             {family.count} aircraft{family.count > 0 && ` · ${family.aircraft.filter(a => a.maintenanceStatus !== 'IN_MAINTENANCE').length} available`}
                           </div>

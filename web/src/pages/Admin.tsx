@@ -131,7 +131,7 @@ export default function Admin() {
       setEvents(e.data)
       setAnnouncements(Array.isArray(an) ? an : [])
       // Compute unique aircraft types
-      const types = [...new Set(a.data.map((ac: any) => ac.type).filter(Boolean))] as string[]
+      const types = [...new Set(a.data.map((ac: any) => ac.icao).filter(Boolean))] as string[]
       setAllAircraftTypes(types)
     } catch (err) {
       console.error(err)
