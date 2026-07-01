@@ -1,21 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { z } from 'zod'
 import prisma from '../utils/prisma.js'
-import axios from 'axios'
 import { positionBus } from '../utils/position-bus.js'
-
-export const getSimBriefData = async (req: FastifyRequest, reply: FastifyReply) => {
-  try {
-    const { username } = req.query as { username: string }
-    if (!username) return reply.status(400).send({ error: 'SimBrief username required' })
-
-    const response = await axios.get(`https://www.simbrief.com/api/xml.fetcher.php?username=${username}&json=1`)
-    return reply.send(response.data)
-  } catch (err) {
-    console.error('SimBrief Fetch Error:', err)
-    return reply.status(500).send({ error: 'Failed to fetch SimBrief data' })
-  }
-}
 
 export const startLiveFlight = async (req: FastifyRequest, reply: FastifyReply) => {
   try {

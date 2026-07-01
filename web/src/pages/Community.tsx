@@ -22,7 +22,7 @@ export default function Community() {
   const channels = [
     { name: '#general', desc: 'General chat and discussion', members: '1,200+' },
     { name: '#pirep-reports', desc: 'Share your flight reports and screenshots', members: '800+' },
-    { name: '#flight-planning', desc: 'Get help with routes, SimBrief, weather', members: '600+' },
+    { name: '#flight-planning', desc: 'Get help with routes, weather, and flight planning', members: '600+' },
     { name: '#group-flights', desc: 'Coordinate and join group flights', members: '500+' },
     { name: '#atc-events', desc: 'VATSIM and IVAO event coordination', members: '400+' },
     { name: '#liveries', desc: 'Share and download Kingfisher VA liveries', members: '300+' },

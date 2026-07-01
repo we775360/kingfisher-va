@@ -153,7 +153,6 @@ export const getRealisticFlightById = async (req: FastifyRequest, reply: Fastify
             firstName: true,
             lastName: true,
             rank: true,
-            simbriefUsername: true,
             callsign: true,
           }
         }

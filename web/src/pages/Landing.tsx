@@ -581,7 +581,7 @@ export default function Landing() {
                     <div className="grid sm:grid-cols-2 gap-8">
                         {[
                             { title: `${stats.routes}+ Active Routes`, icon: MapPin },
-                            { title: 'SimBrief Integrated', icon: Zap },
+                            { title: 'FSACARS Integrated', icon: Zap },
                             { title: 'Dynamic Schedules', icon: Clock },
                             { title: 'Network Ready', icon: GlobeIcon }
                         ].map((item) => (

@@ -73,7 +73,6 @@ model Pilot {
   callsign        String?
   avatar          String?
   bio             String?
-  simbriefUsername String?
   status          PilotStatus @default(ACTIVE)
   rank            String      @default("Student Pilot")
   totalHours      Float       @default(0)
@@ -227,10 +226,6 @@ model Booking {
   network         String
   status          BookingStatus @default(UPCOMING)
   earnings        Float         @default(0)
-  simbriefOfpData String?
-  simbriefPdfUrl  String?
-  simbriefStaticId String?
-  simbriefUserId  String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   pilot           Pilot         @relation(fields: [pilotId], references: [id], onDelete: Cascade)

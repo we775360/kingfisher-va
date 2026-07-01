@@ -61,7 +61,7 @@ export default function PrivacyPolicy() {
             {
               title: "Third-Party Services",
               icon: Lock,
-              content: "We use services like Discord for community engagement and SimBrief for flight planning. Each service has its own privacy policy which we encourage you to review."
+              content: "We use services like Discord for community engagement and FSACARS for flight tracking. Each service has its own privacy policy which we encourage you to review."
             },
             {
               title: "Content Rights",

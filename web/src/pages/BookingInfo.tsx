@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { MapContainer, TileLayer, Marker, Tooltip, Polyline } from 'react-leaflet'
@@ -6,11 +6,10 @@ import L from 'leaflet'
 // @ts-ignore
 import 'leaflet/dist/leaflet.css'
 import {
-  Plane, Navigation, Clock, X, Calendar, Globe, Radio,
-  DollarSign, Info, Check, ArrowRight, MapPin, Download,
-  FileText, AlertTriangle, ExternalLink, Zap, Loader,
-  Shield, Users, Fuel, Gauge, Thermometer,
-  Wind, Cloud, Eye, Ban, ArrowLeft, Edit3
+  Plane, Clock, X, Globe, Radio,
+  DollarSign, Info, Check, ArrowRight, MapPin,
+  FileText, AlertTriangle,
+  Cloud, Ban, ArrowLeft, Edit3
 } from 'lucide-react'
 import { useThemeStore } from '../store/theme.store'
 import { useAuthStore } from '../store/auth.store'
@@ -42,14 +41,12 @@ const arrIcon = new L.DivIcon({
 export default function BookingInfo() {
   const { type, id } = useParams<{ type: string; id: string }>()
   const { isDark } = useThemeStore()
-  const { isAuthenticated, user } = useAuthStore()
+  const { isAuthenticated } = useAuthStore()
   const navigate = useNavigate()
 
   const [booking, setBooking] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [ofpLoading, setOfpLoading] = useState(false)
-  const [ofpData, setOfpData] = useState<any>(null)
   const [networkChanging, setNetworkChanging] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [metarDep, setMetarDep] = useState('')
@@ -69,7 +66,6 @@ export default function BookingInfo() {
   const bookingStatus = booking?.status || ''
   const depTime = booking?.depTime || booking?.offBlock || ''
   const arrTime = booking?.arrTime || booking?.onBlock || ''
-  const simbriefUsername = booking?.pilot?.simbriefUsername || user?.pilot?.simbriefUsername || ''
 
   const depCoords = getAirportCoords(depIcao)
   const arrCoords = getAirportCoords(arrIcao)
@@ -98,17 +94,6 @@ export default function BookingInfo() {
         : `/realistic-flights/${id}`
       const res = await api.get(endpoint)
       setBooking(res.data)
-      // Validate saved OFP before using it (old bug saved error responses)
-      const rawOfp = res.data?.simbriefOfpData
-      if (rawOfp) {
-        try {
-          const parsed = typeof rawOfp === 'string' ? JSON.parse(rawOfp) : rawOfp
-          const status = (parsed?.fetch?.status || '').toLowerCase()
-          if (parsed?.fetch?.params && !status.includes('error') && !status.includes('no records') && !status.includes('unknown')) {
-            setOfpData(parsed)
-          }
-        } catch { }
-      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to load booking')
     } finally {
@@ -134,79 +119,6 @@ export default function BookingInfo() {
     } catch {
       setter([])
     }
-  }
-
-  // Auto-fetch OFP from SimBrief directly (browser-side, bypasses Render IP block)
-  const fetchOFPFromSimBrief = async () => {
-    if (!simbriefUsername) return
-    const sbUrl = `https://www.simbrief.com/api/xml.fetcher.php?username=${encodeURIComponent(simbriefUsername)}&json=1`
-    try {
-      const res = await fetch(sbUrl)
-      if (!res.ok) return
-      const data = await res.json()
-      const status = (data?.fetch?.status || '').toLowerCase()
-      if (data?.fetch?.params && !status.includes('error') && !status.includes('no records') && !status.includes('unknown')) {
-        setOfpData(data)
-        setBooking((prev: any) => ({ ...prev, simbriefOfpData: JSON.stringify(data) }))
-        // Persist to backend so it survives page refresh
-        api.post(`/bookings/${id}/save-ofp`, { ofpData: JSON.stringify(data) }).catch(() => {})
-      }
-    } catch { }
-  }
-
-  // Auto-fetch on page load + refetch on window focus (user returning from SimBrief tab)
-  useEffect(() => {
-    if (booking && simbriefUsername) {
-      setOfpLoading(true)
-      fetchOFPFromSimBrief().finally(() => setOfpLoading(false))
-    }
-  }, [booking, simbriefUsername])
-
-  useEffect(() => {
-    const onFocus = () => {
-      if (booking && simbriefUsername && !ofpData) {
-        fetchOFPFromSimBrief()
-      }
-    }
-    const onPageShow = (e: PageTransitionEvent) => {
-      if (e.persisted && simbriefUsername) {
-        setOfpLoading(true)
-        fetchOFPFromSimBrief().finally(() => setOfpLoading(false))
-      }
-    }
-    window.addEventListener('focus', onFocus)
-    window.addEventListener('pageshow', onPageShow)
-    return () => {
-      window.removeEventListener('focus', onFocus)
-      window.removeEventListener('pageshow', onPageShow)
-    }
-  }, [booking, simbriefUsername, ofpData])
-
-  const buildDispatchUrl = (extra: string, auto: string) => {
-    const dep = booking?.route?.depIcao || booking?.depIcao || ''
-    const arr = booking?.route?.arrIcao || booking?.arrIcao || ''
-    const type = booking?.aircraft?.icao || 'A320'
-    const reg = booking?.aircraft?.registration || ''
-    const fn = (booking?.route?.flightNumber || booking?.flightNumber || '101').replace('KFR', '').replace('IT', '')
-
-    // EOBT in HHMM Zulu
-    let etd = ''
-    if (depTime) {
-      if (isStandard) {
-        const d = new Date(depTime)
-        etd = d.getUTCHours().toString().padStart(2, '0') + d.getUTCMinutes().toString().padStart(2, '0')
-      } else {
-        const m = String(depTime).match(/(\d{1,2}):(\d{2})/)
-        if (m) etd = m[1].padStart(2, '0') + m[2]
-      }
-    }
-
-    return `https://www.simbrief.com/system/dispatch.php?orig=${encodeURIComponent(dep)}&dest=${encodeURIComponent(arr)}&type=${encodeURIComponent(type)}&reg=${encodeURIComponent(reg)}&airline=KFR&fltnum=${encodeURIComponent(fn)}&etd=${etd}&units=kgs&navlog=1&etops=1&stepclimbs=1&tlr=1&notams=1&firnot=1${extra}${auto}`
-  }
-
-  const handleGenerateOFP = () => {
-    const networkParam = bookingNetwork === 'IVAO' ? '&ivao=1&remarks=RMK%2FIVAOVA%2FKFR' : bookingNetwork === 'VATSIM' ? '&vatsim=1' : ''
-    window.location.href = buildDispatchUrl(networkParam, '&auto=1')
   }
 
   const handleNetworkChange = async (network: string) => {
@@ -240,14 +152,6 @@ export default function BookingInfo() {
       setCancelling(false)
       setShowCancelConfirm(false)
     }
-  }
-
-  const handleFileToIVAO = () => {
-    window.location.href = buildDispatchUrl('&ivao=1&remarks=RMK%2FIVAOVA%2FKFR', '')
-  }
-
-  const handleFileToVATSIM = () => {
-    window.location.href = buildDispatchUrl('&vatsim=1', '')
   }
 
   const t = {
@@ -284,30 +188,6 @@ export default function BookingInfo() {
   }
 
   const isUpcoming = bookingStatus === 'UPCOMING' || bookingStatus === 'BOOKED'
-
-  const getOFPValue = (data: any, ...keys: string[]) => {
-    if (!data) return ''
-    for (const key of keys) {
-      const v = data.fetch?.params?.[key]
-        || data.fetch?.text?.general?.[key]
-        || data.fetch?.text?.flight?.airline?.flight?.[0]?.[key]
-        || data.fetch?.text?.atc?.[key]
-        || data.fetch?.text?.weather?.[key]
-        || data.fetch?.text?.navlog?.[key]
-        || data.params?.[key]
-        || data.text?.general?.[key]
-        || data[key]
-      if (v !== undefined && v !== null) return String(v)
-    }
-    return ''
-  }
-
-  const ofpGeneral = ofpData?.fetch?.text?.general || {}
-  const ofpParams = ofpData?.fetch?.params || {}
-  const ofpRoutes = ofpData?.fetch?.text?.flight?.airline?.flight || []
-  const ofpNavlog = ofpData?.fetch?.text?.navlog?.fix || []
-
-  const simbriefPdfUrl = booking?.simbriefPdfUrl || ''
 
   const getTimeDisplay = () => {
     if (isStandard && depTime) {
@@ -556,182 +436,6 @@ export default function BookingInfo() {
               </div>
             </motion.div>
 
-            {/* ── SIMBRIEF OFP SECTION ── */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="rounded-2xl overflow-hidden border"
-              style={{ background: t.card, borderColor: t.border }}
-            >
-              <div className="flex items-center gap-2.5 px-6 py-4 border-b" style={{ borderColor: t.border }}>
-                <Navigation size={15} style={{ color: '#3b82f6' }} />
-                <span className="text-sm font-semibold" style={{ color: t.text }}>SimBrief Flight Plan</span>
-                {isStandard && !isUpcoming && (
-                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full ml-auto" style={{ background: 'rgba(107,114,128,0.1)', color: '#6b7280' }}>
-                    COMPLETED
-                  </span>
-                )}
-              </div>
-              <div className="p-6">
-                {!isStandard ? (
-                  <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: t.input }}>
-                    <Info size={16} style={{ color: t.textMuted }} />
-                    <div className="text-xs" style={{ color: t.textSub }}>
-                      SimBrief OFP is available for standard schedule bookings. Realistic Ops flights have fixed pre-defined schedules.
-                    </div>
-                  </div>
-                ) : !simbriefUsername ? (
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <AlertTriangle size={16} style={{ color: '#f59e0b' }} />
-                      <div>
-                        <div className="text-sm font-semibold" style={{ color: t.text }}>No SimBrief Account Linked</div>
-                        <div className="text-xs mt-0.5" style={{ color: t.textSub }}>Connect your SimBrief account in Settings to generate flight plans.</div>
-                      </div>
-                    </div>
-                    <Link to="/settings" className="px-4 py-2.5 rounded-xl text-xs font-bold text-white flex-shrink-0" style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
-                      Link Account
-                    </Link>
-                  </div>
-                ) : ofpData ? (
-                  <div className="space-y-5">
-                    {/* Route / Waypoints summary */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div>
-                        <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Route</div>
-                        <div className="text-xs font-mono mt-1 truncate" style={{ color: t.text }} title={getOFPValue(ofpData, 'route', 'route_string', 'route_str') || '—'}>
-                          {getOFPValue(ofpData, 'route', 'route_string', 'route_str') || '—'}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Cruise Alt</div>
-                        <div className="text-xs font-mono mt-1" style={{ color: t.text }}>{getOFPValue(ofpData, 'cruise_alt', 'initial_altitude', 'altitude') || '—'}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Cost Index</div>
-                        <div className="text-xs font-mono mt-1" style={{ color: t.text }}>{getOFPValue(ofpData, 'cost_index', 'ci') || '—'}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Alternate</div>
-                        <div className="text-xs font-mono mt-1" style={{ color: t.text }}>{getOFPValue(ofpData, 'alternate', 'altn', 'altn_icao') || '—'}</div>
-                      </div>
-                    </div>
-
-                    <div className="h-px" style={{ background: t.border }} />
-
-                    {/* Pax / Cargo / Fuel / Payload */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: t.input }}>
-                        <Users size={16} style={{ color: '#3b82f6' }} />
-                        <div>
-                          <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Passengers</div>
-                          <div className="text-sm font-bold" style={{ color: t.text }}>{getOFPValue(ofpData, 'pax', 'passengers', 'num_pax', 'pax_count') || '—'}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: t.input }}>
-                        <Fuel size={16} style={{ color: '#f59e0b' }} />
-                        <div>
-                          <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Fuel</div>
-                          <div className="text-sm font-bold" style={{ color: t.text }}>
-                            {getOFPValue(ofpData, 'total_fuel', 'fuel', 'fuel_total', 'burn', 'total_burn') || '—'} kg
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: t.input }}>
-                        <Gauge size={16} style={{ color: '#10b981' }} />
-                        <div>
-                          <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Payload</div>
-                          <div className="text-sm font-bold" style={{ color: t.text }}>
-                            {getOFPValue(ofpData, 'payload', 'total_payload', 'pay_load') || '—'} kg
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: t.input }}>
-                        <Wind size={16} style={{ color: '#8b5cf6' }} />
-                        <div>
-                          <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Cargo</div>
-                          <div className="text-sm font-bold" style={{ color: t.text }}>
-                            {getOFPValue(ofpData, 'cargo', 'total_cargo', 'cargo_weight') || '—'} kg
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {Array.isArray(ofpRoutes) && ofpRoutes.length > 1 && (
-                      <>
-                        <div className="h-px" style={{ background: t.border }} />
-                        <div>
-                          <div className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: t.textMuted }}>Flight Steps (OFP)</div>
-                          <div className="max-h-[200px] overflow-y-auto space-y-1">
-                            {ofpRoutes.slice(0, 20).map((step: any, i: number) => (
-                              <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs" style={{ background: t.input }}>
-                                <span className="font-mono font-bold" style={{ color: '#c0121e', minWidth: '60px' }}>{step.ident || step.fix || step.waypoint || `Step ${i + 1}`}</span>
-                                {step.frequency && <span className="font-mono" style={{ color: t.textSub }}>{step.frequency}</span>}
-                                <span className="ml-auto font-mono" style={{ color: t.textSub }}>
-                                  {step.altitude || step.alt || ''} {step.route || ''}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Download & File buttons */}
-                    <div className="flex flex-wrap gap-3 pt-2">
-                      {simbriefPdfUrl && (
-                        <a
-                          href={simbriefPdfUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all"
-                          style={{ background: '#3b82f6', color: 'white' }}
-                        >
-                          <Download size={13} /> Download OFP
-                        </a>
-                      )}
-                      <button onClick={handleFileToIVAO}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all"
-                        style={{ background: 'rgba(139,92,246,0.1)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.2)' }}>
-                        <Globe size={13} /> File to IVAO
-                      </button>
-                      <button onClick={handleFileToVATSIM}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all"
-                        style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.2)' }}>
-                        <Globe size={13} /> File to VATSIM
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  /* Generate OFP */
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <Zap size={16} style={{ color: '#3b82f6' }} />
-                      <div>
-                        <div className="text-sm font-semibold" style={{ color: t.text }}>
-                          {ofpLoading ? 'Checking SimBrief...' : 'No Flight Plan Yet'}
-                        </div>
-                        <div className="text-xs mt-0.5" style={{ color: t.textSub }}>
-                          {ofpLoading ? '' : bookingNetwork === 'IVAO' ? 'Creates & files to IVAO with VA tracking remark.' : bookingNetwork === 'VATSIM' ? 'Creates & files to VATSIM.' : 'Creates flight plan on SimBrief.'}
-                        </div>
-                      </div>
-                    </div>
-                    {ofpLoading ? (
-                      <div className="w-5 h-5 rounded-full border-2 animate-spin" style={{ borderColor: '#3b82f6', borderTopColor: 'transparent' }} />
-                    ) : (
-                      <button
-                        onClick={handleGenerateOFP}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white flex-shrink-0 transition-all"
-                        style={{ background: '#3b82f6' }}
-                      >
-                        <Zap size={13} /> {bookingNetwork === 'IVAO' ? 'Generate & File to IVAO' : 'Generate Flight Plan'}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </motion.div>
           </div>
 
           {/* ── RIGHT SIDEBAR ── */}
@@ -834,20 +538,6 @@ export default function BookingInfo() {
                 <div className="flex items-center justify-between py-2">
                   <span className="text-xs" style={{ color: t.textMuted }}>Pilot</span>
                   <span className="text-xs font-bold" style={{ color: t.text }}>{booking?.pilot?.callsign || booking?.pilot?.firstName || '—'}</span>
-                </div>
-                <div className="h-px" style={{ background: t.border }} />
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-xs" style={{ color: t.textMuted }}>SimBrief</span>
-                  <span className="text-xs font-bold" style={{ color: simbriefUsername ? '#10b981' : '#ef4444' }}>
-                    {simbriefUsername ? 'Connected' : 'Not Linked'}
-                  </span>
-                </div>
-                <div className="h-px" style={{ background: t.border }} />
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-xs" style={{ color: t.textMuted }}>OFP Status</span>
-                  <span className="text-xs font-bold" style={{ color: ofpData ? '#10b981' : t.textMuted }}>
-                    {ofpData ? 'Generated' : 'Not Generated'}
-                  </span>
                 </div>
               </div>
             </motion.div>
