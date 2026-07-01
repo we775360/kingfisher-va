@@ -79,7 +79,7 @@ export const getRoutesForAircraft = async (req: FastifyRequest, reply: FastifyRe
     const filteredRoutes = routes.filter(r => {
       if (!r.allowedTypes) return true
       const allowed = r.allowedTypes as string[]
-      return allowed.includes(aircraft.type)
+      return allowed.includes(aircraft.icao)
     })
 
     // Add return-to-hub route if aircraft is not at hub
