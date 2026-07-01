@@ -38,8 +38,9 @@ export async function generateOFPData(req: FastifyRequest, reply: FastifyReply) 
     const aircraftIcao = booking.aircraft?.icao || booking.aircraftType || 'A320'
     const aircraftReg = booking.aircraft?.registration || 'VT-KFR'
     const flightNumber = booking.route?.flightNumber || booking.flightNumber || 'KFR000'
+    const bookingDistance = booking.route?.distance || booking.distance || 0
 
-    const paxCount = 132
+    const paxCount = Math.min(Math.round(booking.aircraft?.pax ? booking.aircraft.pax * 0.7 : 132), 200)
     const cargoKg = 1800
 
     const ofpData = await generateOFP({
@@ -47,11 +48,11 @@ export async function generateOFPData(req: FastifyRequest, reply: FastifyReply) 
       depIcao,
       arrIcao,
       altnIcao: 'OMAA',
-      aircraftIcao: aircraftIcao,
+      aircraftIcao,
       aircraftReg,
       paxCount,
       cargoKg,
-      routeString: '',
+      bookingDistance,
       pilotName: booking.pilot?.firstName ? `${booking.pilot.firstName} ${booking.pilot.lastName || ''}`.trim() : undefined,
       pilotCallsign: booking.pilot?.callsign,
     })
@@ -97,8 +98,9 @@ export async function downloadOFPPDF(req: FastifyRequest, reply: FastifyReply) {
     const aircraftIcao = booking.aircraft?.icao || booking.aircraftType || 'A320'
     const aircraftReg = booking.aircraft?.registration || 'VT-KFR'
     const flightNumber = booking.route?.flightNumber || booking.flightNumber || 'KFR000'
+    const bookingDistance = booking.route?.distance || booking.distance || 0
 
-    const paxCount = 132
+    const paxCount = Math.min(Math.round(booking.aircraft?.pax ? booking.aircraft.pax * 0.7 : 132), 200)
     const cargoKg = 1800
 
     const ofpData = await generateOFP({
@@ -110,7 +112,7 @@ export async function downloadOFPPDF(req: FastifyRequest, reply: FastifyReply) {
       aircraftReg,
       paxCount,
       cargoKg,
-      routeString: '',
+      bookingDistance,
       pilotName: booking.pilot?.firstName ? `${booking.pilot.firstName} ${booking.pilot.lastName || ''}`.trim() : undefined,
       pilotCallsign: booking.pilot?.callsign,
     })
