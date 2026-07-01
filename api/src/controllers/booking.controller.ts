@@ -168,6 +168,7 @@ export const createBooking = async (req: FastifyRequest, reply: FastifyReply) =>
             arrName: `Return to ${aircraft.hub}`,
             distance: 0,
             duration: 60,
+            fuel: 0,
           },
         })
       }
