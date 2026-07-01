@@ -130,6 +130,8 @@ model Route {
   arrName      String
   distance     Int
   duration     Int
+  route        String?
+  fuel         Int
   isActive     Boolean  @default(true)
   allowedTypes Json?
   createdAt    DateTime @default(now())

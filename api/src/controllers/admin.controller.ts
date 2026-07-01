@@ -232,6 +232,8 @@ export const createRoute = async (req: FastifyRequest, reply: FastifyReply) => {
       arrName: z.string().min(1),
       distance: z.number().int(),
       duration: z.number().int(),
+      route: z.string().nullable().optional(),
+      fuel: z.number().int(),
       allowedTypes: z.array(z.string()).nullable().optional(),
     })
     const body = schema.parse(req.body)
@@ -244,6 +246,8 @@ export const createRoute = async (req: FastifyRequest, reply: FastifyReply) => {
         arrName: body.arrName,
         distance: body.distance,
         duration: body.duration,
+        route: body.route ?? undefined,
+        fuel: body.fuel,
         allowedTypes: body.allowedTypes ?? undefined,
       },
     })
@@ -400,17 +404,29 @@ export const updateAircraft = async (req: FastifyRequest, reply: FastifyReply) =
   }
 }
 
-// ── UPDATE ROUTE TYPES ──
-export const updateRouteTypes = async (req: FastifyRequest, reply: FastifyReply) => {
+// ── UPDATE ROUTE ──
+export const updateRoute = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const { id } = req.params as { id: string }
     const schema = z.object({
-      allowedTypes: z.array(z.string()).nullable(),
+      flightNumber: z.string().min(1).optional(),
+      depIcao: z.string().min(4).max(4).optional(),
+      arrIcao: z.string().min(4).max(4).optional(),
+      depName: z.string().min(1).optional(),
+      arrName: z.string().min(1).optional(),
+      distance: z.number().int().optional(),
+      duration: z.number().int().optional(),
+      route: z.string().nullable().optional(),
+      fuel: z.number().int().optional(),
+      allowedTypes: z.array(z.string()).nullable().optional(),
     })
     const body = schema.parse(req.body)
+    const data: any = { ...body }
+    if (body.route === null) data.route = null
+    if (body.allowedTypes === null) data.allowedTypes = null
     const route = await prisma.route.update({
       where: { id },
-      data: { allowedTypes: body.allowedTypes ?? undefined },
+      data,
     })
     return reply.send(route)
   } catch (err) {

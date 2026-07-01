@@ -59,11 +59,12 @@ export default function Admin() {
   const [editAircraftForm, setEditAircraftForm] = useState({ currentLocation: '', maintenanceThreshold: 50 })
   const [routeTypeEditor, setRouteTypeEditor] = useState<any>(null)
   const [routeTypeSelections, setRouteTypeSelections] = useState<string[]>([])
+  const [routeEditForm, setRouteEditForm] = useState({ route: '', fuel: '' })
   const [allAircraftTypes, setAllAircraftTypes] = useState<string[]>([])
 
   // Form states
   const [aircraftForm, setAircraftForm] = useState({ icao: '', name: '', registration: '', type: '', engines: '', pax: '', range: '', cruiseSpeed: '', hub: '' })
-  const [routeForm, setRouteForm] = useState({ flightNumber: '', depIcao: '', arrIcao: '', depName: '', arrName: '', distance: '', duration: '' })
+  const [routeForm, setRouteForm] = useState({ flightNumber: '', depIcao: '', arrIcao: '', depName: '', arrName: '', distance: '', duration: '', route: '', fuel: '' })
   const [hubForm, setHubForm] = useState({ icao: '', name: '', city: '', country: '' })
   const [eventForm, setEventForm] = useState({
     title: '', description: '', route: '', depIcao: '',
@@ -203,9 +204,11 @@ export default function Admin() {
         ...routeForm,
         distance: Number(routeForm.distance),
         duration: Number(routeForm.duration),
+        fuel: Number(routeForm.fuel),
+        route: routeForm.route || null,
         allowedTypes: routeTypeSelections.length > 0 ? routeTypeSelections : null,
       })
-      setRouteForm({ flightNumber: '', depIcao: '', arrIcao: '', depName: '', arrName: '', distance: '', duration: '' })
+      setRouteForm({ flightNumber: '', depIcao: '', arrIcao: '', depName: '', arrName: '', distance: '', duration: '', route: '', fuel: '' })
       setRouteTypeSelections([])
       setFormMsg('Route added!')
       fetchAll()
@@ -957,6 +960,8 @@ export default function Admin() {
                   { key: 'arrName', label: 'Arr Airport Name', placeholder: 'Delhi' },
                   { key: 'distance', label: 'Distance (nm)', placeholder: '592' },
                   { key: 'duration', label: 'Duration (min)', placeholder: '125' },
+                  { key: 'route', label: 'Route (waypoints)', placeholder: 'DCT BOM DCT VIDP' },
+                  { key: 'fuel', label: 'Fuel (kgs)', placeholder: '8500' },
                 ].map(field => (
                   <div key={field.key}>
                     <label className="block text-xs mb-1.5" style={{ color: t.textMuted }}>{field.label}</label>
@@ -1026,7 +1031,7 @@ export default function Admin() {
                 <table className="w-full">
                   <thead>
                     <tr style={{ borderBottom: `1px solid ${t.border}` }}>
-                      {['Flight', 'From', 'To', 'Distance', 'Duration', 'Allowed Types', 'Actions'].map(h => (
+                      {['Flight', 'From', 'To', 'Distance', 'Duration', 'Route', 'Fuel', 'Allowed Types', 'Actions'].map(h => (
                         <th key={h} className="text-left px-5 py-3 text-xs font-semibold"
                           style={{ color: t.textMuted }}>
                           {h}
@@ -1058,7 +1063,17 @@ export default function Admin() {
                           <span className="text-xs" style={{ color: t.textSub }}>{r.distance} nm</span>
                         </td>
                         <td className="px-5 py-3.5">
-                          <span className="text-xs" style={{ color: t.textSub }}>{r.duration} min</span>
+                          <span className="text-xs" style={{ color: t.textSub }}>
+                            {Math.floor((r.duration || 0) / 60)}h {(r.duration || 0) % 60}m
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className="text-xs font-mono" style={{ color: t.textSub }}>
+                            {r.route || '—'}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className="text-xs" style={{ color: t.textSub }}>{r.fuel ? `${r.fuel} kg` : '—'}</span>
                         </td>
                         <td className="px-5 py-3.5">
                           <span className="text-xs" style={{ color: t.textSub }}>
@@ -1070,6 +1085,7 @@ export default function Admin() {
                             <button onClick={() => {
                               const currentTypes = (r.allowedTypes as string[]) || []
                               setRouteTypeSelections(currentTypes)
+                              setRouteEditForm({ route: r.route || '', fuel: r.fuel ? String(r.fuel) : '' })
                               setRouteTypeEditor(r)
                             }}
                               className="p-1.5 rounded-lg"
@@ -1894,7 +1910,7 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ── ROUTE TYPE EDITOR MODAL ── */}
+        {/* ── ROUTE EDITOR MODAL ── */}
         {routeTypeEditor && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
             style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
@@ -1904,9 +1920,9 @@ export default function Admin() {
               <div className="flex items-center justify-between px-6 py-4"
                 style={{ borderBottom: `1px solid ${t.border}` }}>
                 <div className="flex items-center gap-3">
-                  <Plane size={15} style={{ color: '#c0121e' }} />
+                  <Navigation size={15} style={{ color: '#c0121e' }} />
                   <span className="text-sm font-semibold" style={{ color: t.text }}>
-                    Route Aircraft Types — {routeTypeEditor.flightNumber}
+                    Edit Route — {routeTypeEditor.flightNumber}
                   </span>
                 </div>
                 <button onClick={() => setRouteTypeEditor(null)}
@@ -1915,6 +1931,26 @@ export default function Admin() {
                 </button>
               </div>
               <div className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs mb-1.5" style={{ color: t.textMuted }}>Route (waypoints)</label>
+                    <input
+                      value={routeEditForm.route}
+                      onChange={e => setRouteEditForm({ ...routeEditForm, route: e.target.value })}
+                      placeholder="DCT BOM DCT VIDP"
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs mb-1.5" style={{ color: t.textMuted }}>Fuel (kgs)</label>
+                    <input
+                      value={routeEditForm.fuel}
+                      onChange={e => setRouteEditForm({ ...routeEditForm, fuel: e.target.value })}
+                      placeholder="8500"
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
                 <div className="text-xs" style={{ color: t.textSub }}>
                   Select which aircraft types can fly this route. Leave empty to allow all types.
                 </div>
@@ -1949,7 +1985,9 @@ export default function Admin() {
                 <div className="flex gap-3">
                   <button onClick={async () => {
                     try {
-                      await api.patch(`/admin/routes/${routeTypeEditor.id}/types`, {
+                      await api.patch(`/admin/routes/${routeTypeEditor.id}`, {
+                        route: routeEditForm.route || null,
+                        fuel: routeEditForm.fuel ? Number(routeEditForm.fuel) : undefined,
                         allowedTypes: routeTypeSelections.length > 0 ? routeTypeSelections : null,
                       })
                       setRouteTypeEditor(null)
@@ -1958,7 +1996,7 @@ export default function Admin() {
                   }}
                     className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
                     style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
-                    Save
+                    Save Changes
                   </button>
                   <button onClick={() => setRouteTypeEditor(null)}
                     className="flex-1 py-2.5 rounded-xl text-sm font-semibold"

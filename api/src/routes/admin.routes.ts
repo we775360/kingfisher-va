@@ -4,7 +4,7 @@ import {
   getAllPilots, updatePilotStatus,
   getAllPIREPs, updatePIREPStatus,
   getAllAircraft, createAircraft, deleteAircraft, updateAircraft,
-  getAllRoutes, createRoute, deleteRoute, updateRouteTypes,
+  getAllRoutes, createRoute, deleteRoute, updateRoute,
   getAllHubs, createHub, deleteHub,
   createAnnouncement, deleteAnnouncement, getStats
 } from '../controllers/admin.controller.js'
@@ -34,7 +34,7 @@ export const adminRoutes = async (app: FastifyInstance) => {
   // Routes
   app.get('/admin/routes', { preHandler: requireStaff }, getAllRoutes)
   app.post('/admin/routes', { preHandler: requireAdmin }, createRoute)
-  app.patch('/admin/routes/:id/types', { preHandler: requireAdmin }, updateRouteTypes)
+  app.patch('/admin/routes/:id', { preHandler: requireAdmin }, updateRoute)
   app.delete('/admin/routes/:id', { preHandler: requireAdmin }, deleteRoute)
 
   // Hubs
