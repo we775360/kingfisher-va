@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import {
   Radio, ExternalLink, Check, Info,
   Globe, Shield, Users, Headphones
@@ -20,34 +19,31 @@ export default function ATCVSO() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: t.bg, color: t.text }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ background: t.bg, color: t.text }}>
 
-      {/* Header */}
-      <div className="sticky top-0 z-30 px-6 py-4"
+      <div className="sticky top-0 z-30 px-4 sm:px-6 py-4"
         style={{
           background: isDark ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.92)',
           backdropFilter: 'blur(12px)',
           borderBottom: `1px solid ${t.border}`,
         }}>
         <div className="max-w-4xl mx-auto flex items-center gap-4">
-          <Link to="/dashboard" className="text-sm" style={{ color: t.textSub, textDecoration: 'none' }}>
-            ← Dashboard
+          <Link to="/dashboard" className="text-sm transition-colors duration-200" style={{ color: t.textSub, textDecoration: 'none' }}>
+            &larr; Dashboard
           </Link>
-          <div className="w-px h-4" style={{ background: t.border }} />
-          <div className="flex items-center gap-2">
-            <Radio size={16} style={{ color: '#c0121e' }} />
-            <span className="font-bold text-base" style={{ color: t.text }}>VATSIM & IVAO</span>
+          <div className="w-px h-4 shrink-0" style={{ background: t.border }} />
+          <div className="flex items-center gap-2 min-w-0">
+            <Radio size={16} className="shrink-0" style={{ color: '#c0121e' }} />
+            <span className="font-bold text-base truncate" style={{ color: t.text }}>VATSIM &amp; IVAO</span>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-        {/* Intro */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-          className="p-6 rounded-2xl"
+        <div className="p-6 rounded-2xl transition-all duration-200 hover:scale-[1.02]"
           style={{ background: t.card, border: `1px solid ${t.border}` }}>
-          <div className="flex items-start gap-4">
+          <div className="flex flex-col sm:flex-row items-start gap-4">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: 'rgba(192,18,30,0.1)' }}>
               <Radio size={22} style={{ color: '#c0121e' }} />
@@ -55,36 +51,32 @@ export default function ATCVSO() {
             <div>
               <h2 className="text-lg font-bold mb-2" style={{ color: t.text }}>Online ATC Networks</h2>
               <p className="text-sm leading-relaxed" style={{ color: t.textSub }}>
-                Kingfisher Virtual Airlines fully supports flying on both VATSIM and IVAO — the two largest
+                Kingfisher Virtual Airlines fully supports flying on both VATSIM and IVAO &mdash; the two largest
                 online ATC networks for flight simulation. Flying online earns you the same hours and salary
                 as offline, with the added immersion of real ATC communication.
               </p>
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Networks */}
-        <div className="grid md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-          {/* VATSIM */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="rounded-2xl overflow-hidden"
+          <div className="rounded-2xl overflow-hidden transition-all duration-200 hover:scale-[1.02]"
             style={{ background: t.card, border: `1px solid ${t.border}` }}>
             <div className="p-5" style={{ borderBottom: `1px solid ${t.border}`, background: 'rgba(59,130,246,0.05)' }}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+              <div className="flex items-center justify-between mb-2 gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                     style={{ background: 'rgba(59,130,246,0.15)' }}>
                     <Globe size={18} style={{ color: '#3b82f6' }} />
                   </div>
-                  <div>
-                    <div className="font-bold text-base" style={{ color: t.text }}>VATSIM</div>
-                    <div className="text-xs" style={{ color: t.textMuted }}>vatsim.net</div>
+                  <div className="min-w-0">
+                    <div className="font-bold text-base truncate" style={{ color: t.text }}>VATSIM</div>
+                    <div className="text-xs truncate" style={{ color: t.textMuted }}>vatsim.net</div>
                   </div>
                 </div>
                 <a href="https://vatsim.net" target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all duration-200"
                   style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6', textDecoration: 'none' }}>
                   Visit <ExternalLink size={11} />
                 </a>
@@ -121,27 +113,24 @@ export default function ATCVSO() {
                 ))}
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          {/* IVAO */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="rounded-2xl overflow-hidden"
+          <div className="rounded-2xl overflow-hidden transition-all duration-200 hover:scale-[1.02]"
             style={{ background: t.card, border: `1px solid ${t.border}` }}>
             <div className="p-5" style={{ borderBottom: `1px solid ${t.border}`, background: 'rgba(139,92,246,0.05)' }}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+              <div className="flex items-center justify-between mb-2 gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                     style={{ background: 'rgba(139,92,246,0.15)' }}>
                     <Radio size={18} style={{ color: '#8b5cf6' }} />
                   </div>
-                  <div>
-                    <div className="font-bold text-base" style={{ color: t.text }}>IVAO</div>
-                    <div className="text-xs" style={{ color: t.textMuted }}>ivao.aero</div>
+                  <div className="min-w-0">
+                    <div className="font-bold text-base truncate" style={{ color: t.text }}>IVAO</div>
+                    <div className="text-xs truncate" style={{ color: t.textMuted }}>ivao.aero</div>
                   </div>
                 </div>
                 <a href="https://ivao.aero" target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all duration-200"
                   style={{ background: 'rgba(139,92,246,0.1)', color: '#8b5cf6', textDecoration: 'none' }}>
                   Visit <ExternalLink size={11} />
                 </a>
@@ -178,19 +167,16 @@ export default function ATCVSO() {
                 ))}
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
 
-        {/* KFR Policy */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="rounded-2xl p-5"
+        <div className="rounded-2xl p-5 transition-all duration-200 hover:scale-[1.02]"
           style={{ background: t.card, border: `1px solid ${t.border}` }}>
           <div className="flex items-center gap-2.5 mb-4">
             <Shield size={15} style={{ color: '#c0121e' }} />
             <span className="text-sm font-semibold" style={{ color: t.text }}>Kingfisher VA Online Policy</span>
           </div>
-          <div className="grid md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               { icon: Check, text: 'VATSIM and IVAO flights earn the same $500/hr salary', color: '#10b981' },
               { icon: Check, text: 'Use KFR callsign prefix (e.g. KFR101) when filing plans', color: '#10b981' },
@@ -206,18 +192,15 @@ export default function ATCVSO() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
-        {/* Useful links */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="rounded-2xl p-5"
+        <div className="rounded-2xl p-5 transition-all duration-200 hover:scale-[1.02]"
           style={{ background: t.card, border: `1px solid ${t.border}` }}>
           <div className="flex items-center gap-2.5 mb-4">
             <Headphones size={15} style={{ color: '#c0121e' }} />
             <span className="text-sm font-semibold" style={{ color: t.text }}>Useful Resources</span>
           </div>
-          <div className="grid md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
               { label: 'VATSIM Website', href: 'https://vatsim.net', color: '#3b82f6' },
               { label: 'IVAO Website', href: 'https://ivao.aero', color: '#8b5cf6' },
@@ -225,16 +208,16 @@ export default function ATCVSO() {
               { label: 'X-Pilot for X-Plane', href: 'https://www.x-pilot.com', color: '#10b981' },
               { label: 'IVAO Altitude Client', href: 'https://ivao.aero/softdev/altitude', color: '#8b5cf6' },
               { label: 'SimAware Live Map', href: 'https://simaware.ca', color: '#c0121e' },
-            ].map((link, i) => (
-              <a key={i} href={link.href} target="_blank" rel="noopener noreferrer"
-                className="flex items-center justify-between px-4 py-3 rounded-xl transition-all hover:scale-[1.02]"
+            ].map((link) => (
+              <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 hover:scale-[1.02]"
                 style={{ background: `${link.color}08`, border: `1px solid ${link.color}20`, textDecoration: 'none' }}>
-                <span className="text-sm font-medium" style={{ color: t.text }}>{link.label}</span>
-                <ExternalLink size={13} style={{ color: link.color }} />
+                <span className="text-sm font-medium truncate" style={{ color: t.text }}>{link.label}</span>
+                <ExternalLink size={13} className="shrink-0" style={{ color: link.color }} />
               </a>
             ))}
           </div>
-        </motion.div>
+        </div>
 
       </div>
     </div>

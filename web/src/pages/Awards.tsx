@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import {
   Trophy, Star, Lock, Plane, Clock,
   TrendingUp, Award, CheckCircle, Shield
@@ -107,37 +106,36 @@ export default function Awards() {
   const locked = ALL_AWARDS.filter(a => !checkUnlocked(a))
 
   return (
-    <div className="min-h-screen" style={{ background: t.bg, color: t.text }}>
-      <div className="sticky top-0 z-30 px-6 py-4"
+    <div className="min-h-screen overflow-x-hidden" style={{ background: t.bg, color: t.text }}>
+      <div className="sticky top-0 z-30 px-4 sm:px-6 lg:px-8 py-4"
         style={{
           background: isDark ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.92)',
           backdropFilter: 'blur(12px)',
           borderBottom: `1px solid ${t.border}`,
         }}>
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/dashboard" className="text-sm" style={{ color: t.textSub, textDecoration: 'none' }}>← Dashboard</Link>
-            <div className="w-px h-4" style={{ background: t.border }} />
-            <div className="flex items-center gap-2">
-              <Trophy size={16} style={{ color: '#d4af37' }} />
-              <span className="font-bold text-base" style={{ color: t.text }}>Awards & Badges</span>
+          <div className="flex items-center gap-4 min-w-0">
+            <Link to="/dashboard" className="text-sm shrink-0" style={{ color: t.textSub, textDecoration: 'none' }}>← Dashboard</Link>
+            <div className="w-px h-4 shrink-0" style={{ background: t.border }} />
+            <div className="flex items-center gap-2 min-w-0">
+              <Trophy size={16} className="shrink-0" style={{ color: '#d4af37' }} />
+              <span className="font-bold text-base truncate" style={{ color: t.text }}>Awards & Badges</span>
             </div>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl"
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl shrink-0"
             style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
-            <Trophy size={13} style={{ color: '#d4af37' }} />
-            <span className="text-xs font-bold" style={{ color: '#d4af37' }}>
+            <Trophy size={13} className="shrink-0" style={{ color: '#d4af37' }} />
+            <span className="text-xs font-bold whitespace-nowrap" style={{ color: '#d4af37' }}>
               {unlocked.length}/{ALL_AWARDS.length} Unlocked
             </span>
           </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        {/* Progress overview */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          className="p-5 rounded-2xl"
+        <div
+          className="p-5 rounded-2xl transition-all duration-200 hover:scale-[1.02]"
           style={{ background: t.card, border: `1px solid ${t.border}` }}>
           <div className="flex items-center justify-between mb-3">
             <div className="text-sm font-semibold" style={{ color: t.text }}>Overall Progress</div>
@@ -146,73 +144,64 @@ export default function Awards() {
             </div>
           </div>
           <div className="w-full h-3 rounded-full overflow-hidden" style={{ background: t.border }}>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${(unlocked.length / ALL_AWARDS.length) * 100}%` }}
-              transition={{ duration: 1, ease: 'easeOut' }}
-              className="h-full rounded-full"
-              style={{ background: 'linear-gradient(90deg, #8b0000, #d4af37)' }} />
+            <div
+              className="h-full rounded-full transition-all duration-1000"
+              style={{ width: `${(unlocked.length / ALL_AWARDS.length) * 100}%`, background: 'linear-gradient(90deg, #8b0000, #d4af37)' }} />
           </div>
           <div className="flex items-center justify-between mt-2">
             <span className="text-xs" style={{ color: t.textMuted }}>{unlocked.length} earned</span>
             <span className="text-xs" style={{ color: t.textMuted }}>{locked.length} remaining</span>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Unlocked */}
         {unlocked.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <CheckCircle size={15} style={{ color: '#10b981' }} />
+              <CheckCircle size={15} className="shrink-0" style={{ color: '#10b981' }} />
               <span className="text-sm font-semibold" style={{ color: t.text }}>Earned ({unlocked.length})</span>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {unlocked.map((award, i) => (
-                <motion.div key={award.id}
-                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.06 }}
-                  className="p-5 rounded-2xl text-center relative overflow-hidden"
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {unlocked.map((award) => (
+                <div key={award.id}
+                  className="p-5 rounded-2xl text-center relative overflow-hidden transition-all duration-200 hover:scale-[1.02]"
                   style={{ background: t.card, border: `1px solid ${award.color}40` }}>
                   <div className="absolute top-2 right-2">
                     <CheckCircle size={14} style={{ color: '#10b981' }} />
                   </div>
                   <div className="text-4xl mb-3">{award.icon}</div>
-                  <div className="text-sm font-bold mb-1" style={{ color: t.text }}>{award.name}</div>
-                  <div className="text-xs" style={{ color: t.textSub }}>{award.desc}</div>
+                  <div className="text-sm font-bold mb-1 truncate" style={{ color: t.text }}>{award.name}</div>
+                  <div className="text-xs break-words" style={{ color: t.textSub }}>{award.desc}</div>
                   <div className="mt-3 px-3 py-1 rounded-full text-xs font-semibold inline-block"
                     style={{ background: `${award.color}18`, color: award.color }}>
                     Unlocked
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Locked */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <Lock size={15} style={{ color: t.textMuted }} />
+            <Lock size={15} className="shrink-0" style={{ color: t.textMuted }} />
             <span className="text-sm font-semibold" style={{ color: t.text }}>In Progress ({locked.length})</span>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {locked.map((award, i) => {
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {locked.map((award) => {
               const progress = getProgress(award)
               return (
-                <motion.div key={award.id}
-                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="p-5 rounded-2xl text-center"
+                <div key={award.id}
+                  className="p-5 rounded-2xl text-center transition-all duration-200 hover:scale-[1.02]"
                   style={{ background: t.card, border: `1px solid ${t.border}`, opacity: 0.7 }}>
                   <div className="text-4xl mb-3 grayscale opacity-50">{award.icon}</div>
-                  <div className="text-sm font-bold mb-1" style={{ color: t.text }}>{award.name}</div>
-                  <div className="text-xs mb-3" style={{ color: t.textSub }}>{award.desc}</div>
+                  <div className="text-sm font-bold mb-1 truncate" style={{ color: t.text }}>{award.name}</div>
+                  <div className="text-xs mb-3 break-words" style={{ color: t.textSub }}>{award.desc}</div>
                   <div className="w-full h-1.5 rounded-full overflow-hidden mb-1" style={{ background: t.border }}>
-                    <div className="h-full rounded-full transition-all"
+                    <div className="h-full rounded-full transition-all duration-200"
                       style={{ width: `${progress}%`, background: award.color }} />
                   </div>
                   <div className="text-xs" style={{ color: t.textMuted }}>{progress.toFixed(0)}%</div>
-                </motion.div>
+                </div>
               )
             })}
           </div>

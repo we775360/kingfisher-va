@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
 import { useNavigate, Link } from 'react-router-dom'
 import { Plane, ArrowLeft } from 'lucide-react'
 import api from '../lib/axios'
@@ -36,7 +35,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center px-4 py-8 overflow-hidden bg-slate-50">
+    <div className="min-h-screen relative flex items-center justify-center px-4 py-8 overflow-hidden overflow-x-hidden bg-slate-50">
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <img
@@ -51,7 +50,7 @@ export default function Login() {
       {/* Back to Home */}
       <Link
         to="/"
-        className="fixed top-5 left-5 md:top-8 md:left-8 z-20 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all bg-white/70 backdrop-blur-md border border-slate-200 text-slate-600 hover:bg-white hover:text-slate-900 hover:border-slate-300 shadow-sm"
+        className="fixed top-5 left-5 md:top-8 md:left-8 z-20 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 bg-white/70 backdrop-blur-md border border-slate-200 text-slate-600 hover:bg-white hover:text-slate-900 hover:border-slate-300 hover:scale-[1.02] shadow-sm"
       >
         <ArrowLeft size={14} /> Back to Home
       </Link>
@@ -61,33 +60,24 @@ export default function Login() {
         <Plane size={120} className="text-slate-300" />
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-md relative z-10"
-      >
+      <div className="w-full max-w-sm sm:max-w-md relative z-10">
         {/* Glass Card */}
-        <div className="rounded-3xl p-8 md:p-10 backdrop-blur-xl bg-white/70 border border-white/40 shadow-xl shadow-slate-200/50">
+        <div className="rounded-3xl p-6 sm:p-8 md:p-10 backdrop-blur-xl bg-white/70 border border-white/40 shadow-xl shadow-slate-200/50 transition-all duration-200">
           {/* Logo & Header */}
           <div className="text-center mb-8">
-            <img src="/logo.png" alt="Kingfisher VA" className="w-20 h-20 object-contain mx-auto mb-4" />
-            <h1 className="text-2xl font-black italic tracking-tight text-slate-900 mb-1">
+            <img src="/logo.png" alt="Kingfisher VA" className="w-16 sm:w-20 h-16 sm:h-20 object-contain mx-auto mb-4" />
+            <h1 className="text-xl sm:text-2xl font-black italic tracking-tight text-slate-900 mb-1 break-words">
               Welcome Back
             </h1>
-            <p className="text-slate-500 text-sm font-medium">
+            <p className="text-slate-500 text-xs sm:text-sm font-medium break-words">
               Sign in to your Kingfisher Virtual account
             </p>
           </div>
 
           {error && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="mb-5 px-4 py-3 rounded-xl text-sm font-medium text-red-700 bg-red-50 border border-red-200"
-            >
+            <div className="mb-5 px-4 py-3 rounded-xl text-sm font-medium text-red-700 bg-red-50 border border-red-200 transition-all duration-200">
               {error}
-            </motion.div>
+            </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -102,7 +92,7 @@ export default function Login() {
                 onChange={handleChange}
                 required
                 placeholder="john@example.com"
-                className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 bg-white/80 border border-slate-200 outline-none transition-all placeholder:text-slate-400 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 bg-white/80 border border-slate-200 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-red-400 focus:ring-2 focus:ring-red-100"
               />
             </div>
 
@@ -117,14 +107,14 @@ export default function Login() {
                 onChange={handleChange}
                 required
                 placeholder="Your password"
-                className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 bg-white/80 border border-slate-200 outline-none transition-all placeholder:text-slate-400 focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                className="w-full px-4 py-3 rounded-xl text-sm text-slate-900 bg-white/80 border border-slate-200 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-red-400 focus:ring-2 focus:ring-red-100"
               />
             </div>
 
             <div className="flex items-center justify-end">
               <Link
                 to="/forgot-password"
-                className="text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
+                className="text-xs font-semibold text-red-600 hover:text-red-700 transition-all duration-200"
               >
                 Forgot password?
               </Link>
@@ -153,7 +143,7 @@ export default function Login() {
 
           <p className="text-center text-slate-400 text-xs font-medium mt-6">
             Don't have an account?{' '}
-            <Link to="/register" className="text-red-600 hover:text-red-700 font-bold transition-colors">
+            <Link to="/register" className="text-red-600 hover:text-red-700 font-bold transition-all duration-200">
               Register for free
             </Link>
           </p>
@@ -163,7 +153,7 @@ export default function Login() {
         <p className="text-center text-slate-400 text-[10px] font-bold tracking-widest uppercase mt-6">
           Kingfisher Virtual Airline &middot; Not a real airline
         </p>
-      </motion.div>
+      </div>
     </div>
   )
 }

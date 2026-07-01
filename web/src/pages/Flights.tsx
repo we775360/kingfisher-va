@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
   Navigation, Clock, Search,
   ChevronRight, X, Calendar, Radio,
@@ -347,10 +346,7 @@ export default function Flights() {
                 {filteredFamilies.map((family, i) => {
                   const available = family.aircraft.filter(a => a.maintenanceStatus !== 'IN_MAINTENANCE').length
                   return (
-                    <motion.div key={family.icao}
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: i * 0.04 }}
+                    <div key={family.icao}
                       onClick={() => handleSelectFamily(family.icao)}
                       className="p-6 rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-0.5 group"
                       style={{
@@ -390,7 +386,7 @@ export default function Flights() {
                         <span className="w-1 h-1 rounded-full" style={{ background: t.textMuted }} />
                         <span style={{ color: available > 0 ? '#10b981' : t.textMuted }}>{available} available</span>
                       </div>
-                    </motion.div>
+                    </div>
                   )
                 })}
               </div>
@@ -433,10 +429,7 @@ export default function Flights() {
                   const location = ac.currentLocation || ac.hub || 'Unknown'
                   const isAtHub = ac.currentLocation === ac.hub
                   return (
-                    <motion.div key={ac.id}
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: i * 0.04 }}
+                    <div key={ac.id}
                       onClick={() => !inMaint && handleSelectAircraft(ac)}
                       className={`p-6 rounded-2xl cursor-pointer transition-all duration-300 ${inMaint ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-0.5 group'}`}
                       style={{
@@ -506,7 +499,7 @@ export default function Flights() {
                           </div>
                         )}
                       </div>
-                    </motion.div>
+                    </div>
                   )
                 })}
               </div>
@@ -518,9 +511,7 @@ export default function Flights() {
         {view === 'routes' && selectedAircraft && (
           <div>
             {/* Aircraft info bar */}
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
+            <div
               className="flex items-center justify-between p-5 rounded-2xl mb-8"
               style={{
                 background: `linear-gradient(135deg, ${t.card}, ${t.cardHover})`,
@@ -552,7 +543,7 @@ export default function Flights() {
                 style={{ background: t.navHover, color: t.textSub, border: `1px solid ${t.border}` }}>
                 Change
               </button>
-            </motion.div>
+            </div>
 
             {routesLoading ? (
               <div className="flex flex-col items-center justify-center py-24">
@@ -581,9 +572,7 @@ export default function Flights() {
 
                 {/* Return to hub */}
                 {returnRoute && !search && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
+                  <div
                     onClick={() => { setSelectedRoute(returnRoute); setBookingSuccess(false); setBookingMsg(''); setBookingForm({ depTime: '', network: 'Offline' }) }}
                     className="p-6 rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-0.5 mb-4"
                     style={{
@@ -623,7 +612,7 @@ export default function Flights() {
                         <div className="text-[11px] mt-0.5" style={{ color: t.textSub }}>{returnRoute.arrName || returnRoute.arrIcao}</div>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 )}
 
                 {/* Route list */}
@@ -641,10 +630,7 @@ export default function Flights() {
                 ) : (
                   <div className="space-y-4">
                     {filteredRoutes.map((route, i) => (
-                      <motion.div key={route.id || `rth-${i}`}
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: i * 0.04 }}
+                      <div key={route.id || `rth-${i}`}
                         onClick={() => { setSelectedRoute(route); setBookingSuccess(false); setBookingMsg(''); setBookingForm({ depTime: '', network: 'Offline' }) }}
                         className="p-6 rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-0.5 group"
                         style={{
@@ -715,7 +701,7 @@ export default function Flights() {
                             <ChevronRight size={16} style={{ color: route.isReturnRoute ? '#f59e0b' : '#c0121e' }} />
                           </div>
                         </div>
-                      </motion.div>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -760,10 +746,7 @@ export default function Flights() {
                 const s = getStatusStyle(booking.status)
                 const isRealisticOps = booking._type === 'realistic-ops'
                 return (
-                  <motion.div key={`${booking._type}-${booking.id}`}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: i * 0.04 }}
+                  <div key={`${booking._type}-${booking.id}`}
                     className="p-6 rounded-2xl"
                     style={{
                       background: `linear-gradient(135deg, ${t.card}, ${t.cardHover})`,
@@ -847,7 +830,7 @@ export default function Flights() {
                         )}
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 )
               })
             )}
@@ -856,234 +839,223 @@ export default function Flights() {
       </div>
 
       {/* ── BOOKING MODAL ── */}
-      <AnimatePresence>
-        {selectedRoute && selectedAircraft && view !== 'mybookings' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-6"
-            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
-            onClick={e => { if (e.target === e.currentTarget) setSelectedRoute(null) }}>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 24 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 24 }}
-              transition={{ type: 'spring', duration: 0.4, bounce: 0.3 }}
-              className="w-full max-w-xl rounded-3xl flex flex-col overflow-hidden"
+      {selectedRoute && selectedAircraft && view !== 'mybookings' && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-6"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setSelectedRoute(null) }}>
+          <div
+            className="w-full max-w-xl rounded-3xl flex flex-col overflow-hidden"
+            style={{
+              background: isDark ? '#141414' : '#ffffff',
+              border: `1px solid ${t.border}`,
+              boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+              maxHeight: '90vh',
+            }}>
+            {/* Modal Header */}
+            <div className="relative px-8 py-6"
               style={{
-                background: isDark ? '#141414' : '#ffffff',
-                border: `1px solid ${t.border}`,
-                boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
-                maxHeight: '90vh',
+                background: 'linear-gradient(135deg, #c0121e, #8b0000)',
               }}>
-              {/* Modal Header */}
-              <div className="relative px-8 py-6"
-                style={{
-                  background: 'linear-gradient(135deg, #c0121e, #8b0000)',
-                }}>
-                <div className="absolute inset-0" style={{ background: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\' opacity=\'0.08\'/%3E%3C/svg%3E")', opacity: 0.3 }} />
-                <div className="relative flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center"
-                      style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
-                      <img src="/logo.png" alt="" className="w-5 h-5 object-contain" />
-                    </div>
-                    <div>
-                      <div className="font-bold text-base text-white">{selectedRoute.flightNumber}</div>
-                      <div className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>{selectedRoute.depIcao} → {selectedRoute.arrIcao}</div>
-                    </div>
+              <div className="absolute inset-0" style={{ background: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\' opacity=\'0.08\'/%3E%3C/svg%3E")', opacity: 0.3 }} />
+              <div className="relative flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center"
+                    style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
+                    <img src="/logo.png" alt="" className="w-5 h-5 object-contain" />
                   </div>
+                  <div>
+                    <div className="font-bold text-base text-white">{selectedRoute.flightNumber}</div>
+                    <div className="text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>{selectedRoute.depIcao} → {selectedRoute.arrIcao}</div>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedRoute(null)}
+                  className="p-2.5 rounded-xl transition-all duration-200 hover:bg-white/10"
+                  style={{ color: 'rgba(255,255,255,0.7)' }}>
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {bookingSuccess ? (
+              <div className="px-8 py-14 text-center">
+                <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5"
+                  style={{ background: 'rgba(16,185,129,0.1)' }}>
+                  <Check size={40} style={{ color: '#10b981' }} />
+                </div>
+                <div className="text-xl font-bold mb-2" style={{ color: t.text }}>Flight Booked!</div>
+                <div className="text-sm mb-1" style={{ color: t.textSub }}>
+                  {selectedRoute.flightNumber} — {selectedRoute.depIcao} → {selectedRoute.arrIcao}
+                </div>
+                <div className="text-sm mb-8" style={{ color: t.textMuted }}>
+                  {selectedAircraft.name} · {selectedAircraft.registration}
+                </div>
+                <div className="flex gap-4 justify-center">
+                  <button
+                    onClick={async () => {
+                      setSelectedRoute(null);
+                      const b = await api.get('/bookings/my').then(r => r.data);
+                      navigate(b?.[0]?.id ? `/booking/standard/${b[0].id}` : '/flights');
+                    }}
+                    className="px-6 py-3 rounded-xl text-sm font-bold text-white transition-all hover:shadow-lg"
+                    style={{
+                      background: 'linear-gradient(135deg, #c0121e, #8b0000)',
+                      boxShadow: '0 4px 15px rgba(192,18,30,0.3)',
+                    }}>
+                    View Booking Details
+                  </button>
                   <button onClick={() => setSelectedRoute(null)}
-                    className="p-2.5 rounded-xl transition-all duration-200 hover:bg-white/10"
-                    style={{ color: 'rgba(255,255,255,0.7)' }}>
-                    <X size={18} />
+                    className="px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
+                    style={{ background: t.badge, color: t.textSub }}>
+                    Close
                   </button>
                 </div>
               </div>
-
-              {bookingSuccess ? (
-                <div className="px-8 py-14 text-center">
-                  <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5"
-                    style={{ background: 'rgba(16,185,129,0.1)' }}>
-                    <Check size={40} style={{ color: '#10b981' }} />
+            ) : (
+              <div className="px-8 py-6 space-y-6 overflow-y-auto flex-1">
+                {/* Aircraft info chip */}
+                <div className="flex items-center gap-3 p-4 rounded-2xl"
+                  style={{ background: t.badge, border: `1px solid ${t.border}` }}>
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(192,18,30,0.1)' }}>
+                    <img src="/logo.png" alt="" className="w-3.5 h-3.5 object-contain" />
                   </div>
-                  <div className="text-xl font-bold mb-2" style={{ color: t.text }}>Flight Booked!</div>
-                  <div className="text-sm mb-1" style={{ color: t.textSub }}>
-                    {selectedRoute.flightNumber} — {selectedRoute.depIcao} → {selectedRoute.arrIcao}
-                  </div>
-                  <div className="text-sm mb-8" style={{ color: t.textMuted }}>
-                    {selectedAircraft.name} · {selectedAircraft.registration}
-                  </div>
-                  <div className="flex gap-4 justify-center">
-                    <button
-                      onClick={async () => {
-                        setSelectedRoute(null);
-                        const b = await api.get('/bookings/my').then(r => r.data);
-                        navigate(b?.[0]?.id ? `/booking/standard/${b[0].id}` : '/flights');
-                      }}
-                      className="px-6 py-3 rounded-xl text-sm font-bold text-white transition-all hover:shadow-lg"
-                      style={{
-                        background: 'linear-gradient(135deg, #c0121e, #8b0000)',
-                        boxShadow: '0 4px 15px rgba(192,18,30,0.3)',
-                      }}>
-                      View Booking Details
-                    </button>
-                    <button onClick={() => setSelectedRoute(null)}
-                      className="px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
-                      style={{ background: t.badge, color: t.textSub }}>
-                      Close
-                    </button>
+                  <div className="text-sm" style={{ color: t.textSub }}>
+                    <span className="font-semibold" style={{ color: t.text }}>{selectedAircraft.name}</span>
+                    <span style={{ color: t.textMuted }}> · {selectedAircraft.registration} · From </span>
+                    <strong style={{ color: t.text }}>{selectedRoute.depIcao}</strong>
                   </div>
                 </div>
-              ) : (
-                <div className="px-8 py-6 space-y-6 overflow-y-auto flex-1">
-                  {/* Aircraft info chip */}
-                  <div className="flex items-center gap-3 p-4 rounded-2xl"
-                    style={{ background: t.badge, border: `1px solid ${t.border}` }}>
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: 'rgba(192,18,30,0.1)' }}>
-                      <img src="/logo.png" alt="" className="w-3.5 h-3.5 object-contain" />
-                    </div>
-                    <div className="text-sm" style={{ color: t.textSub }}>
-                      <span className="font-semibold" style={{ color: t.text }}>{selectedAircraft.name}</span>
-                      <span style={{ color: t.textMuted }}> · {selectedAircraft.registration} · From </span>
-                      <strong style={{ color: t.text }}>{selectedRoute.depIcao}</strong>
-                    </div>
-                  </div>
 
-                  {/* Route preview card */}
-                  <div className="p-5 rounded-2xl text-center"
-                    style={{
-                      background: `linear-gradient(135deg, ${t.navActive}, rgba(192,18,30,0.03))`,
-                      border: `1px solid rgba(192,18,30,0.12)`,
-                    }}>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex-1 text-center">
-                        <div className="text-2xl font-bold tracking-tight" style={{ color: t.text }}>{selectedRoute.depIcao}</div>
-                        <div className="text-xs mt-1" style={{ color: t.textSub }}>{selectedRoute.depName}</div>
-                      </div>
-                      <div className="flex flex-col items-center gap-1.5 px-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-12 h-px" style={{ background: `linear-gradient(90deg, ${t.text}, ${t.text})` }} />
-                          <div className="w-3 h-3 rounded-full flex items-center justify-center" style={{ background: 'rgba(192,18,30,0.15)' }}>
-                            <div className="w-1 h-1 rounded-full" style={{ background: '#c0121e' }} />
-                          </div>
-                          <div className="w-12 h-px" style={{ background: `linear-gradient(90deg, ${t.text}, ${t.text})` }} />
-                        </div>
-                        {selectedRoute.distance && (
-                          <span className="text-[11px] font-medium" style={{ color: t.textMuted }}>{selectedRoute.distance} nm</span>
-                        )}
-                      </div>
-                      <div className="flex-1 text-center">
-                        <div className="text-2xl font-bold tracking-tight" style={{ color: t.text }}>{selectedRoute.arrIcao}</div>
-                        <div className="text-xs mt-1" style={{ color: t.textSub }}>{selectedRoute.arrName}</div>
-                      </div>
+                {/* Route preview card */}
+                <div className="p-5 rounded-2xl text-center"
+                  style={{
+                    background: `linear-gradient(135deg, ${t.navActive}, rgba(192,18,30,0.03))`,
+                    border: `1px solid rgba(192,18,30,0.12)`,
+                  }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex-1 text-center">
+                      <div className="text-2xl font-bold tracking-tight" style={{ color: t.text }}>{selectedRoute.depIcao}</div>
+                      <div className="text-xs mt-1" style={{ color: t.textSub }}>{selectedRoute.depName}</div>
                     </div>
-                    <div className="grid grid-cols-3 gap-3 pt-4"
-                      style={{ borderTop: `1px solid rgba(192,18,30,0.1)` }}>
-                      <div className="text-center">
-                        <div className="flex items-center justify-center gap-1.5 text-sm font-bold" style={{ color: t.text }}>
-                          <Clock size={13} style={{ color: t.textMuted }} />
-                          {Math.floor((selectedRoute.duration || 60) / 60)}h {(selectedRoute.duration || 60) % 60}m
+                    <div className="flex flex-col items-center gap-1.5 px-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-12 h-px" style={{ background: `linear-gradient(90deg, ${t.text}, ${t.text})` }} />
+                        <div className="w-3 h-3 rounded-full flex items-center justify-center" style={{ background: 'rgba(192,18,30,0.15)' }}>
+                          <div className="w-1 h-1 rounded-full" style={{ background: '#c0121e' }} />
                         </div>
-                        <div className="text-[11px] mt-0.5" style={{ color: t.textMuted }}>Duration</div>
+                        <div className="w-12 h-px" style={{ background: `linear-gradient(90deg, ${t.text}, ${t.text})` }} />
                       </div>
-                      <div className="text-center">
-                        <div className="flex items-center justify-center gap-1.5 text-sm font-bold" style={{ color: '#10b981' }}>
-                          <DollarSign size={13} />
-                          ${estimatedEarnings(selectedRoute)}
-                        </div>
-                        <div className="text-[11px] mt-0.5" style={{ color: t.textMuted }}>Earnings</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="flex items-center justify-center gap-1.5 text-sm font-bold" style={{ color: t.text }}>
-                          <Fuel size={13} style={{ color: t.textMuted }} />
-                          $500/hr
-                        </div>
-                        <div className="text-[11px] mt-0.5" style={{ color: t.textMuted }}>Pay Rate</div>
-                      </div>
+                      {selectedRoute.distance && (
+                        <span className="text-[11px] font-medium" style={{ color: t.textMuted }}>{selectedRoute.distance} nm</span>
+                      )}
+                    </div>
+                    <div className="flex-1 text-center">
+                      <div className="text-2xl font-bold tracking-tight" style={{ color: t.text }}>{selectedRoute.arrIcao}</div>
+                      <div className="text-xs mt-1" style={{ color: t.textSub }}>{selectedRoute.arrName}</div>
                     </div>
                   </div>
+                  <div className="grid grid-cols-3 gap-3 pt-4"
+                    style={{ borderTop: `1px solid rgba(192,18,30,0.1)` }}>
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-1.5 text-sm font-bold" style={{ color: t.text }}>
+                        <Clock size={13} style={{ color: t.textMuted }} />
+                        {Math.floor((selectedRoute.duration || 60) / 60)}h {(selectedRoute.duration || 60) % 60}m
+                      </div>
+                      <div className="text-[11px] mt-0.5" style={{ color: t.textMuted }}>Duration</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-1.5 text-sm font-bold" style={{ color: '#10b981' }}>
+                        <DollarSign size={13} />
+                        ${estimatedEarnings(selectedRoute)}
+                      </div>
+                      <div className="text-[11px] mt-0.5" style={{ color: t.textMuted }}>Earnings</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-1.5 text-sm font-bold" style={{ color: t.text }}>
+                        <Fuel size={13} style={{ color: t.textMuted }} />
+                        $500/hr
+                      </div>
+                      <div className="text-[11px] mt-0.5" style={{ color: t.textMuted }}>Pay Rate</div>
+                    </div>
+                  </div>
+                </div>
 
-                  {/* Info note */}
-                  <div className="flex gap-3 p-4 rounded-2xl"
-                    style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(59,130,246,0.03))', border: '1px solid rgba(59,130,246,0.15)' }}>
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: 'rgba(59,130,246,0.12)' }}>
-                      <Info size={14} style={{ color: '#3b82f6' }} />
-                    </div>
-                    <div className="text-xs leading-relaxed" style={{ color: '#3b82f6' }}>
-                      <a href="/fsacars" className="font-semibold underline hover:opacity-80">FSACARS</a> auto-tracks your flight. Manual PIREPs also accepted.
-                    </div>
+                {/* Info note */}
+                <div className="flex gap-3 p-4 rounded-2xl"
+                  style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(59,130,246,0.03))', border: '1px solid rgba(59,130,246,0.15)' }}>
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(59,130,246,0.12)' }}>
+                    <Info size={14} style={{ color: '#3b82f6' }} />
                   </div>
+                  <div className="text-xs leading-relaxed" style={{ color: '#3b82f6' }}>
+                    <a href="/fsacars" className="font-semibold underline hover:opacity-80">FSACARS</a> auto-tracks your flight. Manual PIREPs also accepted.
+                  </div>
+                </div>
 
-                  {/* Form */}
-                  <div>
-                    <label className="block text-xs font-semibold mb-2.5 tracking-wide" style={{ color: t.textMuted }}>DEPARTURE DATE & TIME</label>
-                    <input type="datetime-local" value={bookingForm.depTime}
-                      onChange={e => setBookingForm({ ...bookingForm, depTime: e.target.value })}
-                      style={inputStyle}
-                      className="[&::-webkit-calendar-picker-indicator]:cursor-pointer" />
+                {/* Form */}
+                <div>
+                  <label className="block text-xs font-semibold mb-2.5 tracking-wide" style={{ color: t.textMuted }}>DEPARTURE DATE & TIME</label>
+                  <input type="datetime-local" value={bookingForm.depTime}
+                    onChange={e => setBookingForm({ ...bookingForm, depTime: e.target.value })}
+                    style={inputStyle}
+                    className="[&::-webkit-calendar-picker-indicator]:cursor-pointer" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-2.5 tracking-wide" style={{ color: t.textMuted }}>NETWORK</label>
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {NETWORKS.map(net => (
+                      <button key={net}
+                        onClick={() => setBookingForm({ ...bookingForm, network: net })}
+                        className="py-3 rounded-xl text-sm font-semibold transition-all duration-200"
+                        style={{
+                          background: bookingForm.network === net
+                            ? 'linear-gradient(135deg, rgba(192,18,30,0.15), rgba(192,18,30,0.05))'
+                            : t.input,
+                          border: `1px solid ${bookingForm.network === net ? 'rgba(192,18,30,0.4)' : t.border}`,
+                          color: bookingForm.network === net ? '#c0121e' : t.textSub,
+                          boxShadow: bookingForm.network === net ? '0 2px 10px rgba(192,18,30,0.1)' : 'none',
+                        }}>
+                        {net}
+                      </button>
+                    ))}
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold mb-2.5 tracking-wide" style={{ color: t.textMuted }}>NETWORK</label>
-                    <div className="grid grid-cols-3 gap-2.5">
-                      {NETWORKS.map(net => (
-                        <button key={net}
-                          onClick={() => setBookingForm({ ...bookingForm, network: net })}
-                          className="py-3 rounded-xl text-sm font-semibold transition-all duration-200"
-                          style={{
-                            background: bookingForm.network === net
-                              ? 'linear-gradient(135deg, rgba(192,18,30,0.15), rgba(192,18,30,0.05))'
-                              : t.input,
-                            border: `1px solid ${bookingForm.network === net ? 'rgba(192,18,30,0.4)' : t.border}`,
-                            color: bookingForm.network === net ? '#c0121e' : t.textSub,
-                            boxShadow: bookingForm.network === net ? '0 2px 10px rgba(192,18,30,0.1)' : 'none',
-                          }}>
-                          {net}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                </div>
 
-                  {bookingMsg && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="px-4 py-3 rounded-xl text-xs font-medium"
-                      style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
-                      {bookingMsg}
-                    </motion.div>
+                {bookingMsg && (
+                  <div
+                    className="px-4 py-3 rounded-xl text-xs font-medium"
+                    style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
+                    {bookingMsg}
+                  </div>
+                )}
+
+                <button onClick={handleBook} disabled={bookingLoading}
+                  className="w-full py-4 rounded-xl text-sm font-bold text-white transition-all duration-200"
+                  style={{
+                    background: bookingLoading
+                      ? 'linear-gradient(135deg, rgba(192,18,30,0.5), rgba(139,0,0,0.5))'
+                      : 'linear-gradient(135deg, #c0121e, #8b0000)',
+                    boxShadow: bookingLoading
+                      ? 'none'
+                      : '0 4px 20px rgba(192,18,30,0.35)',
+                    opacity: bookingLoading ? 0.7 : 1,
+                  }}>
+                  {bookingLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 rounded-full border-2 animate-spin"
+                        style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fff' }} />
+                      Booking...
+                    </span>
+                  ) : (
+                    `Book ${selectedRoute.flightNumber} — ${selectedRoute.depIcao} → ${selectedRoute.arrIcao}`
                   )}
-
-                  <button onClick={handleBook} disabled={bookingLoading}
-                    className="w-full py-4 rounded-xl text-sm font-bold text-white transition-all duration-200"
-                    style={{
-                      background: bookingLoading
-                        ? 'linear-gradient(135deg, rgba(192,18,30,0.5), rgba(139,0,0,0.5))'
-                        : 'linear-gradient(135deg, #c0121e, #8b0000)',
-                      boxShadow: bookingLoading
-                        ? 'none'
-                        : '0 4px 20px rgba(192,18,30,0.35)',
-                      opacity: bookingLoading ? 0.7 : 1,
-                    }}>
-                    {bookingLoading ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 rounded-full border-2 animate-spin"
-                          style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fff' }} />
-                        Booking...
-                      </span>
-                    ) : (
-                      `Book ${selectedRoute.flightNumber} — ${selectedRoute.depIcao} → ${selectedRoute.arrIcao}`
-                    )}
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

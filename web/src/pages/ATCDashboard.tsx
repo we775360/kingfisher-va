@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Radio, Clock, Calendar, Plane,
   LogOut, Sun, Moon, Check, X, Users,
@@ -244,7 +243,6 @@ export default function ATCDashboard() {
     </span>
   )
 
-  // ── Find my booked positions for a given slot & airport ──
   const myBookedPositions = mySchedule
     .filter(s => s.date === selectedDay)
     .map(s => `${s.airport}-${s.position}`)
@@ -259,52 +257,49 @@ export default function ATCDashboard() {
 
     switch (active) {
 
-      // ═══════════════════ OVERVIEW ═══════════════════
       case 'overview':
         return (
           <div className="space-y-6">
-            {/* Daily Hub Card — shows BOTH airports */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl p-6 overflow-hidden relative"
+            <div
+              className="rounded-2xl p-5 sm:p-6 overflow-hidden relative"
               style={{
                 background: isDark ? 'linear-gradient(135deg, #1a0000, #0a0a0a)' : 'linear-gradient(135deg, #fff5f5, #ffffff)',
                 border: `1px solid ${isDark ? 'rgba(192,18,30,0.2)' : 'rgba(192,18,30,0.15)'}`,
               }}>
-              <div className="absolute top-0 right-0 w-64 h-64 bg-red-600/5 blur-[80px] rounded-full" />
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[#c0121e]/5 blur-[80px] rounded-full" />
               <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-4">
                   <MapPin size={14} style={{ color: '#c0121e' }} />
                   <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#c0121e' }}>
-                    Today's Operations
+                    Today&apos;s Operations
                   </span>
                 </div>
                 {dailyHub ? (
                   <>
-                    <div className="flex items-center gap-6 flex-wrap">
-                      {/* Departure */}
-                      <div className="flex-1">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                      <div className="w-full sm:flex-1">
                         <div className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>
                           Departure Airport
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <div>
-                            <div className="text-4xl font-black italic tracking-tighter" style={{ color: isDark ? '#ffffff' : '#0a0a0a' }}>
+                            <div className="text-3xl sm:text-4xl font-black italic tracking-tighter" style={{ color: isDark ? '#ffffff' : '#0a0a0a' }}>
                               {dailyHub.depIcao}
                             </div>
-                            <div className="text-xs mt-0.5" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
+                            <div className="text-xs mt-0.5 truncate max-w-[120px] sm:max-w-none" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
                               {dailyHub.depName}
                             </div>
                           </div>
-                          <ArrowRight size={20} style={{ color: '#c0121e' }} />
+                          <ArrowRight size={20} className="shrink-0" style={{ color: '#c0121e' }} />
                           <div>
-                            <div className="text-4xl font-black italic tracking-tighter" style={{ color: isDark ? '#ffffff' : '#0a0a0a' }}>
+                            <div className="text-3xl sm:text-4xl font-black italic tracking-tighter" style={{ color: isDark ? '#ffffff' : '#0a0a0a' }}>
                               {dailyHub.arrIcao}
                             </div>
-                            <div className="text-xs mt-0.5" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
+                            <div className="text-xs mt-0.5 truncate max-w-[120px] sm:max-w-none" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
                               {dailyHub.arrName}
                             </div>
                           </div>
-                          <div className="text-xs" style={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>
+                          <div className="text-xs hidden sm:block" style={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>
                             Arrival Airport
                           </div>
                         </div>
@@ -313,23 +308,22 @@ export default function ATCDashboard() {
                         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
                           style={{ background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}>
                           <Calendar size={12} style={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }} />
-                          <span className="text-xs font-semibold" style={{ color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' }}>
+                          <span className="text-xs font-semibold whitespace-nowrap" style={{ color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' }}>
                             {new Date(dailyHub.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                           </span>
                         </div>
                       </div>
                     </div>
-                    {/* Coverage summary */}
-                    <div className="flex items-center gap-4 mt-4 pt-4" style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
+                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-4 pt-4" style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ background: '#10b981' }} />
-                        <span className="text-xs font-medium" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
+                        <div className="w-2 h-2 rounded-full shrink-0" style={{ background: '#10b981' }} />
+                        <span className="text-xs font-medium whitespace-nowrap" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
                           {stats?.positionsFilled || 0} total positions filled today
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ background: '#3b82f6' }} />
-                        <span className="text-xs font-medium" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
+                        <div className="w-2 h-2 rounded-full shrink-0" style={{ background: '#3b82f6' }} />
+                        <span className="text-xs font-medium whitespace-nowrap" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
                           {stats?.flightsToday || 0} flights scheduled
                         </span>
                       </div>
@@ -344,61 +338,56 @@ export default function ATCDashboard() {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {[
                 { label: 'Staff Online', value: stats?.staffOnline || 0, icon: Headphones, color: '#3b82f6' },
                 { label: 'Positions Filled', value: stats?.positionsFilled || 0, icon: Radio, color: '#10b981' },
                 { label: 'Flights Today', value: stats?.flightsToday || 0, icon: Plane, color: '#f59e0b' },
                 { label: 'My Schedules', value: mySchedule.length, icon: Calendar, color: '#8b5cf6' },
-              ].map((s, i) => (
-                <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                  className="p-4 rounded-2xl" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+              ].map((s) => (
+                <div key={s.label}
+                  className="p-4 rounded-2xl transition-all duration-200 hover:scale-[1.02]" style={{ background: t.card, border: `1px solid ${t.border}` }}>
                   <div className="flex items-center justify-between mb-3">
                     <div className="text-xs" style={{ color: t.textSub }}>{s.label}</div>
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${s.color}18` }}>
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${s.color}18` }}>
                       <s.icon size={14} style={{ color: s.color }} />
                     </div>
                   </div>
                   <div className="text-2xl font-bold" style={{ color: t.text }}>{s.value}</div>
-                </motion.div>
+                </div>
               ))}
             </div>
 
-            {/* Traffic Summary */}
             {stats && (
               <div className="grid grid-cols-2 gap-4">
-                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                  className="p-4 rounded-2xl" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+                <div className="p-4 rounded-2xl transition-all duration-200 hover:scale-[1.02]" style={{ background: t.card, border: `1px solid ${t.border}` }}>
                   <div className="flex items-center gap-2 mb-2">
                     <BarChart3 size={14} style={{ color: '#10b981' }} />
                     <span className="text-xs font-semibold" style={{ color: t.textSub }}>Flights Booked</span>
                   </div>
                   <div className="text-xl font-bold" style={{ color: '#10b981' }}>{stats.flightsBooked || 0}</div>
-                </motion.div>
-                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                  className="p-4 rounded-2xl" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+                </div>
+                <div className="p-4 rounded-2xl transition-all duration-200 hover:scale-[1.02]" style={{ background: t.card, border: `1px solid ${t.border}` }}>
                   <div className="flex items-center gap-2 mb-2">
                     <Check size={14} style={{ color: '#8b5cf6' }} />
                     <span className="text-xs font-semibold" style={{ color: t.textSub }}>Flights Completed</span>
                   </div>
                   <div className="text-xl font-bold" style={{ color: '#8b5cf6' }}>{stats.flightsCompleted || 0}</div>
-                </motion.div>
+                </div>
               </div>
             )}
 
-            {/* My Schedule */}
             <div className="rounded-2xl overflow-hidden" style={{ background: t.card, border: `1px solid ${t.border}` }}>
               <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${t.border}` }}>
-                <div className="flex items-center gap-2.5">
-                  <Calendar size={15} style={{ color: '#c0121e' }} />
-                  <span className="text-sm font-semibold" style={{ color: t.text }}>My Schedule</span>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Calendar size={15} className="shrink-0" style={{ color: '#c0121e' }} />
+                  <span className="text-sm font-semibold truncate" style={{ color: t.text }}>My Schedule</span>
                 </div>
                 <button onClick={() => setActive('schedule')}
-                  className="text-xs font-medium" style={{ color: '#c0121e' }}>
-                  Book Slot →
+                  className="text-xs font-medium shrink-0" style={{ color: '#c0121e' }}>
+                  Book Slot &rarr;
                 </button>
               </div>
               {mySchedule.length === 0 ? (
@@ -407,7 +396,7 @@ export default function ATCDashboard() {
                     <Calendar size={28} style={{ color: t.textMuted, margin: '0 auto 8px' }} />
                     <div className="text-sm" style={{ color: t.textSub }}>No schedules booked yet</div>
                     <button onClick={() => setActive('schedule')}
-                      className="mt-3 px-4 py-2 rounded-xl text-xs font-semibold text-white"
+                      className="mt-3 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all duration-200"
                       style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
                       Book Your First Slot
                     </button>
@@ -419,20 +408,20 @@ export default function ATCDashboard() {
                     const pc = positionColor(s.position)
                     return (
                       <div key={s.id} className="px-5 py-3.5 flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          <span className="px-2 py-0.5 rounded-lg text-xs font-bold font-mono"
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="px-2 py-0.5 rounded-lg text-xs font-bold font-mono shrink-0"
                             style={{ background: pc.bg, color: pc.color }}>
                             {s.position}
                           </span>
-                          <div>
-                            <div className="text-sm font-medium" style={{ color: t.text }}>
-                              {new Date(s.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} — {s.airport}
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium truncate" style={{ color: t.text }}>
+                              {new Date(s.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} &mdash; {s.airport}
                             </div>
-                            <div className="text-xs" style={{ color: t.textSub }}>{s.timeSlot} UTC</div>
+                            <div className="text-xs truncate" style={{ color: t.textSub }}>{s.timeSlot} UTC</div>
                           </div>
                         </div>
                         <button onClick={() => setCancelTarget({ type: 'single', id: s.id })}
-                          className="p-1.5 rounded-lg flex-shrink-0"
+                          className="p-1.5 rounded-lg flex-shrink-0 transition-all duration-200"
                           style={{ background: t.error, color: '#ef4444' }}>
                           <X size={13} />
                         </button>
@@ -445,24 +434,21 @@ export default function ATCDashboard() {
           </div>
         )
 
-      // ═══════════════════ SCHEDULE ═══════════════════
       case 'schedule':
         return (
           <div className="space-y-6">
-            {/* Book Schedule */}
-            <div className="rounded-2xl p-6" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+            <div className="rounded-2xl p-5 sm:p-6" style={{ background: t.card, border: `1px solid ${t.border}` }}>
               <div className="flex items-center gap-2.5 mb-6">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                   style={{ background: 'rgba(192,18,30,0.1)' }}>
                   <Calendar size={16} style={{ color: '#c0121e' }} />
                 </div>
-                <div>
-                  <div className="text-sm font-bold" style={{ color: t.text }}>Book ATC Slot</div>
-                  <div className="text-xs" style={{ color: t.textMuted }}>Select airport, position, and time</div>
+                <div className="min-w-0">
+                  <div className="text-sm font-bold truncate" style={{ color: t.text }}>Book ATC Slot</div>
+                  <div className="text-xs truncate" style={{ color: t.textMuted }}>Select airport, position, and time</div>
                 </div>
               </div>
 
-              {/* Today's date (booking only available for today) */}
               <div className="mb-5">
                 <label className="block text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: t.textMuted }}>
                   TODAY
@@ -473,7 +459,6 @@ export default function ATCDashboard() {
                 </div>
               </div>
 
-              {/* Airport selector */}
               {dailyHub && (
                 <div className="mb-5">
                   <label className="block text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: t.textMuted }}>
@@ -481,7 +466,7 @@ export default function ATCDashboard() {
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     <button onClick={() => setSelectedAirport('DEP')}
-                      className="p-4 rounded-xl text-left transition-all"
+                      className="p-4 rounded-xl text-left transition-all duration-200"
                       style={{
                         background: selectedAirport === 'DEP' ? 'rgba(16,185,129,0.1)' : t.input,
                         border: `1px solid ${selectedAirport === 'DEP' ? 'rgba(16,185,129,0.4)' : t.border}`,
@@ -492,12 +477,12 @@ export default function ATCDashboard() {
                           Departure
                         </span>
                       </div>
-                      <div className="text-xs font-mono font-bold" style={{ color: selectedAirport === 'DEP' ? '#10b981' : t.textSub }}>
-                        {dailyHub.depIcao} — {dailyHub.depName}
+                      <div className="text-xs font-mono font-bold truncate" style={{ color: selectedAirport === 'DEP' ? '#10b981' : t.textSub }}>
+                        {dailyHub.depIcao} &mdash; {dailyHub.depName}
                       </div>
                     </button>
                     <button onClick={() => setSelectedAirport('ARR')}
-                      className="p-4 rounded-xl text-left transition-all"
+                      className="p-4 rounded-xl text-left transition-all duration-200"
                       style={{
                         background: selectedAirport === 'ARR' ? 'rgba(59,130,246,0.1)' : t.input,
                         border: `1px solid ${selectedAirport === 'ARR' ? 'rgba(59,130,246,0.4)' : t.border}`,
@@ -508,18 +493,17 @@ export default function ATCDashboard() {
                           Arrival
                         </span>
                       </div>
-                      <div className="text-xs font-mono font-bold" style={{ color: selectedAirport === 'ARR' ? '#3b82f6' : t.textSub }}>
-                        {dailyHub.arrIcao} — {dailyHub.arrName}
+                      <div className="text-xs font-mono font-bold truncate" style={{ color: selectedAirport === 'ARR' ? '#3b82f6' : t.textSub }}>
+                        {dailyHub.arrIcao} &mdash; {dailyHub.arrName}
                       </div>
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Position selector */}
               <div className="mb-5">
                 <label className="block text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: t.textMuted }}>
-                  SELECT POSITION — {selectedAirport} ({selectedAirport === 'DEP' ? dailyHub?.depIcao : dailyHub?.arrIcao})
+                  SELECT POSITION &mdash; {selectedAirport} ({selectedAirport === 'DEP' ? dailyHub?.depIcao : dailyHub?.arrIcao})
                 </label>
                 <div className="grid grid-cols-5 gap-2">
                   {POSITIONS.map(pos => {
@@ -530,7 +514,7 @@ export default function ATCDashboard() {
                       <div key={pos} className="relative">
                         <button
                           onClick={() => isBookedByMe ? null : setSelectedPosition(pos)}
-                          className="w-full py-3 rounded-xl text-sm font-bold transition-all"
+                          className="w-full py-3 rounded-xl text-sm font-bold transition-all duration-200"
                           style={{
                             background: isBookedByMe ? 'rgba(192,18,30,0.08)' : selectedPosition === pos ? pc.bg : t.input,
                             border: `1px solid ${isBookedByMe ? 'rgba(192,18,30,0.3)' : selectedPosition === pos ? pc.color + '60' : t.border}`,
@@ -538,7 +522,7 @@ export default function ATCDashboard() {
                             opacity: isBookedByMe ? 0.6 : 1,
                             cursor: isBookedByMe ? 'default' : 'pointer',
                           }}
-                          title={isBookedByMe ? 'Already booked — click X to cancel' : POSITION_LABELS[pos]}>
+                          title={isBookedByMe ? 'Already booked - click X to cancel' : POSITION_LABELS[pos]}>
                           {pos}
                           {isBookedByMe && <div className="text-[9px] opacity-70">Booked</div>}
                         </button>
@@ -547,7 +531,7 @@ export default function ATCDashboard() {
                             type: 'batch',
                             body: { date: selectedDay, airport: selectedAirport, timeSlots: mySchedForPos.map((s: any) => s.timeSlot) }
                           })}
-                            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-white"
+                            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-white transition-all duration-200"
                             style={{ background: '#ef4444', fontSize: '10px' }}
                             title="Cancel all booked slots for this position">
                             <X size={10} />
@@ -559,24 +543,23 @@ export default function ATCDashboard() {
                 </div>
               </div>
 
-              {/* Time slot selector - 30-min (multi-select) */}
               <div className="mb-5">
                 <label className="block text-xs font-semibold mb-3 uppercase tracking-widest" style={{ color: t.textMuted }}>
-                  SELECT TIME SLOTS (30-min blocks — UTC) — {selectedTimeSlots.length} selected
+                  SELECT TIME SLOTS (30-min blocks &mdash; UTC) &mdash; {selectedTimeSlots.length} selected
                 </label>
                 {selectedTimeSlots.length > 0 && (
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <button onClick={() => setSelectedTimeSlots([])}
-                      className="px-2 py-1 rounded-lg text-[10px] font-semibold"
+                      className="px-2 py-1 rounded-lg text-[10px] font-semibold transition-all duration-200"
                       style={{ background: t.error, color: '#ef4444' }}>
                       Clear ({selectedTimeSlots.length})
                     </button>
                     <span className="text-xs" style={{ color: t.textMuted }}>
-                      {selectedTimeSlots[0]} — {selectedTimeSlots[selectedTimeSlots.length - 1]}
+                      {selectedTimeSlots[0]} &mdash; {selectedTimeSlots[selectedTimeSlots.length - 1]}
                     </span>
                   </div>
                 )}
-                <div className="grid grid-cols-4 md:grid-cols-6 gap-1.5 max-h-48 overflow-y-auto"
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-1.5 max-h-48 overflow-y-auto"
                   style={{ scrollbarWidth: 'thin' }}>
                   {TIME_SLOTS.map(slot => {
                     const status = positionStatus.find(ps => ps.timeSlot === slot && ps.airport === selectedAirport)
@@ -591,7 +574,7 @@ export default function ATCDashboard() {
                             prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot].sort()
                           )
                         }}
-                        className="py-2 rounded-lg text-[11px] font-medium transition-all"
+                        className="py-2 rounded-lg text-[11px] font-medium transition-all duration-200"
                         style={{
                           background: isSelected ? 'rgba(192,18,30,0.15)' : alreadyFilled ? 'rgba(16,185,129,0.08)' : t.input,
                           border: `1px solid ${isSelected ? 'rgba(192,18,30,0.4)' : alreadyFilled ? 'rgba(16,185,129,0.2)' : t.border}`,
@@ -620,22 +603,21 @@ export default function ATCDashboard() {
 
               <button onClick={handleBookSchedule}
                 disabled={scheduleLoading || selectedTimeSlots.length === 0}
-                className="w-full py-3.5 rounded-xl text-sm font-bold text-white transition-all"
+                className="w-full py-3.5 rounded-xl text-sm font-bold text-white transition-all duration-200"
                 style={{
                   background: scheduleLoading ? 'rgba(192,18,30,0.5)' : 'linear-gradient(135deg, #c0121e, #8b0000)',
                   boxShadow: scheduleLoading ? 'none' : '0 0 20px rgba(192,18,30,0.3)',
                 }}>
-                {scheduleLoading ? 'Booking...' : `Book ${selectedPosition || 'Position'} @ ${selectedAirport} — ${selectedTimeSlots.length} slot(s) selected`}
+                {scheduleLoading ? 'Booking...' : `Book ${selectedPosition || 'Position'} @ ${selectedAirport} &mdash; ${selectedTimeSlots.length} slot(s) selected`}
               </button>
             </div>
 
-            {/* Position Status Grid — shows filled/empty positions per slot */}
             {dailyHub && (
               <div className="rounded-2xl overflow-hidden" style={{ background: t.card, border: `1px solid ${t.border}` }}>
                 <div className="px-5 py-4" style={{ borderBottom: `1px solid ${t.border}` }}>
                   <div className="flex items-center gap-2.5">
                     <Radar size={15} style={{ color: '#c0121e' }} />
-                    <span className="text-sm font-semibold" style={{ color: t.text }}>Position Coverage — {dailyHub.depIcao} / {dailyHub.arrIcao}</span>
+                    <span className="text-sm font-semibold truncate" style={{ color: t.text }}>Position Coverage &mdash; {dailyHub.depIcao} / {dailyHub.arrIcao}</span>
                   </div>
                 </div>
                 <div className="overflow-auto" style={{ maxHeight: 480 }}>
@@ -679,7 +661,7 @@ export default function ATCDashboard() {
                             <tr key={depSlot.timeSlot}
                               onMouseEnter={e => e.currentTarget.style.background = t.navHover}
                               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                              <td className="px-3 py-2 font-mono font-semibold" style={{ color: t.text }}>
+                              <td className="px-3 py-2 font-mono font-semibold whitespace-nowrap" style={{ color: t.text }}>
                                 {depSlot.timeSlot}
                               </td>
                               {allPos.map((p: any, i: number) => (
@@ -706,7 +688,6 @@ export default function ATCDashboard() {
               </div>
             )}
 
-            {/* My Booked Schedules */}
             <div className="rounded-2xl overflow-hidden" style={{ background: t.card, border: `1px solid ${t.border}` }}>
               <div className="px-5 py-4" style={{ borderBottom: `1px solid ${t.border}` }}>
                 <div className="flex items-center gap-2.5">
@@ -724,25 +705,25 @@ export default function ATCDashboard() {
                     const pc = positionColor(s.position)
                     return (
                       <div key={s.id} className="px-5 py-3.5 flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          <span className="px-2 py-0.5 rounded-lg text-xs font-bold font-mono"
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="px-2 py-0.5 rounded-lg text-xs font-bold font-mono shrink-0"
                             style={{ background: pc.bg, color: pc.color }}>
                             {s.position}
                           </span>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium" style={{ color: t.text }}>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-medium truncate" style={{ color: t.text }}>
                                 {new Date(s.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                                 <span className="ml-2 text-xs" style={{ color: s.airport === 'DEP' ? '#10b981' : '#3b82f6' }}>
                                   {s.airport === 'DEP' ? `${dailyHub?.depIcao || 'DEP'}` : `${dailyHub?.arrIcao || 'ARR'}`}
                                 </span>
                               </span>
                             </div>
-                            <div className="text-xs" style={{ color: t.textSub }}>{s.timeSlot} UTC</div>
+                            <div className="text-xs truncate" style={{ color: t.textSub }}>{s.timeSlot} UTC</div>
                           </div>
                         </div>
                         <button onClick={() => setCancelTarget({ type: 'single', id: s.id })}
-                          className="p-1.5 rounded-lg flex-shrink-0"
+                          className="p-1.5 rounded-lg flex-shrink-0 transition-all duration-200"
                           style={{ background: t.error, color: '#ef4444' }}>
                           <X size={13} />
                         </button>
@@ -755,7 +736,6 @@ export default function ATCDashboard() {
           </div>
         )
 
-      // ═══════════════════ FLIGHTS ═══════════════════
       case 'flights':
         const filteredFlights = flights.filter((f: any) =>
           `${f.flightNumber} ${f.depIcao} ${f.arrIcao} ${f.pilotName}`.toLowerCase().includes(flightSearch.toLowerCase())
@@ -764,7 +744,6 @@ export default function ATCDashboard() {
         const completedFlights = flights.filter((f: any) => f.status === 'COMPLETED')
         return (
           <div className="space-y-4">
-            {/* Stats bar */}
             <div className="grid grid-cols-3 gap-3">
               <div className="p-3 rounded-xl" style={{ background: t.card, border: `1px solid ${t.border}` }}>
                 <div className="text-xs" style={{ color: t.textSub }}>Total</div>
@@ -780,19 +759,18 @@ export default function ATCDashboard() {
               </div>
             </div>
 
-            {/* Search */}
             <div className="flex items-center gap-3">
               <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-xl"
                 style={{ background: t.card, border: `1px solid ${t.border}` }}>
                 <Search size={15} style={{ color: t.textMuted }} />
                 <input value={flightSearch} onChange={e => setFlightSearch(e.target.value)}
                   placeholder="Search flights..."
-                  className="flex-1 bg-transparent outline-none text-sm" style={{ color: t.text }} />
+                  className="flex-1 bg-transparent outline-none text-sm min-w-0" style={{ color: t.text }} />
                 {flightSearch && (
                   <button onClick={() => setFlightSearch('')}><X size={14} style={{ color: t.textMuted }} /></button>
                 )}
               </div>
-              <div className="px-4 py-3 rounded-xl text-sm" style={{ background: t.card, border: `1px solid ${t.border}`, color: t.textSub }}>
+              <div className="px-4 py-3 rounded-xl text-sm shrink-0" style={{ background: t.card, border: `1px solid ${t.border}`, color: t.textSub }}>
                 {filteredFlights.length} flights
               </div>
             </div>
@@ -806,11 +784,11 @@ export default function ATCDashboard() {
             ) : (
               <div className="space-y-3">
                 {filteredFlights.map((f: any) => (
-                  <motion.div key={f.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                    className="p-5 rounded-2xl" style={{ background: t.card, border: `1px solid ${t.border}` }}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
+                  <div key={f.id}
+                    className="p-5 rounded-2xl transition-all duration-200 hover:scale-[1.02]" style={{ background: t.card, border: `1px solid ${t.border}` }}>
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                      <div className="flex-1 w-full sm:w-auto min-w-0">
+                        <div className="flex items-center gap-3 mb-3 flex-wrap">
                           <span className="text-sm font-bold font-mono" style={{ color: '#c0121e' }}>
                             {f.flightNumber}
                           </span>
@@ -821,15 +799,15 @@ export default function ATCDashboard() {
                           />
                         </div>
 
-                        <div className="flex items-center gap-3 mb-3">
+                        <div className="flex items-center gap-3 mb-3 flex-wrap">
                           <div className="text-center">
                             <div className="text-xl font-bold" style={{ color: t.text }}>{f.depIcao}</div>
-                            <div className="text-xs" style={{ color: t.textSub }}>{f.depName}</div>
+                            <div className="text-xs truncate max-w-[80px]" style={{ color: t.textSub }}>{f.depName}</div>
                           </div>
-                          <ArrowRight size={14} style={{ color: t.textMuted }} />
+                          <ArrowRight size={14} className="shrink-0" style={{ color: t.textMuted }} />
                           <div className="text-center">
                             <div className="text-xl font-bold" style={{ color: t.text }}>{f.arrIcao}</div>
-                            <div className="text-xs" style={{ color: t.textSub }}>{f.arrName}</div>
+                            <div className="text-xs truncate max-w-[80px]" style={{ color: t.textSub }}>{f.arrName}</div>
                           </div>
                         </div>
 
@@ -855,11 +833,11 @@ export default function ATCDashboard() {
                         </div>
                       </div>
 
-                      <div className="flex flex-col gap-2 flex-shrink-0">
+                      <div className="flex flex-row sm:flex-col gap-2 flex-shrink-0 w-full sm:w-auto">
                         {f.status === 'BOOKED' ? (
                           <>
                             <button onClick={() => handleToggleFlight(f.id, 'depConfirmed')}
-                              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                              className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200"
                               style={{
                                 background: f.depConfirmed ? t.success : t.badge,
                                 border: `1px solid ${f.depConfirmed ? t.successBorder : t.border}`,
@@ -869,7 +847,7 @@ export default function ATCDashboard() {
                               Dep Confirmed
                             </button>
                             <button onClick={() => handleToggleFlight(f.id, 'arrConfirmed')}
-                              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                              className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200"
                               style={{
                                 background: f.arrConfirmed ? t.success : t.badge,
                                 border: `1px solid ${f.arrConfirmed ? t.successBorder : t.border}`,
@@ -880,31 +858,28 @@ export default function ATCDashboard() {
                             </button>
                           </>
                         ) : f.status === 'AVAILABLE' ? (
-                          <div className="px-3 py-2 rounded-xl text-xs" style={{ background: t.badge, color: t.textMuted }}>
+                          <div className="px-3 py-2 rounded-xl text-xs text-center" style={{ background: t.badge, color: t.textMuted }}>
                             Not booked
                           </div>
                         ) : (
-                          <div className="px-3 py-2 rounded-xl text-xs font-semibold" style={{ background: t.success, color: '#10b981' }}>
+                          <div className="px-3 py-2 rounded-xl text-xs font-semibold text-center" style={{ background: t.success, color: '#10b981' }}>
                             {f.depConfirmed && f.arrConfirmed ? 'ALL CONFIRMED' : 'Completed'}
                           </div>
                         )}
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             )}
           </div>
         )
 
-      // ═══════════════════ STAFF ═══════════════════
       case 'staff':
-        // Group by airport for display
         const depStaff = allSchedules.filter((s: any) => s.airport === 'DEP')
         const arrStaff = allSchedules.filter((s: any) => s.airport === 'ARR')
         return (
           <div className="space-y-6">
-            {/* DEP Staff */}
             <div className="rounded-2xl overflow-hidden" style={{ background: t.card, border: `1px solid ${t.border}` }}>
               <div className="px-5 py-4" style={{
                 borderBottom: `1px solid ${t.border}`,
@@ -912,8 +887,8 @@ export default function ATCDashboard() {
               }}>
                 <div className="flex items-center gap-2.5">
                   <Airplay size={15} style={{ color: '#10b981' }} />
-                  <span className="text-sm font-semibold" style={{ color: t.text }}>
-                    Departure Staff — {dailyHub?.depIcao || 'DEP'} ({depStaff.length})
+                  <span className="text-sm font-semibold truncate" style={{ color: t.text }}>
+                    Departure Staff &mdash; {dailyHub?.depIcao || 'DEP'} ({depStaff.length})
                   </span>
                 </div>
               </div>
@@ -927,17 +902,17 @@ export default function ATCDashboard() {
                     const pc = positionColor(s.position)
                     return (
                       <div key={s.id} className="px-5 py-3.5 flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold"
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0"
                             style={{ background: pc.bg, color: pc.color }}>
                             {s.staffName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || '??'}
                           </div>
-                          <div>
-                            <div className="text-sm font-medium" style={{ color: t.text }}>
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium truncate" style={{ color: t.text }}>
                               {s.staffName || 'Unknown'}
                             </div>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="px-1.5 py-0.5 rounded text-xs font-bold font-mono"
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              <span className="px-1.5 py-0.5 rounded text-xs font-bold font-mono shrink-0"
                                 style={{ background: pc.bg, color: pc.color }}>
                                 {s.position}
                               </span>
@@ -962,7 +937,6 @@ export default function ATCDashboard() {
               )}
             </div>
 
-            {/* ARR Staff */}
             <div className="rounded-2xl overflow-hidden" style={{ background: t.card, border: `1px solid ${t.border}` }}>
               <div className="px-5 py-4" style={{
                 borderBottom: `1px solid ${t.border}`,
@@ -970,8 +944,8 @@ export default function ATCDashboard() {
               }}>
                 <div className="flex items-center gap-2.5">
                   <Satellite size={15} style={{ color: '#3b82f6' }} />
-                  <span className="text-sm font-semibold" style={{ color: t.text }}>
-                    Arrival Staff — {dailyHub?.arrIcao || 'ARR'} ({arrStaff.length})
+                  <span className="text-sm font-semibold truncate" style={{ color: t.text }}>
+                    Arrival Staff &mdash; {dailyHub?.arrIcao || 'ARR'} ({arrStaff.length})
                   </span>
                 </div>
               </div>
@@ -985,17 +959,17 @@ export default function ATCDashboard() {
                     const pc = positionColor(s.position)
                     return (
                       <div key={s.id} className="px-5 py-3.5 flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold"
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0"
                             style={{ background: pc.bg, color: pc.color }}>
                             {s.staffName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || '??'}
                           </div>
-                          <div>
-                            <div className="text-sm font-medium" style={{ color: t.text }}>
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium truncate" style={{ color: t.text }}>
                               {s.staffName || 'Unknown'}
                             </div>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="px-1.5 py-0.5 rounded text-xs font-bold font-mono"
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              <span className="px-1.5 py-0.5 rounded text-xs font-bold font-mono shrink-0"
                                 style={{ background: pc.bg, color: pc.color }}>
                                 {s.position}
                               </span>
@@ -1028,12 +1002,11 @@ export default function ATCDashboard() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: t.bg, color: t.text }}>
-      {/* ── SIDEBAR ── */}
+    <div className="min-h-screen flex overflow-x-hidden" style={{ background: t.bg, color: t.text }}>
       <div
         onMouseEnter={() => { if (!pinned) setHovered(true) }}
         onMouseLeave={() => { if (!pinned) setHovered(false) }}
-        className="fixed left-0 top-0 bottom-0 z-50 flex flex-col"
+        className="fixed left-0 top-0 bottom-0 z-50 flex-col hidden md:flex"
         style={{
           width: sidebarW,
           background: t.sidebar,
@@ -1041,7 +1014,6 @@ export default function ATCDashboard() {
           transition: 'width 0.22s ease',
           overflow: 'hidden',
         }}>
-        {/* Header */}
         <div className="flex items-center flex-shrink-0"
           style={{
             borderBottom: `1px solid ${t.border}`,
@@ -1063,13 +1035,13 @@ export default function ATCDashboard() {
               </div>
               <div className="flex items-center gap-1">
                 <button onClick={() => setPinned(!pinned)}
-                  className="p-1.5 rounded-lg transition-all"
+                  className="p-1.5 rounded-lg transition-all duration-200"
                   style={{ color: pinned ? '#c0121e' : t.textMuted, background: pinned ? 'rgba(192,18,30,0.1)' : 'transparent' }}>
                   <ChevronLeft size={14} style={{ transform: pinned ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.2s' }} />
                 </button>
                 {pinned && (
                   <button onClick={() => setCollapsed(!collapsed)}
-                    className="p-1.5 rounded-lg" style={{ color: t.textMuted }}>
+                    className="p-1.5 rounded-lg transition-all duration-200" style={{ color: t.textMuted }}>
                     <ChevronLeft size={14} />
                   </button>
                 )}
@@ -1083,7 +1055,6 @@ export default function ATCDashboard() {
           )}
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5" style={{ scrollbarWidth: 'none' }}>
           {NAV_ITEMS.map(item => {
             const isActive = active === item.id
@@ -1106,7 +1077,7 @@ export default function ATCDashboard() {
                 {isExpanded && (
                   <>
                     <span className="text-sm font-medium flex-1 text-left truncate">{item.label}</span>
-                    {isActive && <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#c0121e' }} />}
+                    {isActive && <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#c0121e' }} />}
                   </>
                 )}
               </button>
@@ -1114,7 +1085,6 @@ export default function ATCDashboard() {
           })}
         </nav>
 
-        {/* Footer */}
         <div className="flex-shrink-0 px-3 pt-3 pb-4 space-y-0.5" style={{ borderTop: `1px solid ${t.border}` }}>
           <div className="flex items-center rounded-xl px-3 py-2 gap-2.5"
             style={{ color: t.textSub, minHeight: '36px' }}>
@@ -1130,7 +1100,7 @@ export default function ATCDashboard() {
           </div>
           <Link to="/"
             title={!isExpanded ? 'Main Site' : undefined}
-            className="flex items-center rounded-xl transition-all"
+            className="flex items-center rounded-xl transition-all duration-200"
             style={{
               gap: isExpanded ? '10px' : '0',
               padding: isExpanded ? '8px 10px' : '8px 0',
@@ -1147,7 +1117,7 @@ export default function ATCDashboard() {
           <button
             onClick={handleLogout}
             title={!isExpanded ? 'Sign Out' : undefined}
-            className="w-full flex items-center rounded-xl transition-all"
+            className="w-full flex items-center rounded-xl transition-all duration-200"
             style={{
               gap: isExpanded ? '10px' : '0',
               padding: isExpanded ? '8px 10px' : '8px 0',
@@ -1163,28 +1133,50 @@ export default function ATCDashboard() {
         </div>
       </div>
 
-      {/* ── MAIN ── */}
-      <main className="flex-1 flex flex-col min-h-screen"
-        style={{ marginLeft: sidebarW, transition: 'margin-left 0.22s ease' }}>
+      {/* Mobile bottom nav */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden"
+        style={{
+          background: t.sidebar,
+          borderTop: `1px solid ${t.border}`,
+          backdropFilter: 'blur(12px)',
+        }}>
+        {NAV_ITEMS.map(item => {
+          const isActive = active === item.id
+          return (
+            <button key={item.id}
+              onClick={() => setActive(item.id)}
+              className="flex-1 flex flex-col items-center py-2.5 transition-all duration-200"
+              style={{
+                color: isActive ? '#c0121e' : t.textSub,
+                background: isActive ? t.navActive : 'transparent',
+              }}>
+              <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+              <span className="text-[9px] font-bold uppercase tracking-widest mt-0.5">{item.label}</span>
+            </button>
+          )
+        })}
+      </div>
 
-        {/* Topbar */}
-        <header className="sticky top-0 z-30 flex items-center justify-between px-6"
+      <main className="flex-1 flex flex-col min-h-screen pb-16 md:pb-0"
+        style={{ marginLeft: 0, transition: 'margin-left 0.22s ease' }}>
+
+        <header className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6"
           style={{
             background: isDark ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.92)',
             backdropFilter: 'blur(12px)',
             borderBottom: `1px solid ${t.border}`,
             minHeight: '65px',
           }}>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
               <Radio size={15} style={{ color: '#c0121e' }} />
-              <h1 className="text-base font-bold" style={{ color: t.text }}>
+              <h1 className="text-base font-bold truncate" style={{ color: t.text }}>
                 {NAV_ITEMS.find(n => n.id === active)?.label || 'ATC'}
               </h1>
             </div>
-            <p className="text-xs" style={{ color: t.textMuted }}>Kingfisher VA — ATC Operations</p>
+            <p className="text-xs truncate" style={{ color: t.textMuted }}>Kingfisher VA &mdash; ATC Operations</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl" style={{ background: t.badge }}>
               <Clock size={11} style={{ color: '#c0121e' }} />
               <span className="text-xs font-bold font-mono tracking-widest" style={{ color: t.text }}>
@@ -1193,24 +1185,22 @@ export default function ATCDashboard() {
               <span className="text-xs font-semibold" style={{ color: '#c0121e' }}>Z</span>
             </div>
             <button onClick={toggle}
-              className="p-2 rounded-xl transition-colors" style={{ background: t.badge, color: t.textSub }}>
+              className="p-2 rounded-xl transition-colors duration-200" style={{ background: t.badge, color: t.textSub }}>
               {isDark ? <Sun size={15} /> : <Moon size={15} />}
             </button>
             <button onClick={fetchAll}
-              className="px-3 py-2 rounded-xl text-xs font-medium transition-colors"
+              className="px-3 py-2 rounded-xl text-xs font-medium transition-colors duration-200"
               style={{ background: t.badge, color: t.textSub }}>
               Refresh
             </button>
           </div>
         </header>
 
-        {/* Content */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-4 sm:p-6">
           {renderContent()}
         </div>
 
-        {/* Footer */}
-        <footer className="px-6 py-4" style={{ borderTop: `1px solid ${t.border}`, background: t.sidebar }}>
+        <footer className="px-4 sm:px-6 py-4 hidden md:block" style={{ borderTop: `1px solid ${t.border}`, background: t.sidebar }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Radio size={14} style={{ color: '#c0121e' }} />
@@ -1225,54 +1215,45 @@ export default function ATCDashboard() {
         </footer>
       </main>
 
-      {/* ── CANCEL CONFIRMATION MODAL ── */}
-      <AnimatePresence>
-        {cancelTarget && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-            style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
-            onClick={e => { if (e.target === e.currentTarget) setCancelTarget(null) }}>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="w-full max-w-md rounded-2xl"
-              style={{ background: t.card, border: `1px solid ${t.border}` }}>
-              <div className="px-6 py-5 text-center">
-                <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
-                  style={{ background: 'rgba(239,68,68,0.1)' }}>
-                  <AlertTriangle size={28} style={{ color: '#ef4444' }} />
-                </div>
-                <div className="text-lg font-bold mb-2" style={{ color: t.text }}>Cancel Schedule?</div>
-                <div className="text-sm mb-4" style={{ color: t.textSub }}>
-                  {cancelTarget.type === 'single'
-                    ? 'This schedule booking will be removed.'
-                    : `All ${cancelTarget.body?.timeSlots?.length || ''} selected schedules will be removed.`
-                  }
-                </div>
-                <div className="flex gap-3">
-                  <button onClick={() => setCancelTarget(null)}
-                    className="flex-1 py-3 rounded-xl text-sm font-semibold"
-                    style={{ background: t.badge, color: t.textSub }}>
-                    Keep
-                  </button>
-                  <button onClick={handleBatchCancel}
-                    disabled={cancelLoading}
-                    className="flex-1 py-3 rounded-xl text-sm font-semibold text-white"
-                    style={{
-                      background: cancelLoading ? 'rgba(239,68,68,0.5)' : '#ef4444',
-                    }}>
-                    {cancelLoading ? 'Cancelling...' : 'Confirm Cancel'}
-                  </button>
-                </div>
+      {cancelTarget && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setCancelTarget(null) }}>
+          <div
+            className="w-full max-w-md rounded-2xl transition-all duration-200"
+            style={{ background: t.card, border: `1px solid ${t.border}` }}>
+            <div className="px-6 py-5 text-center">
+              <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+                style={{ background: 'rgba(239,68,68,0.1)' }}>
+                <AlertTriangle size={28} style={{ color: '#ef4444' }} />
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <div className="text-lg font-bold mb-2" style={{ color: t.text }}>Cancel Schedule?</div>
+              <div className="text-sm mb-4" style={{ color: t.textSub }}>
+                {cancelTarget.type === 'single'
+                  ? 'This schedule booking will be removed.'
+                  : `All ${cancelTarget.body?.timeSlots?.length || ''} selected schedules will be removed.`
+                }
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setCancelTarget(null)}
+                  className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all duration-200"
+                  style={{ background: t.badge, color: t.textSub }}>
+                  Keep
+                </button>
+                <button onClick={handleBatchCancel}
+                  disabled={cancelLoading}
+                  className="flex-1 py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200"
+                  style={{
+                    background: cancelLoading ? 'rgba(239,68,68,0.5)' : '#ef4444',
+                  }}>
+                  {cancelLoading ? 'Cancelling...' : 'Confirm Cancel'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

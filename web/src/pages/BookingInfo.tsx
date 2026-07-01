@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { MapContainer, TileLayer, Marker, Tooltip, Polyline } from 'react-leaflet'
 import L from 'leaflet'
 // @ts-ignore
@@ -176,7 +175,7 @@ export default function BookingInfo() {
     <div className="min-h-screen flex flex-col items-center justify-center gap-6" style={{ background: t.bg, color: t.text }}>
       <AlertTriangle size={48} style={{ color: '#ef4444' }} />
       <div className="text-lg font-bold">{error}</div>
-      <button onClick={() => navigate('/flights')} className="px-6 py-3 rounded-xl text-sm font-semibold text-white" style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
+      <button onClick={() => navigate('/flights')} className="px-6 py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200" style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
         Back to Flights
       </button>
     </div>
@@ -215,35 +214,33 @@ export default function BookingInfo() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: t.bg, color: t.text }}>
-      <div className="sticky top-0 z-30 px-6 py-4" style={{
+    <div className="min-h-screen overflow-x-hidden" style={{ background: t.bg, color: t.text }}>
+      <div className="sticky top-0 z-30 px-4 sm:px-6 lg:px-8 py-4" style={{
         background: isDark ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.92)',
         backdropFilter: 'blur(12px)',
         borderBottom: `1px solid ${t.border}`,
       }}>
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/flights" className="flex items-center gap-2 text-sm transition-colors" style={{ color: t.textSub, textDecoration: 'none' }}>
+          <div className="flex items-center gap-4 min-w-0">
+            <Link to="/flights" className="flex items-center gap-2 text-sm transition-all duration-200 whitespace-nowrap" style={{ color: t.textSub, textDecoration: 'none' }}>
               <ArrowLeft size={16} /> Flights
             </Link>
             <div className="w-px h-4" style={{ background: t.border }} />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               <Plane size={16} style={{ color: '#c0121e' }} />
-              <span className="font-bold text-base" style={{ color: t.text }}>Booking Checkout</span>
+              <span className="font-bold text-base truncate" style={{ color: t.text }}>Booking Checkout</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <span className="font-mono text-sm font-bold" style={{ color: '#c0121e' }}>{flightNumber}</span>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-6 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* ── ROUTE MAP ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative h-[300px] rounded-2xl overflow-hidden border"
+        <div
+          className="relative h-[200px] sm:h-[300px] rounded-2xl overflow-hidden border transition-all duration-200 hover:scale-[1.01]"
           style={{ borderColor: t.border }}
         >
           {/* @ts-ignore */}
@@ -269,43 +266,40 @@ export default function BookingInfo() {
             <ArrowRight size={10} style={{ color: t.textMuted }} />
             <MapPin size={12} style={{ color: '#c0121e' }} /> {arrIcao}
           </div>
-        </motion.div>
+        </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* ── BOOKING DETAILS ── */}
           <div className="lg:col-span-2 space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 }}
-              className="rounded-2xl overflow-hidden border"
+            <div
+              className="rounded-2xl overflow-hidden border transition-all duration-200 hover:scale-[1.01]"
               style={{ background: t.card, borderColor: t.border }}
             >
-              <div className="flex items-center gap-2.5 px-6 py-4 border-b" style={{ borderColor: t.border }}>
+              <div className="flex items-center gap-2.5 px-4 sm:px-6 py-4 border-b" style={{ borderColor: t.border }}>
                 <FileText size={15} style={{ color: '#c0121e' }} />
                 <span className="text-sm font-semibold" style={{ color: t.text }}>Flight Details</span>
                 {!isStandard && (
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold ml-auto" style={{ background: 'rgba(192,18,30,0.1)', color: '#c0121e' }}>
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold ml-auto whitespace-nowrap" style={{ background: 'rgba(192,18,30,0.1)', color: '#c0121e' }}>
                     REALISTIC OPS
                   </span>
                 )}
               </div>
-              <div className="p-6 space-y-5">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 sm:p-6 space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Flight Number</div>
-                    <div className="text-sm font-bold font-mono mt-1" style={{ color: '#c0121e' }}>{flightNumber}</div>
+                    <div className="text-sm font-bold font-mono mt-1 break-words" style={{ color: '#c0121e' }}>{flightNumber}</div>
                   </div>
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Aircraft</div>
-                    <div className="text-sm font-bold mt-1" style={{ color: t.text }}>{aircraftName || '—'}</div>
-                    {aircraftReg && <div className="text-[10px] font-mono" style={{ color: t.textSub }}>{aircraftReg}</div>}
+                    <div className="text-sm font-bold mt-1 break-words" style={{ color: t.text }}>{aircraftName || '—'}</div>
+                    {aircraftReg && <div className="text-[10px] font-mono break-words" style={{ color: t.textSub }}>{aircraftReg}</div>}
                   </div>
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Status</div>
                     <div className="flex items-center gap-1.5 mt-1">
-                      <div className="w-2 h-2 rounded-full" style={{ background: statusColor[bookingStatus] || '#6b7280' }} />
-                      <span className="text-sm font-bold" style={{ color: statusColor[bookingStatus] || t.text }}>{bookingStatus}</span>
+                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: statusColor[bookingStatus] || '#6b7280' }} />
+                      <span className="text-sm font-bold truncate" style={{ color: statusColor[bookingStatus] || t.text }}>{bookingStatus}</span>
                     </div>
                   </div>
                   <div>
@@ -313,16 +307,14 @@ export default function BookingInfo() {
                     <div className="relative">
                       <button
                         onClick={() => isUpcoming ? setNetworkDropdown(!networkDropdown) : null}
-                        className="flex items-center gap-1.5 text-sm font-bold mt-1 transition-colors"
+                        className="flex items-center gap-1.5 text-sm font-bold mt-1 transition-all duration-200"
                         style={{ color: '#8b5cf6', cursor: isUpcoming ? 'pointer' : 'default' }}
                       >
                         <Radio size={12} /> {bookingNetwork}
                         {isUpcoming && <Edit3 size={10} style={{ opacity: 0.5 }} />}
                       </button>
                       {networkDropdown && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -4 }}
-                          animate={{ opacity: 1, y: 0 }}
+                        <div
                           className="absolute top-full left-0 mt-1 rounded-xl overflow-hidden z-10 shadow-2xl border"
                           style={{ background: t.card, borderColor: t.border, minWidth: '140px' }}
                         >
@@ -331,7 +323,7 @@ export default function BookingInfo() {
                               key={net}
                               onClick={() => handleNetworkChange(net)}
                               disabled={networkChanging}
-                              className="w-full px-4 py-2.5 text-xs font-semibold text-left transition-colors hover:bg-red-600/10 flex items-center gap-2"
+                              className="w-full px-4 py-2.5 text-xs font-semibold text-left transition-all duration-200 hover:bg-red-600/10 flex items-center gap-2"
                               style={{
                                 color: bookingNetwork === net ? '#c0121e' : t.text,
                                 background: bookingNetwork === net ? 'rgba(192,18,30,0.08)' : 'transparent',
@@ -342,7 +334,7 @@ export default function BookingInfo() {
                               {net}
                             </button>
                           ))}
-                        </motion.div>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -350,8 +342,8 @@ export default function BookingInfo() {
 
                 <div className="h-px" style={{ background: t.border }} />
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="md:col-span-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="sm:col-span-2">
                     <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Route</div>
                     <div className="flex items-center gap-3 mt-1">
                       <div className="text-center">
@@ -359,7 +351,7 @@ export default function BookingInfo() {
                       </div>
                       <div className="flex flex-col items-center gap-0.5">
                         <Plane size={12} style={{ color: '#c0121e' }} />
-                        <div className="text-[9px] font-mono" style={{ color: t.textMuted }}>{booking?.route?.distance || booking?.distance || ''} nm</div>
+                        <div className="text-[9px] font-mono whitespace-nowrap" style={{ color: t.textMuted }}>{booking?.route?.distance || booking?.distance || ''} nm</div>
                       </div>
                       <div className="text-center">
                         <div className="text-lg font-bold" style={{ color: t.text }}>{arrIcao}</div>
@@ -368,20 +360,20 @@ export default function BookingInfo() {
                   </div>
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Off-Block</div>
-                    <div className="text-sm font-bold mt-1" style={{ color: t.text }}>{getTimeDisplay()}</div>
+                    <div className="text-sm font-bold mt-1 break-words" style={{ color: t.text }}>{getTimeDisplay()}</div>
                   </div>
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>On-Block (Est.)</div>
-                    <div className="text-sm font-bold mt-1" style={{ color: t.text }}>{getArrTimeDisplay()}</div>
+                    <div className="text-sm font-bold mt-1 break-words" style={{ color: t.text }}>{getArrTimeDisplay()}</div>
                   </div>
                 </div>
 
                 <div className="h-px" style={{ background: t.border }} />
 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Est. Duration</div>
-                    <div className="text-sm font-bold mt-1" style={{ color: t.text }}>
+                    <div className="text-sm font-bold mt-1 break-words" style={{ color: t.text }}>
                       {isStandard && booking?.route?.duration
                         ? `${Math.floor(booking.route.duration / 60)}h ${booking.route.duration % 60}m`
                         : booking?.estimatedFlightTime || '—'}
@@ -389,11 +381,11 @@ export default function BookingInfo() {
                   </div>
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Distance</div>
-                    <div className="text-sm font-bold mt-1" style={{ color: t.text }}>{booking?.route?.distance || booking?.distance || '—'} nm</div>
+                    <div className="text-sm font-bold mt-1 break-words" style={{ color: t.text }}>{booking?.route?.distance || booking?.distance || '—'} nm</div>
                   </div>
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.textMuted }}>Est. Earnings</div>
-                    <div className="text-sm font-bold mt-1" style={{ color: '#10b981' }}>
+                    <div className="text-sm font-bold mt-1 break-words" style={{ color: '#10b981' }}>
                       ${isStandard ? flightEarnings?.toFixed(0) : flightEarnings}
                     </div>
                   </div>
@@ -405,13 +397,13 @@ export default function BookingInfo() {
                   {isUpcoming && (
                     <>
                       <Link to="/pirep"
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all"
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200"
                         style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)', color: 'white' }}>
                         <FileText size={13} /> File PIREP
                       </Link>
                       <button onClick={() => setShowCancelConfirm(true)}
                         disabled={cancelling}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all"
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200"
                         style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
                         {cancelling ? '...' : <><Ban size={13} /> Cancel Booking</>}
                       </button>
@@ -434,22 +426,19 @@ export default function BookingInfo() {
                   )}
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             {/* ── FLIGHT PLAN FILING ── */}
             {isUpcoming && (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="rounded-2xl overflow-hidden border"
+              <div
+                className="rounded-2xl overflow-hidden border transition-all duration-200 hover:scale-[1.01]"
                 style={{ background: t.card, borderColor: t.border }}
               >
-                <div className="flex items-center gap-2.5 px-6 py-4 border-b" style={{ borderColor: t.border }}>
+                <div className="flex items-center gap-2.5 px-4 sm:px-6 py-4 border-b" style={{ borderColor: t.border }}>
                   <FileText size={15} style={{ color: '#c0121e' }} />
                   <span className="text-sm font-semibold" style={{ color: t.text }}>Flight Plan &amp; Filing</span>
                 </div>
-                <div className="p-6 space-y-5">
+                <div className="p-4 sm:p-6 space-y-5">
                   <div className="text-xs leading-relaxed" style={{ color: t.textSub }}>
                     Generate your operational flight plan using <strong style={{ color: t.text }}>SimBrief</strong>, then file your IVAO/VATSIM flight plan with the Kingfisher remark code.
                   </div>
@@ -459,7 +448,7 @@ export default function BookingInfo() {
                     href={`https://www.simbrief.com/dispatch/prefill.php?dep=${depIcao}&arr=${arrIcao}&fltnum=${flightNumber}&aircraft=${booking?.aircraft?.icao || booking?.aircraftType || 'A320'}&regist=${aircraftReg}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-3 px-5 py-4 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    className="flex items-center justify-center gap-3 px-5 py-4 rounded-xl text-sm font-bold text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                     style={{
                       background: 'linear-gradient(135deg, #c0121e, #8b0000)',
                       boxShadow: '0 4px 20px rgba(192,18,30,0.3)',
@@ -482,7 +471,7 @@ export default function BookingInfo() {
                         </div>
                       </div>
                       <div
-                        className="text-center px-4 py-3 rounded-xl text-sm font-mono font-bold tracking-wider"
+                        className="text-center px-4 py-3 rounded-xl text-sm font-mono font-bold tracking-wider break-words"
                         style={{ background: 'rgba(192,18,30,0.08)', color: '#c0121e', border: '1px dashed rgba(192,18,30,0.3)' }}
                       >
                         RMK IVAOKFR
@@ -490,7 +479,7 @@ export default function BookingInfo() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
 
           </div>
@@ -498,60 +487,54 @@ export default function BookingInfo() {
           {/* ── RIGHT SIDEBAR ── */}
           <div className="space-y-6">
             {/* METARs */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="rounded-2xl overflow-hidden border"
+            <div
+              className="rounded-2xl overflow-hidden border transition-all duration-200 hover:scale-[1.01]"
               style={{ background: t.card, borderColor: t.border }}
             >
-              <div className="flex items-center gap-2.5 px-6 py-4 border-b" style={{ borderColor: t.border }}>
+              <div className="flex items-center gap-2.5 px-4 sm:px-6 py-4 border-b" style={{ borderColor: t.border }}>
                 <Cloud size={15} style={{ color: '#3b82f6' }} />
                 <span className="text-sm font-semibold" style={{ color: t.text }}>Live METARs</span>
               </div>
-              <div className="p-5 space-y-3">
+              <div className="p-4 sm:p-5 space-y-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2 h-2 rounded-full" style={{ background: '#10b981' }} />
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#10b981' }} />
                     <span className="text-xs font-bold font-mono" style={{ color: t.text }}>{depIcao}</span>
                   </div>
-                  <div className="text-[11px] font-mono leading-relaxed px-3 py-2 rounded-lg" style={{ background: t.input, color: t.textSub, wordBreak: 'break-word' }}>
+                  <div className="text-[11px] font-mono leading-relaxed px-3 py-2 rounded-lg break-words" style={{ background: t.input, color: t.textSub }}>
                     {metarDep || <span style={{ opacity: 0.5 }}>Loading...</span>}
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2 h-2 rounded-full" style={{ background: '#c0121e' }} />
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#c0121e' }} />
                     <span className="text-xs font-bold font-mono" style={{ color: t.text }}>{arrIcao}</span>
                   </div>
-                  <div className="text-[11px] font-mono leading-relaxed px-3 py-2 rounded-lg" style={{ background: t.input, color: t.textSub, wordBreak: 'break-word' }}>
+                  <div className="text-[11px] font-mono leading-relaxed px-3 py-2 rounded-lg break-words" style={{ background: t.input, color: t.textSub }}>
                     {metarArr || <span style={{ opacity: 0.5 }}>Loading...</span>}
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             {/* NOTAMs */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.18 }}
-              className="rounded-2xl overflow-hidden border"
+            <div
+              className="rounded-2xl overflow-hidden border transition-all duration-200 hover:scale-[1.01]"
               style={{ background: t.card, borderColor: t.border }}
             >
-              <div className="flex items-center gap-2.5 px-6 py-4 border-b" style={{ borderColor: t.border }}>
+              <div className="flex items-center gap-2.5 px-4 sm:px-6 py-4 border-b" style={{ borderColor: t.border }}>
                 <AlertTriangle size={15} style={{ color: '#f59e0b' }} />
                 <span className="text-sm font-semibold" style={{ color: t.text }}>Live NOTAMs</span>
               </div>
-              <div className="p-5 space-y-3">
+              <div className="p-4 sm:p-5 space-y-3">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2 h-2 rounded-full" style={{ background: '#10b981' }} />
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#10b981' }} />
                     <span className="text-xs font-bold font-mono" style={{ color: t.text }}>{depIcao}</span>
                   </div>
                   <div className="max-h-[120px] overflow-y-auto space-y-1">
                     {notamDep.length > 0 ? notamDep.map((n, i) => (
-                      <div key={i} className="text-[10px] font-mono leading-relaxed px-2 py-1 rounded" style={{ background: t.input, color: t.textSub }}>
+                      <div key={i} className="text-[10px] font-mono leading-relaxed px-2 py-1 rounded break-words" style={{ background: t.input, color: t.textSub }}>
                         {n}
                       </div>
                     )) : <div className="text-[10px]" style={{ color: t.textMuted }}>No active NOTAMs</div>}
@@ -560,61 +543,54 @@ export default function BookingInfo() {
                 <div className="h-px" style={{ background: t.border }} />
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2 h-2 rounded-full" style={{ background: '#c0121e' }} />
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#c0121e' }} />
                     <span className="text-xs font-bold font-mono" style={{ color: t.text }}>{arrIcao}</span>
                   </div>
                   <div className="max-h-[120px] overflow-y-auto space-y-1">
                     {notamArr.length > 0 ? notamArr.map((n, i) => (
-                      <div key={i} className="text-[10px] font-mono leading-relaxed px-2 py-1 rounded" style={{ background: t.input, color: t.textSub }}>
+                      <div key={i} className="text-[10px] font-mono leading-relaxed px-2 py-1 rounded break-words" style={{ background: t.input, color: t.textSub }}>
                         {n}
                       </div>
                     )) : <div className="text-[10px]" style={{ color: t.textMuted }}>No active NOTAMs</div>}
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             {/* Quick Summary */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="rounded-2xl overflow-hidden border"
+            <div
+              className="rounded-2xl overflow-hidden border transition-all duration-200 hover:scale-[1.01]"
               style={{ background: t.card, borderColor: t.border }}
             >
-              <div className="flex items-center gap-2.5 px-6 py-4 border-b" style={{ borderColor: t.border }}>
+              <div className="flex items-center gap-2.5 px-4 sm:px-6 py-4 border-b" style={{ borderColor: t.border }}>
                 <Info size={15} style={{ color: '#c0121e' }} />
                 <span className="text-sm font-semibold" style={{ color: t.text }}>Quick Summary</span>
               </div>
-              <div className="p-5 space-y-3">
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-xs" style={{ color: t.textMuted }}>Type</span>
-                  <span className="text-xs font-bold" style={{ color: t.text }}>{isStandard ? 'Standard Schedule' : 'Realistic Ops'}</span>
+              <div className="p-4 sm:p-5 space-y-3">
+                <div className="flex items-center justify-between py-2 gap-2">
+                  <span className="text-xs whitespace-nowrap" style={{ color: t.textMuted }}>Type</span>
+                  <span className="text-xs font-bold text-right break-words" style={{ color: t.text }}>{isStandard ? 'Standard Schedule' : 'Realistic Ops'}</span>
                 </div>
                 <div className="h-px" style={{ background: t.border }} />
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-xs" style={{ color: t.textMuted }}>Pilot</span>
-                  <span className="text-xs font-bold" style={{ color: t.text }}>{booking?.pilot?.callsign || booking?.pilot?.firstName || '—'}</span>
+                <div className="flex items-center justify-between py-2 gap-2">
+                  <span className="text-xs whitespace-nowrap" style={{ color: t.textMuted }}>Pilot</span>
+                  <span className="text-xs font-bold text-right break-words" style={{ color: t.text }}>{booking?.pilot?.callsign || booking?.pilot?.firstName || '—'}</span>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* ── CANCEL CONFIRMATION MODAL ── */}
       {showCancelConfirm && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
           onClick={e => { if (e.target === e.currentTarget) setShowCancelConfirm(false) }}
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="w-full max-w-md rounded-2xl"
+          <div
+            className="w-full max-w-md rounded-2xl transition-all duration-200"
             style={{ background: isDark ? '#141414' : '#ffffff', border: `1px solid ${t.border}` }}
           >
             <div className="px-6 py-5 text-center">
@@ -622,7 +598,7 @@ export default function BookingInfo() {
                 <AlertTriangle size={28} style={{ color: '#ef4444' }} />
               </div>
               <div className="text-lg font-bold mb-2" style={{ color: t.text }}>Cancel Booking?</div>
-              <div className="text-sm mb-1" style={{ color: t.textSub }}>
+              <div className="text-sm mb-1 break-words" style={{ color: t.textSub }}>
                 {flightNumber} — {depIcao} → {arrIcao}
               </div>
               {!isStandard && (
@@ -635,20 +611,20 @@ export default function BookingInfo() {
               )}
               <div className="flex gap-3 mt-6">
                 <button onClick={() => setShowCancelConfirm(false)}
-                  className="flex-1 py-3 rounded-xl text-sm font-semibold"
+                  className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all duration-200"
                   style={{ background: t.badge, color: t.textSub }}>
                   Keep Booking
                 </button>
                 <button onClick={handleCancel}
                   disabled={cancelling}
-                  className="flex-1 py-3 rounded-xl text-sm font-semibold text-white"
+                  className="flex-1 py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200"
                   style={{ background: cancelling ? 'rgba(239,68,68,0.5)' : '#ef4444' }}>
                   {cancelling ? 'Cancelling...' : 'Confirm Cancel'}
                 </button>
               </div>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { Users, Search, Clock, Plane, TrendingUp, MapPin } from 'lucide-react'
 import { useThemeStore } from '../store/theme.store'
 import { useAuthStore } from '../store/auth.store'
@@ -51,76 +50,70 @@ export default function Roster() {
   )
 
   return (
-    <div className="min-h-screen" style={{ background: t.bg, color: t.text }}>
-      <div className="sticky top-0 z-30 px-6 py-4"
+    <div className="min-h-screen overflow-x-hidden" style={{ background: t.bg, color: t.text }}>
+      <div className="sticky top-0 z-30 px-4 sm:px-6 lg:px-8 py-4"
         style={{
           background: isDark ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.92)',
           backdropFilter: 'blur(12px)',
           borderBottom: `1px solid ${t.border}`,
         }}>
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/dashboard" className="text-sm" style={{ color: t.textSub, textDecoration: 'none' }}>← Dashboard</Link>
-            <div className="w-px h-4" style={{ background: t.border }} />
-            <div className="flex items-center gap-2">
-              <Users size={16} style={{ color: '#c0121e' }} />
-              <span className="font-bold text-base" style={{ color: t.text }}>Pilot Roster</span>
+        <div className="max-w-5xl mx-auto flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-4 min-w-0">
+            <Link to="/dashboard" className="text-sm shrink-0" style={{ color: t.textSub, textDecoration: 'none' }}>← Dashboard</Link>
+            <div className="w-px h-4 shrink-0" style={{ background: t.border }} />
+            <div className="flex items-center gap-2 min-w-0">
+              <Users size={16} className="shrink-0" style={{ color: '#c0121e' }} />
+              <span className="font-bold text-base truncate" style={{ color: t.text }}>Pilot Roster</span>
             </div>
           </div>
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl ml-auto shrink-0"
             style={{ background: t.card, border: `1px solid ${t.border}` }}>
-            <Search size={13} style={{ color: t.textMuted }} />
+            <Search size={13} className="shrink-0" style={{ color: t.textMuted }} />
             <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search pilots..."
-              className="bg-transparent outline-none text-sm w-36"
+              className="bg-transparent outline-none text-sm w-24 sm:w-36"
               style={{ color: t.text }} />
           </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-6 space-y-4">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
 
-        {/* Stats bar */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: 'Active Pilots', value: pilots.length, icon: Users, color: '#c0121e' },
             { label: 'Total Hours', value: pilots.reduce((s, p) => s + p.totalHours, 0).toFixed(0), icon: Clock, color: '#3b82f6' },
             { label: 'Total Flights', value: pilots.reduce((s, p) => s + p.totalFlights, 0), icon: Plane, color: '#10b981' },
-          ].map((stat, i) => (
-            <motion.div key={stat.label}
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.07 }}
-              className="p-4 rounded-2xl"
+          ].map((stat) => (
+            <div key={stat.label}
+              className="p-4 rounded-2xl transition-all duration-200 hover:scale-[1.02]"
               style={{ background: t.card, border: `1px solid ${t.border}` }}>
               <div className="flex items-center justify-between mb-2">
                 <div className="text-xs" style={{ color: t.textSub }}>{stat.label}</div>
-                <stat.icon size={14} style={{ color: stat.color }} />
+                <stat.icon size={14} className="shrink-0" style={{ color: stat.color }} />
               </div>
-              <div className="text-2xl font-bold" style={{ color: t.text }}>{stat.value}</div>
-            </motion.div>
+              <div className="text-2xl font-bold truncate" style={{ color: t.text }}>{stat.value}</div>
+            </div>
           ))}
         </div>
 
-        {/* Roster grid */}
         {filtered.length === 0 ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-sm" style={{ color: t.textSub }}>No pilots found</div>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((pilot, i) => {
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((pilot) => {
               const rankColor = RANK_COLORS[pilot.rank] || '#6b7280'
               const initials = `${pilot.firstName?.[0] || ''}${pilot.lastName?.[0] || ''}`
               return (
-                <motion.div key={pilot.id}
-                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.04 }}
+                <div key={pilot.id}
                   className="p-5 rounded-2xl transition-all duration-200 hover:scale-[1.02]"
                   style={{ background: t.card, border: `1px solid ${t.border}` }}
                   onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(192,18,30,0.3)'}
                   onMouseLeave={e => e.currentTarget.style.borderColor = t.border}>
                   <div className="flex items-start gap-3 mb-4">
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
                       style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)', color: 'white' }}>
                       {initials}
                     </div>
@@ -129,37 +122,37 @@ export default function Roster() {
                         {pilot.firstName} {pilot.lastName}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs font-mono" style={{ color: '#c0121e' }}>{pilot.pilotId}</span>
+                        <span className="text-xs font-mono shrink-0" style={{ color: '#c0121e' }}>{pilot.pilotId}</span>
                         {pilot.callsign && (
-                          <span className="text-xs" style={{ color: t.textMuted }}>· {pilot.callsign}</span>
+                          <span className="text-xs truncate" style={{ color: t.textMuted }}>· {pilot.callsign}</span>
                         )}
                       </div>
                     </div>
-                    <div className="px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0"
+                    <div className="px-2 py-0.5 rounded-full text-xs font-semibold shrink-0"
                       style={{ background: `${rankColor}18`, color: rankColor }}>
                       {pilot.rank}
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2 pt-3"
                     style={{ borderTop: `1px solid ${t.border}` }}>
-                    <div className="text-center">
-                      <div className="text-sm font-bold" style={{ color: t.text }}>
+                    <div className="text-center min-w-0">
+                      <div className="text-sm font-bold truncate" style={{ color: t.text }}>
                         {pilot.totalHours?.toFixed(0)}h
                       </div>
                       <div className="text-xs" style={{ color: t.textMuted }}>Hours</div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-sm font-bold" style={{ color: t.text }}>{pilot.totalFlights}</div>
+                    <div className="text-center min-w-0">
+                      <div className="text-sm font-bold truncate" style={{ color: t.text }}>{pilot.totalFlights}</div>
                       <div className="text-xs" style={{ color: t.textMuted }}>Flights</div>
                     </div>
-                    <div className="text-center">
+                    <div className="text-center min-w-0">
                       <div className="text-sm font-bold truncate" style={{ color: t.text }}>
                         {pilot.hub || '—'}
                       </div>
                       <div className="text-xs" style={{ color: t.textMuted }}>Hub</div>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               )
             })}
           </div>

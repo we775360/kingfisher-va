@@ -76,26 +76,26 @@ export default function LiveMap() {
 
   return (
     <div className={`h-screen w-full flex flex-col ${t.bg} ${t.text} font-sans overflow-hidden`}>
-      <div className="absolute top-0 left-0 right-0 z-[1000] p-6 flex justify-between items-start pointer-events-none">
-        <div className={`p-4 rounded-2xl border ${t.card} pointer-events-auto flex items-center gap-4`}>
-          <button onClick={() => navigate('/dashboard')} className="p-2.5 rounded-xl bg-red-600 text-white hover:bg-red-700 transition-all">
+      <div className="absolute top-0 left-0 right-0 z-[1000] p-3 sm:p-6 flex justify-between items-start pointer-events-none gap-3">
+        <div className={`p-3 sm:p-4 rounded-2xl border ${t.card} pointer-events-auto flex items-center gap-3 sm:gap-4`}>
+          <button onClick={() => navigate('/dashboard')} className="p-2.5 rounded-xl bg-[#c0121e] text-white transition-all duration-200 hover:bg-[#8b0000]">
             <ArrowLeft size={18} />
           </button>
-          <div>
-            <h1 className="text-lg font-black italic tracking-tighter uppercase leading-none">Radar</h1>
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-lg font-black italic tracking-tighter uppercase leading-none truncate">Radar</h1>
             <div className="flex items-center gap-2 mt-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
               <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Live</span>
             </div>
           </div>
         </div>
 
-        <div className={`p-4 rounded-2xl border ${t.card} pointer-events-auto flex items-center gap-6`}>
+        <div className={`p-3 sm:p-4 rounded-2xl border ${t.card} pointer-events-auto flex items-center gap-4 sm:gap-6`}>
           <div className="text-center">
-            <div className="text-xl font-black italic text-red-600">{liveFlights.length}</div>
-            <div className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Airborne</div>
+            <div className="text-xl font-black italic text-[#c0121e]">{liveFlights.length}</div>
+            <div className="text-[8px] font-black uppercase tracking-widest text-zinc-500 whitespace-nowrap">Airborne</div>
           </div>
-          {liveFlights.length > 0 && <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />}
+          {liveFlights.length > 0 && <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />}
         </div>
       </div>
 
@@ -118,26 +118,26 @@ export default function LiveMap() {
               })}
             >
               <Tooltip permanent direction="top" offset={[0, -18]}
-                className={`${isDark ? 'bg-black/90 text-white' : 'bg-white text-slate-900'} backdrop-blur-xl border border-red-600/20 rounded-xl p-3 shadow-2xl min-w-[160px]`}
+                className={`${isDark ? 'bg-black/90 text-white' : 'bg-white text-slate-900'} backdrop-blur-xl border border-[#c0121e]/20 rounded-xl p-3 shadow-2xl min-w-[160px]`}
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-2">
-                    <span className="text-xs font-black text-red-600">{f.flightNumber}</span>
+                    <span className="text-xs font-black text-[#c0121e]">{f.flightNumber}</span>
                     <span className="bg-green-500/10 text-green-400 text-[7px] font-black px-2 py-0.5 rounded-full uppercase">{f.phase}</span>
                   </div>
                   <div className="flex justify-between text-[10px] font-black uppercase italic">
                     <span>{f.depIcao}</span>
-                    <span className="opacity-30">→</span>
+                    <span className="opacity-30">&rarr;</span>
                     <span>{f.arrIcao}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/10">
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-[7px] font-black uppercase text-zinc-500 tracking-widest">Alt</div>
-                      <div className="text-[10px] font-bold font-mono">{f.alt?.toLocaleString()} ft</div>
+                      <div className="text-[10px] font-bold font-mono truncate">{f.alt?.toLocaleString()} ft</div>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-[7px] font-black uppercase text-zinc-500 tracking-widest">GS</div>
-                      <div className="text-[10px] font-bold font-mono">{f.groundSpeed} kt</div>
+                      <div className="text-[10px] font-bold font-mono truncate">{f.groundSpeed} kt</div>
                     </div>
                   </div>
                 </div>
@@ -146,20 +146,20 @@ export default function LiveMap() {
           ))}
         </MapContainer>
 
-        <div className="absolute bottom-6 left-6 z-[1000]">
-          <div className={`p-4 rounded-2xl border ${t.card} max-w-xs`}>
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-red-600 mb-3 flex items-center gap-2">
+        <div className="absolute bottom-3 sm:bottom-6 left-3 sm:left-6 right-3 sm:right-auto z-[1000]">
+          <div className={`p-3 sm:p-4 rounded-2xl border ${t.card} max-w-full sm:max-w-xs`}>
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-[#c0121e] mb-3 flex items-center gap-2">
               <Activity size={12} /> Flights
             </h4>
-            <div className="space-y-2 max-h-[200px] overflow-y-auto scrollbar-hide">
+            <div className="space-y-2 max-h-[160px] sm:max-h-[200px] overflow-y-auto scrollbar-hide">
               {liveFlights.length > 0 ? liveFlights.filter(f => f.pilot).map(f => (
-                <div key={f.id || f.flightNumber} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
-                  <div>
-                    <div className="text-[10px] font-black text-red-600">{f.flightNumber}</div>
-                    <div className="text-[8px] font-bold text-zinc-500 uppercase">{f.pilot?.firstName} {f.pilot?.lastName?.[0]}.</div>
+                <div key={f.id || f.flightNumber} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0 gap-2">
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-black text-[#c0121e] truncate">{f.flightNumber}</div>
+                    <div className="text-[8px] font-bold text-zinc-500 uppercase truncate">{f.pilot?.firstName} {f.pilot?.lastName?.[0]}.</div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-[8px] font-black text-zinc-500">{f.depIcao}→{f.arrIcao}</div>
+                  <div className="text-right shrink-0">
+                    <div className="text-[8px] font-black text-zinc-500">{f.depIcao}&rarr;{f.arrIcao}</div>
                     <div className="text-[8px] font-bold text-green-500 uppercase">{f.phase}</div>
                   </div>
                 </div>

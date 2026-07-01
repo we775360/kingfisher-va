@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import {
   Plane, FileText, Clock, Navigation,
   Radio, Wind, AlertTriangle, Check,
@@ -179,8 +178,8 @@ export default function PIREP() {
 
   if (success) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: t.bg }}>
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-        className="text-center p-12 rounded-2xl max-w-md w-full mx-4"
+      <div
+        className="text-center p-8 sm:p-12 rounded-2xl max-w-md w-full mx-4 transition-all duration-200"
         style={{ background: t.card, border: `1px solid ${t.border}` }}>
         <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
           style={{ background: 'rgba(16,185,129,0.1)' }}>
@@ -195,25 +194,25 @@ export default function PIREP() {
         </p>
         <div className="flex gap-3 justify-center">
           <button onClick={() => navigate('/flights')}
-            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200"
             style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
             My Flights
           </button>
           <button onClick={() => navigate('/dashboard')}
-            className="px-5 py-2.5 rounded-xl text-sm font-semibold"
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
             style={{ background: t.input, color: t.textSub }}>
             Dashboard
           </button>
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 
   return (
-    <div className="min-h-screen" style={{ background: t.bg, color: t.text }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ background: t.bg, color: t.text }}>
 
       {/* Header */}
-      <div className="sticky top-0 z-30 px-6 py-4"
+      <div className="sticky top-0 z-30 px-4 sm:px-6 lg:px-8 py-4"
         style={{
           background: isDark ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.92)',
           backdropFilter: 'blur(12px)',
@@ -221,31 +220,31 @@ export default function PIREP() {
         }}>
         <div className="max-w-3xl mx-auto flex items-center gap-4">
           <Link to="/dashboard"
-            className="text-sm transition-colors"
+            className="text-sm transition-all duration-200 whitespace-nowrap"
             style={{ color: t.textSub, textDecoration: 'none' }}>
             ← Dashboard
           </Link>
           <div className="w-px h-4" style={{ background: t.border }} />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <FileText size={16} style={{ color: '#c0121e' }} />
-            <span className="font-bold text-base" style={{ color: t.text }}>File PIREP</span>
+            <span className="font-bold text-base truncate" style={{ color: t.text }}>File PIREP</span>
           </div>
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 py-6 space-y-5">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
 
         {/* Link to booking */}
         {myBookings.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-2xl"
+          <div
+            className="p-4 rounded-2xl transition-all duration-200 hover:scale-[1.01]"
             style={{ background: t.navActive, border: `1px solid rgba(192,18,30,0.2)` }}>
             <div className="flex items-center gap-2 mb-3">
               <Plane size={14} style={{ color: '#c0121e' }} />
               <span className="text-sm font-semibold" style={{ color: t.text }}>
                 Link to a Booked Flight
               </span>
-              <span className="text-xs px-2 py-0.5 rounded-full"
+              <span className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
                 style={{ background: 'rgba(192,18,30,0.1)', color: '#c0121e' }}>
                 Optional
               </span>
@@ -254,12 +253,12 @@ export default function PIREP() {
               {myBookings.map(booking => (
                 <button key={booking.id}
                   onClick={() => handleBookingSelect(booking)}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all text-left"
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left gap-2"
                   style={{
                     background: form.bookingId === booking.id ? 'rgba(192,18,30,0.15)' : t.input,
                     border: `1px solid ${form.bookingId === booking.id ? 'rgba(192,18,30,0.4)' : t.border}`,
                   }}>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-sm font-bold font-mono" style={{ color: '#c0121e' }}>
                       {booking.route?.flightNumber}
                     </span>
@@ -267,8 +266,8 @@ export default function PIREP() {
                       {booking.route?.depIcao} → {booking.route?.arrIcao}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs" style={{ color: t.textSub }}>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-xs whitespace-nowrap" style={{ color: t.textSub }}>
                       {booking.aircraft?.registration}
                     </span>
                     {form.bookingId === booking.id && (
@@ -278,21 +277,20 @@ export default function PIREP() {
                 </button>
               ))}
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* Flight details */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="rounded-2xl overflow-hidden"
+        <div
+          className="rounded-2xl overflow-hidden transition-all duration-200 hover:scale-[1.01]"
           style={{ background: t.card, border: `1px solid ${t.border}` }}>
-          <div className="flex items-center gap-2.5 px-5 py-4"
+          <div className="flex items-center gap-2.5 px-4 sm:px-5 py-4"
             style={{ borderBottom: `1px solid ${t.border}` }}>
             <Navigation size={15} style={{ color: '#c0121e' }} />
             <span className="text-sm font-semibold" style={{ color: t.text }}>Flight Details</span>
           </div>
-          <div className="p-5 space-y-4">
-            <div className="grid grid-cols-3 gap-3">
+          <div className="p-4 sm:p-5 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: t.textMuted }}>
                   FLIGHT NUMBER
@@ -324,7 +322,7 @@ export default function PIREP() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: t.textMuted }}>
                   DEPARTURE TIME
@@ -347,24 +345,24 @@ export default function PIREP() {
 
             {/* Flight time display */}
             {flightTime() && (
-              <div className="flex items-center gap-4 px-4 py-3 rounded-xl"
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 px-4 py-3 rounded-xl"
                 style={{ background: t.navActive }}>
                 <div className="flex items-center gap-2">
                   <Clock size={13} style={{ color: '#c0121e' }} />
-                  <span className="text-xs font-semibold" style={{ color: t.text }}>
+                  <span className="text-xs font-semibold whitespace-nowrap" style={{ color: t.text }}>
                     Flight Time: {flightTime()?.toFixed(1)}h
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <DollarSign size={13} style={{ color: '#10b981' }} />
-                  <span className="text-xs font-semibold" style={{ color: '#10b981' }}>
+                  <span className="text-xs font-semibold whitespace-nowrap" style={{ color: '#10b981' }}>
                     Estimated: ${estimatedEarnings()}
                   </span>
                 </div>
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: t.textMuted }}>
                   DISTANCE (nm)
@@ -387,19 +385,18 @@ export default function PIREP() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Aircraft */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="rounded-2xl overflow-hidden"
+        <div
+          className="rounded-2xl overflow-hidden transition-all duration-200 hover:scale-[1.01]"
           style={{ background: t.card, border: `1px solid ${t.border}` }}>
-          <div className="flex items-center gap-2.5 px-5 py-4"
+          <div className="flex items-center gap-2.5 px-4 sm:px-5 py-4"
             style={{ borderBottom: `1px solid ${t.border}` }}>
             <Plane size={15} style={{ color: '#c0121e' }} />
             <span className="text-sm font-semibold" style={{ color: t.text }}>Aircraft & Equipment</span>
           </div>
-          <div className="p-5 space-y-4">
+          <div className="p-4 sm:p-5 space-y-4">
             <div>
               <label className="block text-xs font-semibold mb-1.5" style={{ color: t.textMuted }}>
                 AIRCRAFT
@@ -419,12 +416,12 @@ export default function PIREP() {
                     filteredAircraft.slice(0, 5).map(a => (
                       <button key={a.id}
                         onClick={() => setForm({ ...form, aircraftId: a.id, aircraftSearch: `${a.name} · ${a.registration}` })}
-                        className="w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors"
+                        className="w-full flex items-center justify-between px-4 py-2.5 text-left transition-all duration-200 gap-2"
                         style={{ borderBottom: `1px solid ${t.border}` }}
                         onMouseEnter={e => e.currentTarget.style.background = t.navHover}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                        <span className="text-sm font-medium" style={{ color: t.text }}>{a.name}</span>
-                        <span className="text-xs font-mono" style={{ color: '#c0121e' }}>{a.registration}</span>
+                        <span className="text-sm font-medium truncate" style={{ color: t.text }}>{a.name}</span>
+                        <span className="text-xs font-mono flex-shrink-0" style={{ color: '#c0121e' }}>{a.registration}</span>
                       </button>
                     ))
                   )}
@@ -434,12 +431,12 @@ export default function PIREP() {
                 <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-xl"
                   style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
                   <Check size={13} style={{ color: '#10b981' }} />
-                  <span className="text-xs font-medium" style={{ color: '#10b981' }}>{form.aircraftSearch}</span>
+                  <span className="text-xs font-medium truncate" style={{ color: '#10b981' }}>{form.aircraftSearch}</span>
                 </div>
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: t.textMuted }}>
                   SIMULATOR
@@ -460,7 +457,7 @@ export default function PIREP() {
                   {NETWORKS.map(net => (
                     <button key={net}
                       onClick={() => setForm({ ...form, network: net })}
-                      className="py-2.5 rounded-xl text-xs font-medium transition-all"
+                      className="py-2.5 rounded-xl text-xs font-medium transition-all duration-200"
                       style={{
                         background: form.network === net ? 'rgba(192,18,30,0.15)' : t.input,
                         border: `1px solid ${form.network === net ? 'rgba(192,18,30,0.4)' : t.border}`,
@@ -473,19 +470,18 @@ export default function PIREP() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Landing & Stats */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="rounded-2xl overflow-hidden"
+        <div
+          className="rounded-2xl overflow-hidden transition-all duration-200 hover:scale-[1.01]"
           style={{ background: t.card, border: `1px solid ${t.border}` }}>
-          <div className="flex items-center gap-2.5 px-5 py-4"
+          <div className="flex items-center gap-2.5 px-4 sm:px-5 py-4"
             style={{ borderBottom: `1px solid ${t.border}` }}>
             <Wind size={15} style={{ color: '#c0121e' }} />
             <span className="text-sm font-semibold" style={{ color: t.text }}>Landing Report</span>
           </div>
-          <div className="p-5">
+          <div className="p-4 sm:p-5">
             <div>
               <label className="block text-xs font-semibold mb-1.5" style={{ color: t.textMuted }}>
                 LANDING RATE (fpm — negative value)
@@ -497,7 +493,7 @@ export default function PIREP() {
                 style={inputStyle} />
               {form.landingRate && (
                 <div className="mt-2 flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full"
+                  <div className="w-2 h-2 rounded-full flex-shrink-0"
                     style={{ background: getLandingRateColor() }} />
                   <span className="text-xs font-semibold"
                     style={{ color: getLandingRateColor() }}>
@@ -507,30 +503,29 @@ export default function PIREP() {
               )}
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Comments */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="rounded-2xl overflow-hidden"
+        <div
+          className="rounded-2xl overflow-hidden transition-all duration-200 hover:scale-[1.01]"
           style={{ background: t.card, border: `1px solid ${t.border}` }}>
-          <div className="flex items-center gap-2.5 px-5 py-4"
+          <div className="flex items-center gap-2.5 px-4 sm:px-5 py-4"
             style={{ borderBottom: `1px solid ${t.border}` }}>
             <FileText size={15} style={{ color: '#c0121e' }} />
             <span className="text-sm font-semibold" style={{ color: t.text }}>Comments</span>
-            <span className="text-xs px-2 py-0.5 rounded-full"
+            <span className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
               style={{ background: t.input, color: t.textSub }}>
               Optional
             </span>
           </div>
-          <div className="p-5">
+          <div className="p-4 sm:p-5">
             <textarea value={form.comments}
               onChange={e => setForm({ ...form, comments: e.target.value })}
               placeholder="Any remarks about the flight — weather, diversions, technical issues..."
               rows={3}
               style={{ ...inputStyle, resize: 'vertical' }} />
           </div>
-        </motion.div>
+        </div>
 
         {/* Info box */}
         <div className="flex gap-2.5 p-4 rounded-xl"
@@ -547,13 +542,13 @@ export default function PIREP() {
           <div className="flex gap-2.5 p-4 rounded-xl"
             style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
             <AlertTriangle size={14} style={{ color: '#ef4444', flexShrink: 0 }} />
-            <span className="text-xs" style={{ color: '#ef4444' }}>{error}</span>
+            <span className="text-xs break-words" style={{ color: '#ef4444' }}>{error}</span>
           </div>
         )}
 
         {/* Submit */}
         <button onClick={handleSubmit} disabled={submitting}
-          className="w-full py-4 rounded-xl text-sm font-bold text-white transition-all mb-8"
+          className="w-full py-4 rounded-xl text-sm font-bold text-white transition-all duration-200 mb-8"
           style={{
             background: submitting ? 'rgba(192,18,30,0.5)' : 'linear-gradient(135deg, #c0121e, #8b0000)',
             boxShadow: submitting ? 'none' : '0 0 20px rgba(192,18,30,0.3)',

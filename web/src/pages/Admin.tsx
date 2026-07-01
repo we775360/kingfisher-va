@@ -249,6 +249,7 @@ export default function Admin() {
     fontSize: '13px',
     outline: 'none',
     width: '100%',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
   }
 
   const StatusBadge = ({ status }: { status: string }) => {
@@ -284,7 +285,7 @@ export default function Admin() {
       case 'overview':
         return (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {[
                 { label: 'Total Pilots', value: stats?.totalPilots || 0, icon: Users, color: '#3b82f6' },
                 { label: 'Total Flights', value: stats?.totalFlights || 0, icon: Plane, color: '#10b981' },
@@ -292,7 +293,7 @@ export default function Admin() {
                 { label: 'Routes', value: stats?.totalRoutes || 0, icon: Navigation, color: '#d4af37' },
                 { label: 'Pending PIREPs', value: stats?.pendingPireps || 0, icon: AlertTriangle, color: '#f59e0b' },
               ].map((s, i) => (
-                <div key={i} className="p-4 rounded-2xl"
+                <div key={i} className="p-4 rounded-2xl transition-all duration-200 hover:scale-[1.02]"
                   style={{ background: t.card, border: `1px solid ${t.border}` }}>
                   <div className="flex items-center justify-between mb-3">
                     <div className="text-xs" style={{ color: t.textSub }}>{s.label}</div>
@@ -309,7 +310,7 @@ export default function Admin() {
             {/* Recent PIREPs needing attention */}
             <div className="rounded-2xl overflow-hidden"
               style={{ background: t.card, border: `1px solid ${t.border}` }}>
-              <div className="flex items-center justify-between px-5 py-4"
+              <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4"
                 style={{ borderBottom: `1px solid ${t.border}` }}>
                 <div className="flex items-center gap-2.5">
                   <AlertTriangle size={15} style={{ color: '#f59e0b' }} />
@@ -330,7 +331,7 @@ export default function Admin() {
               ) : (
                 <div className="divide-y" style={{ borderColor: t.border }}>
                   {pireps.filter(p => p.status === 'PENDING').slice(0, 5).map((pirep: any) => (
-                    <div key={pirep.id} className="px-5 py-3.5 flex items-center justify-between gap-4">
+                    <div key={pirep.id} className="px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
                       <div className="min-w-0">
                         <div className="text-sm font-semibold" style={{ color: t.text }}>
                           {pirep.pilot?.firstName} {pirep.pilot?.lastName} — {pirep.flightNumber}
@@ -341,12 +342,12 @@ export default function Admin() {
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <button onClick={() => updatePIREP(pirep.id, 'APPROVED')}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200"
                           style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
                           <Check size={13} /> Approve
                         </button>
                         <button onClick={() => updatePIREP(pirep.id, 'REJECTED')}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200"
                           style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
                           <X size={13} /> Reject
                         </button>
@@ -369,7 +370,7 @@ export default function Admin() {
         return (
           <div className="rounded-2xl overflow-hidden"
             style={{ background: t.card, border: `1px solid ${t.border}` }}>
-            <div className="flex items-center justify-between px-5 py-4"
+            <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4"
               style={{ borderBottom: `1px solid ${t.border}` }}>
               <div className="flex items-center gap-2.5">
                 <Users size={15} style={{ color: '#c0121e' }} />
@@ -389,7 +390,7 @@ export default function Admin() {
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${t.border}` }}>
                     {['Pilot ID', 'Name', 'Email', 'Rank', 'Hours', 'Flights', 'Status', 'Role', 'Actions'].map(h => (
-                      <th key={h} className="text-left px-5 py-3 text-xs font-semibold tracking-wide"
+                      <th key={h} className="text-left px-4 sm:px-6 lg:px-8 py-3 text-xs font-semibold tracking-wide"
                         style={{ color: t.textMuted }}>
                         {h}
                       </th>
@@ -403,7 +404,7 @@ export default function Admin() {
                     <tr key={user.id}
                       onMouseEnter={e => e.currentTarget.style.background = t.navHover}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                      <td className="px-5 py-3.5">
+                      <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                         {p ? (
                           <span className="text-xs font-bold font-mono" style={{ color: '#c0121e' }}>
                             {p.pilotId}
@@ -412,14 +413,14 @@ export default function Admin() {
                           <span className="text-xs" style={{ color: t.textMuted }}>—</span>
                         )}
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-4 sm:px-6 lg:px-8 py-3.5 min-w-0">
                         {p ? (
                           <div className="flex items-center gap-2.5">
                             <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                               style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)', color: 'white' }}>
                               {p.firstName?.[0]}{p.lastName?.[0]}
                             </div>
-                            <span className="text-sm font-medium" style={{ color: t.text }}>
+                            <span className="text-sm font-medium truncate" style={{ color: t.text }}>
                               {p.firstName} {p.lastName}
                             </span>
                           </div>
@@ -427,24 +428,24 @@ export default function Admin() {
                           <span className="text-sm" style={{ color: t.textMuted }}>Pending Setup</span>
                         )}
                       </td>
-                      <td className="px-5 py-3.5">
-                        <span className="text-xs" style={{ color: t.textSub }}>{user.email}</span>
+                      <td className="px-4 sm:px-6 lg:px-8 py-3.5">
+                        <span className="text-xs truncate block max-w-[180px]" style={{ color: t.textSub }}>{user.email}</span>
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                         <span className="text-xs" style={{ color: t.textSub }}>{p?.rank || '—'}</span>
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                         <span className="text-xs font-semibold" style={{ color: t.text }}>
                           {p ? `${p.totalHours?.toFixed(1)}h` : '—'}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                         <span className="text-xs" style={{ color: t.textSub }}>{p?.totalFlights ?? '—'}</span>
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                         {p ? <StatusBadge status={p.status} /> : <span className="text-xs" style={{ color: t.textMuted }}>No Pilot</span>}
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                         <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md"
                           style={{
                             background: user.role === 'ADMIN' ? 'rgba(192,18,30,0.1)' : user.role === 'STAFF' ? 'rgba(37,99,235,0.1)' : 'rgba(16,185,129,0.1)',
@@ -453,25 +454,25 @@ export default function Admin() {
                           {user.role}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                         <div className="flex items-center gap-1.5">
                           {p ? (
                             p.status === 'ACTIVE' ? (
                               <>
                                 <button onClick={() => updatePilotStatus(p.id, 'SUSPENDED')}
-                                  className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                                  className="px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200"
                                   style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>
                                   Suspend
                                 </button>
                                 <button onClick={() => updatePilotStatus(p.id, 'BANNED')}
-                                  className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                                  className="px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200"
                                   style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
                                   Ban
                                 </button>
                               </>
                             ) : (
                               <button onClick={() => updatePilotStatus(p.id, 'ACTIVE')}
-                                className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
+                                className="px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200"
                                 style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
                                 Reactivate
                               </button>
@@ -504,7 +505,7 @@ export default function Admin() {
           <div className="space-y-4">
             <div className="rounded-2xl overflow-hidden"
               style={{ background: t.card, border: `1px solid ${t.border}` }}>
-              <div className="flex items-center justify-between px-5 py-4"
+              <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4"
                 style={{ borderBottom: `1px solid ${t.border}` }}>
                 <div className="flex items-center gap-2.5">
                   <FileText size={15} style={{ color: '#c0121e' }} />
@@ -524,7 +525,7 @@ export default function Admin() {
                   <thead>
                     <tr style={{ borderBottom: `1px solid ${t.border}` }}>
                       {['Pilot', 'Flight', 'Route', 'Duration', 'Landing', 'Sim', 'Status', 'Actions'].map(h => (
-                        <th key={h} className="text-left px-5 py-3 text-xs font-semibold tracking-wide"
+                        <th key={h} className="text-left px-4 sm:px-6 lg:px-8 py-3 text-xs font-semibold tracking-wide"
                           style={{ color: t.textMuted }}>
                           {h}
                         </th>
@@ -536,43 +537,43 @@ export default function Admin() {
                       <tr key={pirep.id}
                         onMouseEnter={e => e.currentTarget.style.background = t.navHover}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                        <td className="px-5 py-3.5">
-                          <div className="text-sm font-medium" style={{ color: t.text }}>
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5 min-w-0">
+                          <div className="text-sm font-medium truncate" style={{ color: t.text }}>
                             {pirep.pilot?.firstName} {pirep.pilot?.lastName}
                           </div>
                           <div className="text-xs" style={{ color: t.textMuted }}>{pirep.pilot?.pilotId}</div>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs font-bold font-mono" style={{ color: '#c0121e' }}>
                             {pirep.flightNumber}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs" style={{ color: t.textSub }}>
                             {pirep.depIcao} → {pirep.arrIcao}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs font-semibold" style={{ color: t.text }}>
                             {pirep.flightTime?.toFixed(1)}h
                           </span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs font-semibold"
                             style={{ color: Math.abs(pirep.landingRate) < 200 ? '#10b981' : Math.abs(pirep.landingRate) < 400 ? '#f59e0b' : '#ef4444' }}>
                             {pirep.landingRate} fpm
                           </span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs" style={{ color: t.textSub }}>{pirep.simulator}</span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <StatusBadge status={pirep.status} />
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <div className="flex items-center gap-1.5">
                             <button onClick={() => setSelectedPirep(pirep)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200"
                               style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6' }}>
                               <Eye size={12} /> View
                             </button>
@@ -611,7 +612,7 @@ export default function Admin() {
                 onClick={e => { if (e.target === e.currentTarget) setSelectedPirep(null) }}>
                 <div className="w-full max-w-lg rounded-2xl overflow-hidden"
                   style={{ background: isDark ? '#141414' : '#ffffff', border: `1px solid ${t.border}`, maxHeight: '90vh', overflowY: 'auto' }}>
-                  <div className="flex items-center justify-between px-6 py-4 sticky top-0"
+                  <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4 sticky top-0"
                     style={{ borderBottom: `1px solid ${t.border}`, background: isDark ? '#141414' : '#ffffff' }}>
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -633,7 +634,7 @@ export default function Admin() {
                       <X size={18} />
                     </button>
                   </div>
-                  <div className="p-6 space-y-4">
+                  <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-4">
                     {/* Route */}
                     <div className="p-4 rounded-xl"
                       style={{ background: t.navActive, border: `1px solid rgba(192,18,30,0.1)` }}>
@@ -656,7 +657,7 @@ export default function Admin() {
                     </div>
 
                     {/* Details grid */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
                         { label: 'Flight Time', value: `${selectedPirep.flightTime?.toFixed(2)}h` },
                         { label: 'Distance', value: `${selectedPirep.distance} nm` },
@@ -734,7 +735,7 @@ export default function Admin() {
                           setSelectedPirep(null)
                           setStaffNote('')
                         }}
-                          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-colors"
+                          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all duration-200 hover:scale-[1.02]"
                           style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>
                           <Check size={15} /> Approve PIREP
                         </button>
@@ -743,7 +744,7 @@ export default function Admin() {
                           setSelectedPirep(null)
                           setStaffNote('')
                         }}
-                          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-colors"
+                          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all duration-200 hover:scale-[1.02]"
                           style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}>
                           <X size={15} /> Reject PIREP
                         </button>
@@ -767,7 +768,7 @@ export default function Admin() {
                 <Plus size={15} style={{ color: '#c0121e' }} />
                 <span className="text-sm font-semibold" style={{ color: t.text }}>Add Aircraft</span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                 {[
                   { key: 'icao', label: 'ICAO Type', placeholder: 'A320' },
                   { key: 'name', label: 'Full Name', placeholder: 'Airbus A320-200' },
@@ -798,7 +799,7 @@ export default function Admin() {
               )}
               <div className="flex items-center gap-2">
                 <button onClick={submitAircraft}
-                  className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors"
+                  className="px-4 sm:px-6 lg:px-8 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200"
                   style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
                   Add to Fleet
                 </button>
@@ -823,7 +824,7 @@ export default function Admin() {
                     setFormMsg('No existing aircraft found for ICAO ' + icao)
                   }
                 }}
-                  className="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
                   style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6' }}>
                   Fill for ICAO
                 </button>
@@ -833,7 +834,7 @@ export default function Admin() {
             {/* Aircraft list */}
             <div className="rounded-2xl overflow-hidden"
               style={{ background: t.card, border: `1px solid ${t.border}` }}>
-              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${t.border}` }}>
+              <div className="px-4 sm:px-6 lg:px-8 py-4" style={{ borderBottom: `1px solid ${t.border}` }}>
                 <div className="flex items-center gap-2.5">
                   <Plane size={15} style={{ color: '#c0121e' }} />
                   <span className="text-sm font-semibold" style={{ color: t.text }}>Fleet ({aircraft.length})</span>
@@ -844,7 +845,7 @@ export default function Admin() {
                   <thead>
                     <tr style={{ borderBottom: `1px solid ${t.border}` }}>
                       {['Registration', 'Name', 'Type', 'Pax', 'Range', 'Hub', 'Current Location', 'Flight Hours', 'Maintenance', 'Actions'].map(h => (
-                        <th key={h} className="text-left px-5 py-3 text-xs font-semibold"
+                        <th key={h} className="text-left px-4 sm:px-6 lg:px-8 py-3 text-xs font-semibold"
                           style={{ color: t.textMuted }}>
                           {h}
                         </th>
@@ -863,37 +864,37 @@ export default function Admin() {
                       <tr key={a.id}
                         onMouseEnter={e => e.currentTarget.style.background = t.navHover}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs font-bold font-mono" style={{ color: '#c0121e' }}>
                             {a.registration}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5">
-                          <span className="text-sm font-medium" style={{ color: t.text }}>{a.name}</span>
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5 min-w-0">
+                          <span className="text-sm font-medium truncate" style={{ color: t.text }}>{a.name}</span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs" style={{ color: t.textSub }}>{a.type}</span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs" style={{ color: t.textSub }}>{a.pax}</span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs" style={{ color: t.textSub }}>{a.range} nm</span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs" style={{ color: t.textSub }}>{a.hub || '—'}</span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs font-semibold" style={{ color: '#3b82f6' }}>
                             {a.currentLocation || a.hub || '—'}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs" style={{ color: t.textSub }}>
                             {a.totalFlightHours?.toFixed(1)}h / {a.maintenanceThreshold || 50}h
                           </span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           {inMaint ? (
                             <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
                               style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
@@ -907,7 +908,7 @@ export default function Admin() {
                             </span>
                           )}
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <div className="flex items-center gap-1.5">
                             <button onClick={() => {
                               setEditAircraft(a)
@@ -916,12 +917,12 @@ export default function Admin() {
                                 maintenanceThreshold: a.maintenanceThreshold || 50,
                               })
                             }}
-                              className="p-1.5 rounded-lg transition-colors"
+                              className="p-1.5 rounded-lg transition-all duration-200"
                               style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6' }}>
                               <Edit3 size={13} />
                             </button>
                             <button onClick={() => deleteItem(`/admin/aircraft/${a.id}`)}
-                              className="p-1.5 rounded-lg transition-colors"
+                              className="p-1.5 rounded-lg transition-all duration-200"
                               style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
                               <Trash2 size={13} />
                             </button>
@@ -951,7 +952,7 @@ export default function Admin() {
                 <Plus size={15} style={{ color: '#c0121e' }} />
                 <span className="text-sm font-semibold" style={{ color: t.text }}>Add Route</span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                 {[
                   { key: 'flightNumber', label: 'Flight Number', placeholder: 'IT101' },
                   { key: 'depIcao', label: 'Dep ICAO', placeholder: 'VABB' },
@@ -1013,15 +1014,15 @@ export default function Admin() {
                 </div>
               )}
               <button onClick={submitRoute}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
-                style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
-                Add Route
+className="px-4 sm:px-6 lg:px-8 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200"
+                  style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
+                  Add Route
               </button>
             </div>
 
             <div className="rounded-2xl overflow-hidden"
               style={{ background: t.card, border: `1px solid ${t.border}` }}>
-              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${t.border}` }}>
+              <div className="px-4 sm:px-6 lg:px-8 py-4" style={{ borderBottom: `1px solid ${t.border}` }}>
                 <div className="flex items-center gap-2.5">
                   <Navigation size={15} style={{ color: '#c0121e' }} />
                   <span className="text-sm font-semibold" style={{ color: t.text }}>Routes ({routes.length})</span>
@@ -1032,7 +1033,7 @@ export default function Admin() {
                   <thead>
                     <tr style={{ borderBottom: `1px solid ${t.border}` }}>
                       {['Flight', 'From', 'To', 'Distance', 'Duration', 'Route', 'Fuel', 'Allowed Types', 'Actions'].map(h => (
-                        <th key={h} className="text-left px-5 py-3 text-xs font-semibold"
+                        <th key={h} className="text-left px-4 sm:px-6 lg:px-8 py-3 text-xs font-semibold"
                           style={{ color: t.textMuted }}>
                           {h}
                         </th>
@@ -1046,41 +1047,41 @@ export default function Admin() {
                       <tr key={r.id}
                         onMouseEnter={e => e.currentTarget.style.background = t.navHover}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs font-bold font-mono" style={{ color: '#c0121e' }}>
                             {r.flightNumber}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5">
-                          <div className="text-sm font-medium" style={{ color: t.text }}>{r.depIcao}</div>
-                          <div className="text-xs" style={{ color: t.textMuted }}>{r.depName}</div>
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5 min-w-0">
+                          <div className="text-sm font-medium truncate" style={{ color: t.text }}>{r.depIcao}</div>
+                          <div className="text-xs truncate" style={{ color: t.textMuted }}>{r.depName}</div>
                         </td>
-                        <td className="px-5 py-3.5">
-                          <div className="text-sm font-medium" style={{ color: t.text }}>{r.arrIcao}</div>
-                          <div className="text-xs" style={{ color: t.textMuted }}>{r.arrName}</div>
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5 min-w-0">
+                          <div className="text-sm font-medium truncate" style={{ color: t.text }}>{r.arrIcao}</div>
+                          <div className="text-xs truncate" style={{ color: t.textMuted }}>{r.arrName}</div>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs" style={{ color: t.textSub }}>{r.distance} nm</span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs" style={{ color: t.textSub }}>
                             {Math.floor((r.duration || 0) / 60)}h {(r.duration || 0) % 60}m
                           </span>
                         </td>
-                        <td className="px-5 py-3.5">
-                          <span className="text-xs font-mono" style={{ color: t.textSub }}>
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5 min-w-0">
+                          <span className="text-xs font-mono truncate block max-w-[150px]" style={{ color: t.textSub }}>
                             {r.route || '—'}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs" style={{ color: t.textSub }}>{r.fuel ? `${r.fuel} kg` : '—'}</span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs" style={{ color: t.textSub }}>
                             {types && types.length > 0 ? types.join(', ') : 'All'}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <div className="flex items-center gap-1.5">
                             <button onClick={() => {
                               const currentTypes = (r.allowedTypes as string[]) || []
@@ -1123,7 +1124,7 @@ export default function Admin() {
                 <Plus size={15} style={{ color: '#c0121e' }} />
                 <span className="text-sm font-semibold" style={{ color: t.text }}>Add Hub</span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                 {[
                   { key: 'icao', label: 'ICAO Code', placeholder: 'VABB' },
                   { key: 'name', label: 'Airport Name', placeholder: 'Chhatrapati Shivaji' },
@@ -1148,7 +1149,7 @@ export default function Admin() {
                 </div>
               )}
               <button onClick={submitHub}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+                className="px-4 sm:px-6 lg:px-8 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200"
                 style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
                 Add Hub
               </button>
@@ -1156,7 +1157,7 @@ export default function Admin() {
 
             <div className="grid md:grid-cols-3 gap-4">
               {hubs.map((hub: any) => (
-                <div key={hub.id} className="p-5 rounded-2xl"
+                <div key={hub.id} className="p-5 rounded-2xl transition-all duration-200 hover:scale-[1.02]"
                   style={{ background: t.card, border: `1px solid ${t.border}` }}>
                   <div className="flex items-start justify-between mb-3">
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold"
@@ -1205,7 +1206,7 @@ export default function Admin() {
                 <Plus size={15} style={{ color: '#c0121e' }} />
                 <span className="text-sm font-semibold" style={{ color: t.text }}>Create Event</span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                 {[
                   { key: 'title', label: 'Event Title', placeholder: 'India Mega Event' },
                   { key: 'route', label: 'Route Name', placeholder: 'VABB → VIDP' },
@@ -1247,14 +1248,14 @@ export default function Admin() {
                 </div>
               )}
               <button onClick={submitEvent}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+                className="px-4 sm:px-6 lg:px-8 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200"
                 style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
                 Create Event
               </button>
             </div>
 
             <div className="rounded-2xl overflow-hidden" style={{ background: t.card, border: `1px solid ${t.border}` }}>
-              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${t.border}` }}>
+              <div className="px-4 sm:px-6 lg:px-8 py-4" style={{ borderBottom: `1px solid ${t.border}` }}>
                 <div className="flex items-center gap-2.5">
                   <Calendar size={15} style={{ color: '#c0121e' }} />
                   <span className="text-sm font-semibold" style={{ color: t.text }}>Events ({events.length})</span>
@@ -1267,9 +1268,9 @@ export default function Admin() {
               ) : (
                 <div className="divide-y" style={{ borderColor: t.border }}>
                   {events.map((event: any) => (
-                    <div key={event.id} className="px-5 py-4 flex items-center justify-between gap-4">
+                    <div key={event.id} className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
                       <div className="min-w-0">
-                        <div className="text-sm font-semibold" style={{ color: t.text }}>{event.title}</div>
+                        <div className="text-sm font-semibold truncate" style={{ color: t.text }}>{event.title}</div>
                         <div className="text-xs mt-0.5" style={{ color: t.textSub }}>
                           {event.depIcao} → {event.arrIcao} · {new Date(event.date).toLocaleDateString()} · {event.attendees?.length || 0}/{event.slots} slots · ${event.earnings} bonus
                         </div>
@@ -1304,7 +1305,7 @@ export default function Admin() {
                 <Headphones size={15} style={{ color: '#c0121e' }} />
                 <span className="text-sm font-semibold" style={{ color: t.text }}>Create ATC Staff Account</span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                 {[
                   { key: 'firstName', label: 'First Name', placeholder: 'John', type: 'text' },
                   { key: 'lastName', label: 'Last Name', placeholder: 'Doe', type: 'text' },
@@ -1357,7 +1358,7 @@ export default function Admin() {
                   setFormMsg(err.response?.data?.error || 'Error creating ATC staff')
                 }
               }}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+                className="px-4 sm:px-6 lg:px-8 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200"
                 style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
                 Create ATC Account
               </button>
@@ -1365,7 +1366,7 @@ export default function Admin() {
 
             {/* ATC Staff List */}
             <div className="rounded-2xl overflow-hidden" style={{ background: t.card, border: `1px solid ${t.border}` }}>
-              <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${t.border}` }}>
+              <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4" style={{ borderBottom: `1px solid ${t.border}` }}>
                 <div className="flex items-center gap-2.5">
                   <Headphones size={15} style={{ color: '#c0121e' }} />
                   <span className="text-sm font-semibold" style={{ color: t.text }}>ATC Staff ({atcStaff.length})</span>
@@ -1382,7 +1383,7 @@ export default function Admin() {
                   <thead>
                     <tr style={{ borderBottom: `1px solid ${t.border}` }}>
                       {['Name', 'Email', 'Position', 'Rating', 'Status', 'Actions'].map(h => (
-                        <th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{ color: t.textMuted }}>{h}</th>
+                        <th key={h} className="text-left px-4 sm:px-6 lg:px-8 py-3 text-xs font-semibold" style={{ color: t.textMuted }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -1391,21 +1392,21 @@ export default function Admin() {
                       <tr key={staff.id}
                         onMouseEnter={e => e.currentTarget.style.background = t.navHover}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5 min-w-0">
                           <div className="flex items-center gap-2.5">
                             <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                               style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)', color: 'white' }}>
                               {staff.firstName?.[0]}{staff.lastName?.[0]}
                             </div>
-                            <span className="text-sm font-medium" style={{ color: t.text }}>
+                            <span className="text-sm font-medium truncate" style={{ color: t.text }}>
                               {staff.firstName} {staff.lastName}
                             </span>
                           </div>
                         </td>
-                        <td className="px-5 py-3.5">
-                          <span className="text-xs" style={{ color: t.textSub }}>{staff.email}</span>
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
+                          <span className="text-xs truncate block max-w-[160px]" style={{ color: t.textSub }}>{staff.email}</span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="px-2 py-0.5 rounded-lg text-xs font-bold font-mono"
                             style={{
                               background: staff.position === 'CTR' ? 'rgba(239,68,68,0.1)' :
@@ -1420,13 +1421,13 @@ export default function Admin() {
                             {staff.position}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <span className="text-xs font-semibold" style={{ color: t.textSub }}>{staff.rating}</span>
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <StatusBadge status={staff.status || 'ACTIVE'} />
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 sm:px-6 lg:px-8 py-3.5">
                           <div className="flex items-center gap-1.5">
                             {staff.status === 'ACTIVE' ? (
                               <button onClick={async () => {
@@ -1505,7 +1506,7 @@ export default function Admin() {
                 <MapPin size={15} style={{ color: '#c0121e' }} />
                 <span className="text-sm font-semibold" style={{ color: t.text }}>Set Daily Hub</span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                 {[
                   { key: 'depIcao', label: 'Departure ICAO', placeholder: 'VABB' },
                   { key: 'arrIcao', label: 'Arrival ICAO', placeholder: 'VIDP' },
@@ -1540,7 +1541,7 @@ export default function Admin() {
                   setFormMsg(err.response?.data?.error || 'Error setting daily hub')
                 }
               }}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+                className="px-4 sm:px-6 lg:px-8 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200"
                 style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
                 Set as Current Hub
               </button>
@@ -1598,7 +1599,7 @@ export default function Admin() {
               </div>
             )}
             <button onClick={submitAnnouncement}
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+              className="px-4 sm:px-6 lg:px-8 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200"
               style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
               Post Announcement
             </button>
@@ -1641,13 +1642,13 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: t.bg, color: t.text }}>
+    <div className="min-h-screen flex overflow-x-hidden" style={{ background: t.bg, color: t.text }}>
 
       {/* ── SIDEBAR ── */}
       <div
         onMouseEnter={() => { if (!pinned) setHovered(true) }}
         onMouseLeave={() => { if (!pinned) setHovered(false) }}
-        className="fixed left-0 top-0 bottom-0 z-50 flex flex-col"
+        className="hidden md:flex fixed left-0 top-0 bottom-0 z-50 flex-col"
         style={{
           width: sidebarW,
           background: t.sidebar,
@@ -1708,7 +1709,7 @@ export default function Admin() {
               <button key={item.id}
                 onClick={() => { setActive(item.id); setSearch(''); setFormMsg('') }}
                 title={!isExpanded ? item.label : undefined}
-                className="w-full flex items-center rounded-xl transition-all duration-150"
+                className="w-full flex items-center rounded-xl transition-all duration-200"
                 style={{
                   gap: isExpanded ? '10px' : '0',
                   padding: isExpanded ? '8px 10px' : '8px 0',
@@ -1784,11 +1785,10 @@ export default function Admin() {
       </div>
 
       {/* ── MAIN ── */}
-      <main className="flex-1 flex flex-col min-h-screen"
-        style={{ marginLeft: sidebarW, transition: 'margin-left 0.22s ease' }}>
+      <main className="flex-1 flex flex-col min-h-screen ml-0 md:ml-64">
 
         {/* Topbar */}
-        <header className="sticky top-0 z-30 flex items-center justify-between px-6"
+        <header className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 lg:px-8"
           style={{
             background: isDark ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.92)',
             backdropFilter: 'blur(12px)',
@@ -1814,7 +1814,7 @@ export default function Admin() {
               <span className="text-xs font-semibold" style={{ color: '#c0121e' }}>Z</span>
             </div>
             <button onClick={fetchAll}
-              className="px-3 py-2 rounded-xl text-xs font-medium transition-colors"
+              className="px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200"
               style={{ background: t.badge, color: t.textSub }}>
               Refresh
             </button>
@@ -1822,7 +1822,7 @@ export default function Admin() {
         </header>
 
         {/* Content */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 px-4 sm:px-6 lg:px-8 py-6">
           {renderContent()}
         </div>
 
@@ -1833,7 +1833,7 @@ export default function Admin() {
             onClick={e => { if (e.target === e.currentTarget) setEditAircraft(null) }}>
             <div className="w-full max-w-md rounded-2xl overflow-hidden"
               style={{ background: isDark ? '#141414' : '#ffffff', border: `1px solid ${t.border}` }}>
-              <div className="flex items-center justify-between px-6 py-4"
+              <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4"
                 style={{ borderBottom: `1px solid ${t.border}` }}>
                 <div className="flex items-center gap-3">
                   <Wrench size={15} style={{ color: '#c0121e' }} />
@@ -1846,7 +1846,7 @@ export default function Admin() {
                   <X size={16} />
                 </button>
               </div>
-              <div className="p-6 space-y-4">
+              <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-4">
                 <div>
                   <label className="block text-xs mb-1.5" style={{ color: t.textMuted }}>Current Location (ICAO)</label>
                   <input value={editAircraftForm.currentLocation}
@@ -1873,7 +1873,7 @@ export default function Admin() {
                       fetchAll()
                     } catch (err) { console.error(err) }
                   }}
-                    className="w-full py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                    className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-[1.02]"
                     style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>
                     Resolve Maintenance (Mark Available)
                   </button>
@@ -1889,7 +1889,7 @@ export default function Admin() {
                       fetchAll()
                     } catch (err) { console.error(err) }
                   }}
-                    className="w-full py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                    className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-[1.02]"
                     style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}>
                     Trigger 6h Maintenance
                   </button>
@@ -1901,7 +1901,7 @@ export default function Admin() {
                     fetchAll()
                   } catch (err) { console.error(err) }
                 }}
-                  className="w-full py-2.5 rounded-xl text-sm font-semibold text-white"
+                    className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02]"
                   style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
                   Save Changes
                 </button>
@@ -1917,7 +1917,7 @@ export default function Admin() {
             onClick={e => { if (e.target === e.currentTarget) setRouteTypeEditor(null) }}>
             <div className="w-full max-w-md rounded-2xl overflow-hidden"
               style={{ background: isDark ? '#141414' : '#ffffff', border: `1px solid ${t.border}` }}>
-              <div className="flex items-center justify-between px-6 py-4"
+              <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4"
                 style={{ borderBottom: `1px solid ${t.border}` }}>
                 <div className="flex items-center gap-3">
                   <Navigation size={15} style={{ color: '#c0121e' }} />
@@ -1930,8 +1930,8 @@ export default function Admin() {
                   <X size={16} />
                 </button>
               </div>
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-3">
+              <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs mb-1.5" style={{ color: t.textMuted }}>Route (waypoints)</label>
                     <input
@@ -1962,7 +1962,7 @@ export default function Admin() {
                   ) : (
                     allAircraftTypes.map(type => (
                       <label key={type}
-                        className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors"
+                        className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200"
                         style={{ background: t.input, border: `1px solid ${t.border}` }}
                         onMouseEnter={e => e.currentTarget.style.background = t.navHover}
                         onMouseLeave={e => e.currentTarget.style.background = t.input}>
@@ -1994,12 +1994,12 @@ export default function Admin() {
                       fetchAll()
                     } catch (err) { console.error(err) }
                   }}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02]"
                     style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
                     Save Changes
                   </button>
                   <button onClick={() => setRouteTypeEditor(null)}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
                     style={{ background: t.badge, color: t.textSub }}>
                     Cancel
                   </button>
@@ -2010,7 +2010,7 @@ export default function Admin() {
         )}
 
         {/* Footer */}
-        <footer className="px-6 py-4"
+        <footer className="px-4 sm:px-6 lg:px-8 py-4"
           style={{ borderTop: `1px solid ${t.border}`, background: t.sidebar }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
