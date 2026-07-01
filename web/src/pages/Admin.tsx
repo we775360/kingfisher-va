@@ -793,11 +793,38 @@ export default function Admin() {
                   {formMsg}
                 </div>
               )}
-              <button onClick={submitAircraft}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors"
-                style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
-                Add to Fleet
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={submitAircraft}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors"
+                  style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
+                  Add to Fleet
+                </button>
+                <button onClick={() => {
+                  const icao = aircraftForm.icao.trim().toUpperCase()
+                  if (!icao) return
+                  const existing = aircraft.find(a => a.icao === icao)
+                  if (existing) {
+                    setAircraftForm({
+                      icao: existing.icao,
+                      name: existing.name,
+                      registration: '',
+                      type: existing.type,
+                      engines: existing.engines,
+                      pax: String(existing.pax),
+                      range: String(existing.range),
+                      cruiseSpeed: String(existing.cruiseSpeed),
+                      hub: existing.hub || '',
+                    })
+                    setFormMsg('Filled from ' + existing.registration)
+                  } else {
+                    setFormMsg('No existing aircraft found for ICAO ' + icao)
+                  }
+                }}
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                  style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6' }}>
+                  Fill for ICAO
+                </button>
+              </div>
             </div>
 
             {/* Aircraft list */}

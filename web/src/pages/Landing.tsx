@@ -10,7 +10,7 @@ import 'leaflet/dist/leaflet.css'
 import { 
   Plane, Users, Navigation, Activity, Trophy, ArrowRight, 
   ExternalLink, Globe as GlobeIcon, Shield, Zap, Info, Camera,
-  MapPin, Clock, Wind, ArrowUpRight, Radio, Mail, 
+  MapPin, Clock, Wind, ArrowUpRight, Radio, Mail, Wrench,
   ChevronDown, Menu, X, Landmark, Compass, Award, Share2, PlayCircle,
   Sun, Moon, Headphones, Radio as RadioIcon, Calendar,
   Check, Star, Download, Monitor
@@ -632,6 +632,27 @@ export default function Landing() {
                                     <div className={`text-xs font-bold ${!isDark && 'text-slate-700'}`}>{ac.pax}</div>
                                 </div>
                             </div>
+                            <div className={`grid grid-cols-2 gap-6 border-t ${theme.border} pt-6 mt-6`}>
+                                <div>
+                                    <div className={`flex items-center gap-1.5 text-[8px] font-black ${theme.textMuted} uppercase tracking-widest mb-1`}>
+                                        <MapPin size={10} /> Location
+                                    </div>
+                                    <div className={`text-xs font-bold ${!isDark && 'text-slate-700'}`}>{ac.currentLocation || ac.hub || '—'}</div>
+                                </div>
+                                <div>
+                                    <div className={`flex items-center gap-1.5 text-[8px] font-black ${theme.textMuted} uppercase tracking-widest mb-1`}>
+                                        <Clock size={10} /> Hours
+                                    </div>
+                                    <div className={`text-xs font-bold ${!isDark && 'text-slate-700'}`}>{(ac.totalFlightHours || 0).toFixed(1)}h</div>
+                                </div>
+                            </div>
+                            {ac.maintenanceStatus === 'IN_MAINTENANCE' && (
+                                <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-bold"
+                                    style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                                    <Wrench size={12} /> IN MAINTENANCE
+                                    {ac.maintenanceUntil && ` · until ${new Date(ac.maintenanceUntil).toLocaleDateString()}`}
+                                </div>
+                            )}
                         </div>
                     </motion.div>
                 )) : (
