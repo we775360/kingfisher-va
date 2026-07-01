@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -11,9 +11,22 @@ let aircraftProfiles: Record<string, any> = {}
 
 let loaded = false
 
+function findDataDir(): string {
+  const candidates = [
+    join(__dirname, '..', '..', 'data'),
+    join(__dirname, '..', '..', '..', 'data'),
+    join(process.cwd(), 'src', 'data'),
+    join(process.cwd(), 'data'),
+  ]
+  for (const dir of candidates) {
+    if (existsSync(join(dir, 'nav-airports.json'))) return dir
+  }
+  return candidates[0]
+}
+
 export function loadNavDatabase() {
   if (loaded) return
-  const dataDir = join(__dirname, '..', '..', 'data')
+  const dataDir = findDataDir()
   airports = JSON.parse(readFileSync(join(dataDir, 'nav-airports.json'), 'utf-8'))
   waypoints = JSON.parse(readFileSync(join(dataDir, 'nav-waypoints.json'), 'utf-8'))
   airways = JSON.parse(readFileSync(join(dataDir, 'nav-airways.json'), 'utf-8'))
