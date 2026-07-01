@@ -14,7 +14,6 @@ import acarsRoutes from './routes/acars.routes.js'
 import { fsacarsRoutes } from './routes/fsacars.routes.js'
 import { atcRoutes } from './routes/atc.routes.js'
 import { realisticFlightsRoutes } from './routes/realistic-flights.routes.js'
-import { ofpRoutes } from './routes/ofp.routes.js'
 import { initializeDiscordBot } from './discord/discord.js'
 dotenv.config()
 
@@ -51,7 +50,6 @@ await app.register(acarsRoutes, { prefix: '/api/v1/acars' })
 await app.register(fsacarsRoutes, { prefix: '/api/v1' })
 await app.register(atcRoutes, { prefix: '/api/v1' })
 await app.register(realisticFlightsRoutes, { prefix: '/api/v1' })
-await app.register(ofpRoutes, { prefix: '/api/v1' })
 
 // ── SEO / PUBLIC FILES ──
 app.get('/robots.txt', async (_req, reply) => {
