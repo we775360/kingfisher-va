@@ -203,8 +203,10 @@ export default function Admin() {
         ...routeForm,
         distance: Number(routeForm.distance),
         duration: Number(routeForm.duration),
+        allowedTypes: routeTypeSelections.length > 0 ? routeTypeSelections : null,
       })
       setRouteForm({ flightNumber: '', depIcao: '', arrIcao: '', depName: '', arrName: '', distance: '', duration: '' })
+      setRouteTypeSelections([])
       setFormMsg('Route added!')
       fetchAll()
     } catch (err: any) {
@@ -939,6 +941,38 @@ export default function Admin() {
                     />
                   </div>
                 ))}
+              </div>
+
+              {/* Allowed aircraft types for this route */}
+              <div className="mb-4">
+                <label className="block text-xs font-semibold mb-2" style={{ color: t.textMuted }}>
+                  ALLOWED AIRCRAFT TYPES (leave empty for all)
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {allAircraftTypes.length === 0 ? (
+                    <span className="text-xs" style={{ color: t.textMuted }}>No aircraft types found. Add aircraft first.</span>
+                  ) : (
+                    allAircraftTypes.map(type => {
+                      const selected = routeTypeSelections.includes(type)
+                      return (
+                        <button key={type}
+                          onClick={() => {
+                            setRouteTypeSelections(prev =>
+                              prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+                            )
+                          }}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                          style={{
+                            background: selected ? 'rgba(192,18,30,0.15)' : t.input,
+                            border: `1px solid ${selected ? 'rgba(192,18,30,0.4)' : t.border}`,
+                            color: selected ? '#c0121e' : t.textSub,
+                          }}>
+                          {type}
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
               </div>
               {formMsg && active === 'routes' && (
                 <div className="mb-3 text-xs px-3 py-2 rounded-lg"

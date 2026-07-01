@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Plane, Navigation, Clock, Search, Filter,
-  ChevronRight, X, Calendar, Globe, Radio,
-  DollarSign, Award, Info, Check, ArrowRight,
-  MapPin, Wrench, AlertTriangle
+  Plane, Navigation, Clock, Search,
+  ChevronRight, X, Calendar, Radio,
+  DollarSign, Info, Check, ArrowRight,
+  MapPin, Wrench, AlertTriangle, ChevronLeft
 } from 'lucide-react'
 import { useThemeStore } from '../store/theme.store'
 import { useAuthStore } from '../store/auth.store'
@@ -19,20 +19,17 @@ export default function Flights() {
   const navigate = useNavigate()
 
   const [aircraft, setAircraft] = useState<any[]>([])
+  const [selectedFamily, setSelectedFamily] = useState<string | null>(null)
   const [selectedAircraft, setSelectedAircraft] = useState<any>(null)
   const [routes, setRoutes] = useState<any[]>([])
   const [returnRoute, setReturnRoute] = useState<any>(null)
   const [myBookings, setMyBookings] = useState<any[]>([])
-  const [realisticOpsBookings, setRealisticOpsBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [routesLoading, setRoutesLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [selectedRoute, setSelectedRoute] = useState<any>(null)
-  const [view, setView] = useState<'select' | 'routes' | 'mybookings'>('select')
-  const [bookingForm, setBookingForm] = useState({
-    depTime: '',
-    network: 'Offline',
-  })
+  const [view, setView] = useState<'family' | 'aircraft' | 'routes' | 'mybookings'>('family')
+  const [bookingForm, setBookingForm] = useState({ depTime: '', network: 'Offline' })
   const [bookingLoading, setBookingLoading] = useState(false)
   const [bookingMsg, setBookingMsg] = useState('')
   const [bookingSuccess, setBookingSuccess] = useState(false)
@@ -64,10 +61,10 @@ export default function Flights() {
 
   useEffect(() => {
     if (!isAuthenticated) { navigate('/login'); return }
-    fetchAircraft()
+    fetchData()
   }, [])
 
-  const fetchAircraft = async () => {
+  const fetchData = async () => {
     try {
       const [a, b, rb] = await Promise.all([
         api.get('/aircraft'),
@@ -95,7 +92,6 @@ export default function Flights() {
         })),
       ]
       setMyBookings(merged)
-      setRealisticOpsBookings(rb.data || [])
     } catch (err) {
       console.error(err)
     } finally {
@@ -117,15 +113,56 @@ export default function Flights() {
     }
   }
 
+  const handleSelectFamily = (family: string) => {
+    setSelectedFamily(family)
+    setSearch('')
+    setView('aircraft')
+  }
+
   const handleSelectAircraft = async (ac: any) => {
     if (ac.maintenanceStatus === 'IN_MAINTENANCE') return
     setSelectedAircraft(ac)
+    setSearch('')
     setView('routes')
     await fetchRoutesForAircraft(ac.id)
   }
 
-  const filteredAircraft = aircraft.filter(a =>
-    `${a.name} ${a.registration} ${a.type} ${a.hub || ''} ${a.currentLocation || ''}`
+  const handleBackToFamilies = () => {
+    setView('family')
+    setSelectedFamily(null)
+    setSearch('')
+  }
+
+  const handleBackToAircraft = () => {
+    setView('aircraft')
+    setSelectedAircraft(null)
+    setRoutes([])
+    setSearch('')
+  }
+
+  // Compute families from aircraft data
+  const families = useMemo(() => {
+    const map = new Map<string, any[]>()
+    aircraft.forEach(ac => {
+      const type = ac.type || 'Unknown'
+      if (!map.has(type)) map.set(type, [])
+      map.get(type)!.push(ac)
+    })
+    return Array.from(map.entries())
+      .map(([type, list]) => ({ type, count: list.length, aircraft: list }))
+      .sort((a, b) => a.type.localeCompare(b.type))
+  }, [aircraft])
+
+  const filteredFamilies = families.filter(f =>
+    f.type.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const familyAircraft = selectedFamily
+    ? aircraft.filter(ac => ac.type === selectedFamily)
+    : []
+
+  const filteredAircraft = familyAircraft.filter(ac =>
+    `${ac.name} ${ac.registration} ${ac.hub || ''} ${ac.currentLocation || ''}`
       .toLowerCase().includes(search.toLowerCase())
   )
 
@@ -147,17 +184,10 @@ export default function Flights() {
     setBookingMsg('')
     try {
       let routeId = selectedRoute.id
-      if (selectedRoute.isReturnRoute) {
-        routeId = 'return-to-hub'
-      }
-      await api.post('/bookings', {
-        routeId,
-        aircraftId: selectedAircraft.id,
-        depTime: bookingForm.depTime,
-        network: bookingForm.network,
-      })
+      if (selectedRoute.isReturnRoute) routeId = 'return-to-hub'
+      await api.post('/bookings', { routeId, aircraftId: selectedAircraft.id, depTime: bookingForm.depTime, network: bookingForm.network })
       setBookingSuccess(true)
-      fetchAircraft()
+      fetchData()
     } catch (err: any) {
       setBookingMsg(err.response?.data?.error || 'Booking failed')
     } finally {
@@ -168,13 +198,12 @@ export default function Flights() {
   const handleCancel = async (booking: any) => {
     if (!confirm('Cancel this booking?')) return
     try {
-      const isRealistic = booking._type === 'realistic-ops'
-      if (isRealistic) {
+      if (booking._type === 'realistic-ops') {
         await api.patch(`/realistic-flights/${booking.id}/cancel`)
       } else {
         await api.patch(`/bookings/${booking.id}/cancel`)
       }
-      fetchAircraft()
+      fetchData()
     } catch (err) { console.error(err) }
   }
 
@@ -192,9 +221,7 @@ export default function Flights() {
     if (!ac.maintenanceUntil) return null
     const remaining = new Date(ac.maintenanceUntil).getTime() - Date.now()
     if (remaining <= 0) return null
-    const hours = Math.floor(remaining / 3600000)
-    const mins = Math.floor((remaining % 3600000) / 60000)
-    return `${hours}h ${mins}m`
+    return `${Math.floor(remaining / 3600000)}h ${Math.floor((remaining % 3600000) / 60000)}m`
   }
 
   if (loading) return (
@@ -214,79 +241,134 @@ export default function Flights() {
           backdropFilter: 'blur(12px)',
           borderBottom: `1px solid ${t.border}`,
         }}>
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/dashboard"
-              className="flex items-center gap-2 text-sm transition-colors"
-              style={{ color: t.textSub, textDecoration: 'none' }}>
-              ← Dashboard
-            </Link>
+            {view === 'aircraft' ? (
+              <button onClick={handleBackToFamilies}
+                className="flex items-center gap-2 text-sm transition-colors"
+                style={{ color: t.textSub }}>
+                <ChevronLeft size={16} /> Families
+              </button>
+            ) : view === 'routes' ? (
+              <button onClick={handleBackToAircraft}
+                className="flex items-center gap-2 text-sm transition-colors"
+                style={{ color: t.textSub }}>
+                <ChevronLeft size={16} /> Aircraft
+              </button>
+            ) : (
+              <Link to="/dashboard"
+                className="flex items-center gap-2 text-sm transition-colors"
+                style={{ color: t.textSub, textDecoration: 'none' }}>
+                ← Dashboard
+              </Link>
+            )}
             <div className="w-px h-4" style={{ background: t.border }} />
             <div className="flex items-center gap-2">
               <Plane size={16} style={{ color: '#c0121e' }} />
-              <span className="font-bold text-base" style={{ color: t.text }}>Flight Booking</span>
+              <span className="font-bold text-base" style={{ color: t.text }}>
+                {view === 'family' ? 'Select Aircraft Family' :
+                 view === 'aircraft' ? `Select ${selectedFamily}` :
+                 view === 'routes' ? 'Available Routes' : 'My Flights'}
+              </span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => { setView('select'); setSelectedAircraft(null); setRoutes([]); setSearch('') }}
-              className="px-4 py-2 rounded-xl text-sm font-medium transition-colors"
-              style={{
-                background: view === 'select' ? t.navActive : 'transparent',
-                color: view === 'select' ? '#c0121e' : t.textSub,
-                border: `1px solid ${view === 'select' ? 'rgba(192,18,30,0.2)' : 'transparent'}`,
-              }}>
-              Select Aircraft
-            </button>
-            <button onClick={() => { setView('mybookings'); setSearch('') }}
-              className="px-4 py-2 rounded-xl text-sm font-medium transition-colors relative"
-              style={{
-                background: view === 'mybookings' ? t.navActive : 'transparent',
-                color: view === 'mybookings' ? '#c0121e' : t.textSub,
-                border: `1px solid ${view === 'mybookings' ? 'rgba(192,18,30,0.2)' : 'transparent'}`,
-              }}>
-              My Flights
-              {myBookings.filter(b => b.status === 'UPCOMING').length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-xs flex items-center justify-center text-white"
-                  style={{ background: '#c0121e', fontSize: '10px' }}>
-                  {myBookings.filter(b => b.status === 'UPCOMING').length}
-                </span>
-              )}
-            </button>
-          </div>
+          <button onClick={() => { setView('mybookings'); setSearch('') }}
+            className="px-4 py-2 rounded-xl text-sm font-medium transition-colors relative"
+            style={{
+              background: view === 'mybookings' ? t.navActive : 'transparent',
+              color: view === 'mybookings' ? '#c0121e' : t.textSub,
+              border: `1px solid ${view === 'mybookings' ? 'rgba(192,18,30,0.2)' : 'transparent'}`,
+            }}>
+            My Flights
+            {myBookings.filter(b => b.status === 'UPCOMING').length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-xs flex items-center justify-center text-white"
+                style={{ background: '#c0121e', fontSize: '10px' }}>
+                {myBookings.filter(b => b.status === 'UPCOMING').length}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-6">
+      <div className="max-w-4xl mx-auto px-6 py-6">
 
-        {/* ── STEP 1: SELECT AIRCRAFT ── */}
-        {view === 'select' && (
+        {/* ── STEP 1: SELECT AIRCRAFT FAMILY ── */}
+        {view === 'family' && (
           <div>
-            {/* Info box */}
             <div className="flex gap-2.5 p-3.5 rounded-xl mb-6"
               style={{ background: 'rgba(192,18,30,0.06)', border: '1px solid rgba(192,18,30,0.12)' }}>
               <Info size={14} style={{ color: '#c0121e', flexShrink: 0, marginTop: '1px' }} />
               <div className="text-xs leading-relaxed" style={{ color: '#c0121e' }}>
-                Select an aircraft first. You'll see only routes available from its current location.
+                Pick an aircraft family first, then choose a specific aircraft to see routes available from its current location.
               </div>
             </div>
 
-            {/* Search */}
             <div className="flex items-center gap-3 mb-6">
               <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-xl"
                 style={{ background: t.card, border: `1px solid ${t.border}` }}>
                 <Search size={15} style={{ color: t.textMuted }} />
-                <input
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="Search by name, registration, type or location..."
-                  className="flex-1 bg-transparent outline-none text-sm"
-                  style={{ color: t.text }}
-                />
-                {search && (
-                  <button onClick={() => setSearch('')}>
-                    <X size={14} style={{ color: t.textMuted }} />
-                  </button>
-                )}
+                <input value={search} onChange={e => setSearch(e.target.value)}
+                  placeholder="Search aircraft families..."
+                  className="flex-1 bg-transparent outline-none text-sm" style={{ color: t.text }} />
+                {search && <button onClick={() => setSearch('')}><X size={14} style={{ color: t.textMuted }} /></button>}
+              </div>
+              <div className="px-4 py-3 rounded-xl text-sm"
+                style={{ background: t.card, border: `1px solid ${t.border}`, color: t.textSub }}>
+                {filteredFamilies.length} families
+              </div>
+            </div>
+
+            {filteredFamilies.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <Plane size={40} style={{ color: t.textMuted, marginBottom: '12px' }} strokeWidth={1.5} />
+                <div className="text-sm font-medium mb-1" style={{ color: t.textSub }}>No aircraft families found</div>
+                <div className="text-xs" style={{ color: t.textMuted }}>Ask admin to add aircraft to the fleet</div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredFamilies.map((family, i) => (
+                  <motion.div key={family.type}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, delay: i * 0.03 }}
+                    onClick={() => handleSelectFamily(family.type)}
+                    className="p-5 rounded-2xl cursor-pointer transition-all duration-200 hover:scale-[1.01]"
+                    style={{ background: t.card, border: `1px solid ${t.border}` }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(192,18,30,0.4)'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = t.border}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center"
+                          style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
+                          <Plane size={20} style={{ color: 'white' }} />
+                        </div>
+                        <div>
+                          <div className="text-base font-bold" style={{ color: t.text }}>{family.type}</div>
+                          <div className="text-xs mt-0.5" style={{ color: t.textSub }}>
+                            {family.count} aircraft{family.count > 0 && ` · ${family.aircraft.filter(a => a.maintenanceStatus !== 'IN_MAINTENANCE').length} available`}
+                          </div>
+                        </div>
+                      </div>
+                      <ChevronRight size={18} style={{ color: t.textMuted }} />
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── STEP 2: SELECT AIRCRAFT ── */}
+        {view === 'aircraft' && selectedFamily && (
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-xl"
+                style={{ background: t.card, border: `1px solid ${t.border}` }}>
+                <Search size={15} style={{ color: t.textMuted }} />
+                <input value={search} onChange={e => setSearch(e.target.value)}
+                  placeholder="Search by registration, name or location..."
+                  className="flex-1 bg-transparent outline-none text-sm" style={{ color: t.text }} />
+                {search && <button onClick={() => setSearch('')}><X size={14} style={{ color: t.textMuted }} /></button>}
               </div>
               <div className="px-4 py-3 rounded-xl text-sm"
                 style={{ background: t.card, border: `1px solid ${t.border}`, color: t.textSub }}>
@@ -294,74 +376,60 @@ export default function Flights() {
               </div>
             </div>
 
-            {/* Aircraft grid */}
             {filteredAircraft.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <Plane size={40} style={{ color: t.textMuted, marginBottom: '12px' }} strokeWidth={1.5} />
-                <div className="text-sm font-medium mb-1" style={{ color: t.textSub }}>No aircraft found</div>
-                <div className="text-xs" style={{ color: t.textMuted }}>Try a different search</div>
+                <div className="text-sm font-medium mb-1" style={{ color: t.textSub }}>No aircraft in this family</div>
+                <div className="text-xs" style={{ color: t.textMuted }}>Ask admin to add {selectedFamily} aircraft</div>
               </div>
             ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-3">
                 {filteredAircraft.map((ac, i) => {
                   const inMaint = ac.maintenanceStatus === 'IN_MAINTENANCE'
                   const countdown = getMaintenanceCountdown(ac)
                   const location = ac.currentLocation || ac.hub || 'Unknown'
                   return (
                     <motion.div key={ac.id}
-                      initial={{ opacity: 0, y: 16 }}
+                      initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: i * 0.05 }}
+                      transition={{ duration: 0.25, delay: i * 0.03 }}
                       onClick={() => !inMaint && handleSelectAircraft(ac)}
-                      className={`p-5 rounded-2xl cursor-pointer transition-all duration-200 ${inMaint ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}`}
+                      className={`p-5 rounded-2xl cursor-pointer transition-all duration-200 ${inMaint ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.01]'}`}
                       style={{ background: t.card, border: `1px solid ${inMaint ? 'rgba(239,68,68,0.2)' : t.border}` }}
                       onMouseEnter={e => { if (!inMaint) e.currentTarget.style.borderColor = 'rgba(192,18,30,0.4)' }}
                       onMouseLeave={e => { if (!inMaint) e.currentTarget.style.borderColor = t.border }}>
-
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <img src="/logo.png" alt="KFR" className="w-8 h-8 object-contain" />
-                          <div>
-                            <div className="text-sm font-bold" style={{ color: t.text }}>{ac.name}</div>
-                            <div className="text-xs font-mono" style={{ color: '#c0121e' }}>{ac.registration}</div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style={{ background: 'rgba(192,18,30,0.1)' }}>
+                            <Plane size={18} style={{ color: '#c0121e' }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm font-bold" style={{ color: t.text }}>{ac.name}</span>
+                              <span className="text-xs font-mono px-2 py-0.5 rounded-md"
+                                style={{ background: t.navActive, color: '#c0121e' }}>
+                                {ac.registration}
+                              </span>
+                              {inMaint && (
+                                <span className="flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold flex-shrink-0"
+                                  style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                                  <Wrench size={11} /> {countdown || 'Maint'}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 mt-1.5">
+                              <span className="text-xs" style={{ color: t.textSub }}>
+                                Hub: <strong>{ac.hub || '—'}</strong>
+                              </span>
+                              <span className="text-xs flex items-center gap-1" style={{ color: '#3b82f6' }}>
+                                <MapPin size={10} /> {location}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        {inMaint ? (
-                          <div className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold"
-                            style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
-                            <Wrench size={12} />
-                            {countdown ? `${countdown}` : 'Maintenance'}
-                          </div>
-                        ) : (
-                          <ChevronRight size={16} style={{ color: t.textMuted }} />
-                        )}
+                        {!inMaint && <ChevronRight size={16} style={{ color: t.textMuted, flexShrink: 0 }} />}
                       </div>
-
-                      <div className="grid grid-cols-2 gap-3 mb-3">
-                        <div className="p-2.5 rounded-xl" style={{ background: t.input }}>
-                          <div className="text-xs mb-0.5" style={{ color: t.textMuted }}>Type</div>
-                          <div className="text-xs font-semibold" style={{ color: t.text }}>{ac.type}</div>
-                        </div>
-                        <div className="p-2.5 rounded-xl" style={{ background: t.input }}>
-                          <div className="text-xs mb-0.5" style={{ color: t.textMuted }}>Hub</div>
-                          <div className="text-xs font-semibold" style={{ color: t.text }}>{ac.hub || '—'}</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 p-2.5 rounded-xl"
-                        style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.12)' }}>
-                        <MapPin size={12} style={{ color: '#3b82f6' }} />
-                        <span className="text-xs font-medium" style={{ color: '#3b82f6' }}>
-                          Current Location: <strong>{location}</strong>
-                        </span>
-                      </div>
-
-                      {inMaint && countdown && (
-                        <div className="mt-2 flex items-center gap-1.5 text-xs" style={{ color: '#ef4444' }}>
-                          <AlertTriangle size={11} />
-                          Available in {countdown}
-                        </div>
-                      )}
                     </motion.div>
                   )
                 })}
@@ -370,7 +438,7 @@ export default function Flights() {
           </div>
         )}
 
-        {/* ── STEP 2: SELECT ROUTE ── */}
+        {/* ── STEP 3: SELECT ROUTE ── */}
         {view === 'routes' && selectedAircraft && (
           <div>
             {/* Aircraft info bar */}
@@ -386,12 +454,8 @@ export default function Flights() {
                     {selectedAircraft.name} · {selectedAircraft.registration}
                   </div>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className="text-xs" style={{ color: t.textSub }}>
-                      <strong>Type:</strong> {selectedAircraft.type}
-                    </span>
-                    <span className="text-xs" style={{ color: t.textSub }}>
-                      <strong>Hub:</strong> {selectedAircraft.hub || '—'}
-                    </span>
+                    <span className="text-xs" style={{ color: t.textSub }}><strong>Type:</strong> {selectedAircraft.type}</span>
+                    <span className="text-xs" style={{ color: t.textSub }}><strong>Hub:</strong> {selectedAircraft.hub || '—'}</span>
                     <span className="text-xs font-semibold" style={{ color: '#3b82f6' }}>
                       <MapPin size={10} style={{ display: 'inline', marginRight: 2 }} />
                       {selectedAircraft.currentLocation || selectedAircraft.hub || 'Unknown'}
@@ -399,10 +463,10 @@ export default function Flights() {
                   </div>
                 </div>
               </div>
-              <button onClick={() => { setView('select'); setSelectedAircraft(null); setRoutes([]); setSearch('') }}
+              <button onClick={handleBackToAircraft}
                 className="px-3 py-2 rounded-xl text-xs font-medium transition-colors"
                 style={{ background: t.navHover, color: t.textSub }}>
-                Change Aircraft
+                Change
               </button>
             </div>
 
@@ -413,23 +477,14 @@ export default function Flights() {
               </div>
             ) : (
               <div>
-                {/* Search */}
                 <div className="flex items-center gap-3 mb-6">
                   <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-xl"
                     style={{ background: t.card, border: `1px solid ${t.border}` }}>
                     <Search size={15} style={{ color: t.textMuted }} />
-                    <input
-                      value={search}
-                      onChange={e => setSearch(e.target.value)}
+                    <input value={search} onChange={e => setSearch(e.target.value)}
                       placeholder="Search routes..."
-                      className="flex-1 bg-transparent outline-none text-sm"
-                      style={{ color: t.text }}
-                    />
-                    {search && (
-                      <button onClick={() => setSearch('')}>
-                        <X size={14} style={{ color: t.textMuted }} />
-                      </button>
-                    )}
+                      className="flex-1 bg-transparent outline-none text-sm" style={{ color: t.text }} />
+                    {search && <button onClick={() => setSearch('')}><X size={14} style={{ color: t.textMuted }} /></button>}
                   </div>
                   <div className="px-4 py-3 rounded-xl text-sm"
                     style={{ background: t.card, border: `1px solid ${t.border}`, color: t.textSub }}>
@@ -437,40 +492,33 @@ export default function Flights() {
                   </div>
                 </div>
 
-                {/* Return to hub route */}
+                {/* Return to hub */}
                 {returnRoute && !search && (
                   <motion.div
-                    initial={{ opacity: 0, y: 16 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     onClick={() => { setSelectedRoute(returnRoute); setBookingSuccess(false); setBookingMsg(''); setBookingForm({ depTime: '', network: 'Offline' }) }}
-                    className="p-5 rounded-2xl cursor-pointer transition-all duration-200 hover:scale-[1.02] mb-4"
+                    className="p-5 rounded-2xl cursor-pointer transition-all duration-200 hover:scale-[1.01] mb-3"
                     style={{ background: t.card, border: '2px solid rgba(245,158,11,0.3)' }}
                     onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(245,158,11,0.6)'}
                     onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(245,158,11,0.3)'}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <AlertTriangle size={14} style={{ color: '#f59e0b' }} />
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle size={13} style={{ color: '#f59e0b' }} />
                       <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#f59e0b' }}>Return to Hub</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold" style={{ color: t.text }}>{returnRoute.depIcao}</div>
+                      <span className="text-lg font-bold" style={{ color: t.text }}>{returnRoute.depIcao}</span>
+                      <div className="flex-1 flex items-center gap-1">
+                        <div className="flex-1 h-px" style={{ background: t.border }} />
+                        <Plane size={12} style={{ color: '#f59e0b' }} />
+                        <div className="flex-1 h-px" style={{ background: t.border }} />
                       </div>
-                      <div className="flex-1 flex flex-col items-center gap-1">
-                        <div className="w-full flex items-center gap-1">
-                          <div className="flex-1 h-px" style={{ background: t.border }} />
-                          <Plane size={14} style={{ color: '#f59e0b' }} />
-                          <div className="flex-1 h-px" style={{ background: t.border }} />
-                        </div>
-                        <div className="text-xs" style={{ color: t.textMuted }}>Return flight</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold" style={{ color: t.text }}>{returnRoute.arrIcao}</div>
-                      </div>
+                      <span className="text-lg font-bold" style={{ color: t.text }}>{returnRoute.arrIcao}</span>
                     </div>
                   </motion.div>
                 )}
 
-                {/* Route cards */}
+                {/* Route list */}
                 {filteredRoutes.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20">
                     <Navigation size={40} style={{ color: t.textMuted, marginBottom: '12px' }} strokeWidth={1.5} />
@@ -480,61 +528,50 @@ export default function Flights() {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="space-y-3">
                     {filteredRoutes.map((route, i) => (
                       <motion.div key={route.id || `rth-${i}`}
-                        initial={{ opacity: 0, y: 16 }}
+                        initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: i * 0.05 }}
+                        transition={{ duration: 0.25, delay: i * 0.03 }}
                         onClick={() => { setSelectedRoute(route); setBookingSuccess(false); setBookingMsg(''); setBookingForm({ depTime: '', network: 'Offline' }) }}
-                        className="p-5 rounded-2xl cursor-pointer transition-all duration-200 hover:scale-[1.02]"
+                        className="p-5 rounded-2xl cursor-pointer transition-all duration-200 hover:scale-[1.01]"
                         style={{ background: t.card, border: `1px solid ${route.isReturnRoute ? 'rgba(245,158,11,0.3)' : t.border}` }}
                         onMouseEnter={e => e.currentTarget.style.borderColor = route.isReturnRoute ? 'rgba(245,158,11,0.6)' : 'rgba(192,18,30,0.4)'}
                         onMouseLeave={e => e.currentTarget.style.borderColor = route.isReturnRoute ? 'rgba(245,158,11,0.3)' : t.border}>
-
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-2">
-                            <img src="/logo.png" alt="KFR" className="w-8 h-8 object-contain" />
-                            <span className="text-sm font-bold font-mono" style={{ color: route.isReturnRoute ? '#f59e0b' : '#c0121e' }}>
-                              {route.flightNumber}
-                            </span>
-                          </div>
-                          <ChevronRight size={16} style={{ color: t.textMuted }} />
-                        </div>
-
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="text-center">
-                            <div className="text-2xl font-bold" style={{ color: t.text }}>{route.depIcao}</div>
-                            <div className="text-xs mt-0.5 truncate max-w-[80px]" style={{ color: t.textSub }}>{route.depName}</div>
-                          </div>
-                          <div className="flex-1 flex flex-col items-center gap-1">
-                            <div className="w-full flex items-center gap-1">
-                              <div className="flex-1 h-px" style={{ background: t.border }} />
-                              <Plane size={14} style={{ color: route.isReturnRoute ? '#f59e0b' : '#c0121e' }} />
-                              <div className="flex-1 h-px" style={{ background: t.border }} />
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                              style={{ background: 'rgba(192,18,30,0.1)' }}>
+                              <Navigation size={16} style={{ color: '#c0121e' }} />
                             </div>
-                            <div className="text-xs" style={{ color: t.textMuted }}>{route.distance || 0} nm</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-3">
+                                <span className="text-sm font-bold font-mono" style={{ color: route.isReturnRoute ? '#f59e0b' : '#c0121e' }}>
+                                  {route.flightNumber}
+                                </span>
+                                <span className="text-sm font-semibold" style={{ color: t.text }}>
+                                  {route.depIcao}
+                                </span>
+                                <ArrowRight size={12} style={{ color: t.textMuted }} />
+                                <span className="text-sm font-semibold" style={{ color: t.text }}>
+                                  {route.arrIcao}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-4 mt-1">
+                                <span className="text-xs" style={{ color: t.textSub }}>
+                                  {route.depName || route.depIcao} → {route.arrName || route.arrIcao}
+                                </span>
+                                <span className="text-xs" style={{ color: t.textMuted }}>
+                                  {Math.floor((route.duration || 60) / 60)}h {(route.duration || 60) % 60}m
+                                </span>
+                                <span className="text-xs font-semibold" style={{ color: '#10b981' }}>
+                                  ${estimatedEarnings(route)}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="text-center">
-                            <div className="text-2xl font-bold" style={{ color: t.text }}>{route.arrIcao}</div>
-                            <div className="text-xs mt-0.5 truncate max-w-[80px]" style={{ color: t.textSub }}>{route.arrName}</div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-3"
-                          style={{ borderTop: `1px solid ${t.border}` }}>
-                          <div className="flex items-center gap-1.5">
-                            <Clock size={12} style={{ color: t.textMuted }} />
-                            <span className="text-xs" style={{ color: t.textSub }}>
-                              {Math.floor((route.duration || 60) / 60)}h {(route.duration || 60) % 60}m
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <DollarSign size={12} style={{ color: '#10b981' }} />
-                            <span className="text-xs font-semibold" style={{ color: '#10b981' }}>
-                              ${estimatedEarnings(route)}
-                            </span>
-                          </div>
+                          <ChevronRight size={16} style={{ color: t.textMuted, flexShrink: 0 }} />
                         </div>
                       </motion.div>
                     ))}
@@ -560,11 +597,11 @@ export default function Flights() {
               <div className="flex flex-col items-center justify-center py-20">
                 <Plane size={40} style={{ color: t.textMuted, marginBottom: '12px' }} strokeWidth={1.5} />
                 <div className="text-sm font-medium mb-1" style={{ color: t.textSub }}>No flights yet</div>
-                <div className="text-xs mb-4" style={{ color: t.textMuted }}>Select an aircraft and book your first flight!</div>
-                <button onClick={() => setView('select')}
+                <div className="text-xs mb-4" style={{ color: t.textMuted }}>Select an aircraft family and book your first flight!</div>
+                <button onClick={() => setView('family')}
                   className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
                   style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
-                  Select Aircraft
+                  Browse Aircraft
                 </button>
               </div>
             ) : (
@@ -575,72 +612,53 @@ export default function Flights() {
                   <motion.div key={`${booking._type}-${booking.id}`}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: i * 0.05 }}
+                    transition={{ duration: 0.25, delay: i * 0.03 }}
                     className="p-5 rounded-2xl"
                     style={{ background: t.card, border: `1px solid ${booking._type === 'realistic-ops' ? 'rgba(192,18,30,0.2)' : t.border}` }}>
                     <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-3">
                           <span className="text-sm font-bold font-mono" style={{ color: '#c0121e' }}>
                             {booking.flightNumber || booking.route?.flightNumber}
                           </span>
                           {isRealisticOps && (
                             <span className="px-2 py-0.5 rounded-full text-[9px] font-bold"
-                              style={{ background: 'rgba(192,18,30,0.1)', color: '#c0121e' }}>
-                              REALISTIC OPS
-                            </span>
+                              style={{ background: 'rgba(192,18,30,0.1)', color: '#c0121e' }}>REALISTIC OPS</span>
                           )}
                           <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                            style={{ background: s.bg, color: s.color }}>
-                            {s.label}
-                          </span>
+                            style={{ background: s.bg, color: s.color }}>{s.label}</span>
                         </div>
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="text-center">
-                            <div className="text-xl font-bold" style={{ color: t.text }}>{booking.depIcao || booking.route?.depIcao}</div>
-                            <div className="text-xs" style={{ color: t.textSub }}>{booking.depName || booking.route?.depName}</div>
-                          </div>
-                          <ArrowRight size={16} style={{ color: t.textMuted }} />
-                          <div className="text-center">
-                            <div className="text-xl font-bold" style={{ color: t.text }}>{booking.arrIcao || booking.route?.arrIcao}</div>
-                            <div className="text-xs" style={{ color: t.textSub }}>{booking.arrName || booking.route?.arrName}</div>
-                          </div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-base font-bold" style={{ color: t.text }}>{booking.depIcao || booking.route?.depIcao}</span>
+                          <ArrowRight size={14} style={{ color: t.textMuted }} />
+                          <span className="text-base font-bold" style={{ color: t.text }}>{booking.arrIcao || booking.route?.arrIcao}</span>
                         </div>
                         <div className="flex items-center gap-4 flex-wrap">
                           {!isRealisticOps && (
-                            <div className="flex items-center gap-1.5">
-                              <Plane size={12} style={{ color: t.textMuted }} />
-                              <span className="text-xs" style={{ color: t.textSub }}>
-                                {booking.aircraft?.name} · {booking.aircraft?.registration}
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-1.5">
-                            <Calendar size={12} style={{ color: t.textMuted }} />
                             <span className="text-xs" style={{ color: t.textSub }}>
-                              {isRealisticOps ? booking.depTime : new Date(booking.depTime).toLocaleString()}
+                              <Plane size={11} style={{ display: 'inline', marginRight: 2 }} />
+                              {booking.aircraft?.name} · {booking.aircraft?.registration}
                             </span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Radio size={12} style={{ color: t.textMuted }} />
-                            <span className="text-xs" style={{ color: t.textSub }}>{booking.network}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <DollarSign size={12} style={{ color: '#10b981' }} />
-                            <span className="text-xs font-semibold" style={{ color: '#10b981' }}>
-                              ${isRealisticOps ? (booking.earnings || 0) : (booking.earnings?.toFixed(0) || '0')} estimated
-                            </span>
-                          </div>
+                          )}
+                          <span className="text-xs" style={{ color: t.textSub }}>
+                            <Calendar size={11} style={{ display: 'inline', marginRight: 2 }} />
+                            {isRealisticOps ? booking.depTime : new Date(booking.depTime).toLocaleString()}
+                          </span>
+                          <span className="text-xs" style={{ color: t.textSub }}>
+                            <Radio size={11} style={{ display: 'inline', marginRight: 2 }} />
+                            {booking.network}
+                          </span>
+                          <span className="text-xs font-semibold" style={{ color: '#10b981' }}>
+                            <DollarSign size={11} style={{ display: 'inline' }} />
+                            ${isRealisticOps ? (booking.earnings || 0) : (booking.earnings?.toFixed(0) || '0')} est.
+                          </span>
                         </div>
                       </div>
                       <div className="flex flex-col gap-2 flex-shrink-0">
-                        <button onClick={() => {
-                          const bkType = isRealisticOps ? 'realistic' : 'standard'
-                          navigate(`/booking/${bkType}/${booking.id}`)
-                        }}
-                          className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 justify-center"
+                        <button onClick={() => navigate(`/booking/${isRealisticOps ? 'realistic' : 'standard'}/${booking.id}`)}
+                          className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
                           style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
-                          <Navigation size={11} /> Details
+                          Details
                         </button>
                         {booking.status === 'UPCOMING' && !isRealisticOps && (
                           <Link to="/pirep"
@@ -651,7 +669,7 @@ export default function Flights() {
                         )}
                         {booking.status === 'UPCOMING' && (
                           <button onClick={() => handleCancel(booking)}
-                            className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
+                            className="px-3 py-2 rounded-xl text-xs font-semibold"
                             style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
                             Cancel
                           </button>
@@ -660,9 +678,7 @@ export default function Flights() {
                           <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl"
                             style={{ background: 'rgba(16,185,129,0.1)' }}>
                             <Check size={13} style={{ color: '#10b981' }} />
-                            <span className="text-xs font-semibold" style={{ color: '#10b981' }}>
-                              +${booking.earnings?.toFixed(0)}
-                            </span>
+                            <span className="text-xs font-semibold" style={{ color: '#10b981' }}>+${booking.earnings?.toFixed(0)}</span>
                           </div>
                         )}
                       </div>
@@ -691,8 +707,6 @@ export default function Flights() {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="w-full max-w-lg rounded-2xl flex flex-col"
               style={{ background: isDark ? '#141414' : '#ffffff', border: `1px solid ${t.border}`, maxHeight: '90vh' }}>
-
-              {/* Modal header */}
               <div className="flex items-center justify-between px-6 py-4"
                 style={{ borderBottom: `1px solid ${t.border}` }}>
                 <div className="flex items-center gap-3">
@@ -701,19 +715,12 @@ export default function Flights() {
                     <Plane size={16} style={{ color: 'white' }} />
                   </div>
                   <div>
-                    <div className="font-bold text-sm" style={{ color: t.text }}>
-                      {selectedRoute.flightNumber}
-                    </div>
-                    <div className="text-xs" style={{ color: t.textSub }}>
-                      {selectedRoute.depIcao} → {selectedRoute.arrIcao}
-                    </div>
+                    <div className="font-bold text-sm" style={{ color: t.text }}>{selectedRoute.flightNumber}</div>
+                    <div className="text-xs" style={{ color: t.textSub }}>{selectedRoute.depIcao} → {selectedRoute.arrIcao}</div>
                   </div>
                 </div>
                 <button onClick={() => setSelectedRoute(null)}
-                  className="p-2 rounded-xl transition-colors"
-                  style={{ color: t.textMuted }}
-                  onMouseEnter={e => e.currentTarget.style.background = t.navHover}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                  className="p-2 rounded-xl transition-colors" style={{ color: t.textMuted }}>
                   <X size={18} />
                 </button>
               </div>
@@ -729,16 +736,14 @@ export default function Flights() {
                     {selectedRoute.flightNumber} — {selectedRoute.depIcao} → {selectedRoute.arrIcao}
                   </div>
                   <div className="text-xs mb-6" style={{ color: t.textMuted }}>
-                    Aircraft: {selectedAircraft.name} · {selectedAircraft.registration}
+                    {selectedAircraft.name} · {selectedAircraft.registration}
                   </div>
                   <div className="flex gap-3 justify-center">
                     <button
                       onClick={async () => {
                         setSelectedRoute(null);
                         const b = await api.get('/bookings/my').then(r => r.data);
-                        const newest = b?.[0];
-                        if (newest?.id) navigate(`/booking/standard/${newest.id}`);
-                        else navigate('/flights');
+                        navigate(b?.[0]?.id ? `/booking/standard/${b[0].id}` : '/flights');
                       }}
                       className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
                       style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
@@ -753,19 +758,14 @@ export default function Flights() {
                 </div>
               ) : (
                 <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
-
-                  {/* Selected aircraft info */}
                   <div className="flex items-center gap-3 p-3 rounded-xl"
                     style={{ background: t.badge, border: `1px solid ${t.border}` }}>
                     <Plane size={14} style={{ color: '#c0121e' }} />
                     <div className="text-xs" style={{ color: t.textSub }}>
                       <span className="font-semibold" style={{ color: t.text }}>{selectedAircraft.name}</span>
-                      {' · '}{selectedAircraft.registration}
-                      {' · '}From <strong>{selectedRoute.depIcao}</strong>
+                      {' · '}{selectedAircraft.registration} · From <strong>{selectedRoute.depIcao}</strong>
                     </div>
                   </div>
-
-                  {/* Route details */}
                   <div className="p-4 rounded-xl"
                     style={{ background: t.navActive, border: `1px solid rgba(192,18,30,0.1)` }}>
                     <div className="flex items-center justify-between mb-3">
@@ -774,11 +774,7 @@ export default function Flights() {
                         <div className="text-xs" style={{ color: t.textSub }}>{selectedRoute.depName}</div>
                       </div>
                       <div className="flex flex-col items-center gap-1">
-                        <div className="flex items-center gap-2">
-                          <div className="w-12 h-px" style={{ background: 'rgba(192,18,30,0.3)' }} />
-                          <Plane size={14} style={{ color: '#c0121e' }} />
-                          <div className="w-12 h-px" style={{ background: 'rgba(192,18,30,0.3)' }} />
-                        </div>
+                        <Plane size={14} style={{ color: '#c0121e' }} />
                         <div className="text-xs" style={{ color: t.textMuted }}>{selectedRoute.distance || 0} nm</div>
                       </div>
                       <div className="text-center">
@@ -795,48 +791,30 @@ export default function Flights() {
                         <div className="text-xs" style={{ color: t.textMuted }}>Duration</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-xs font-semibold" style={{ color: '#10b981' }}>
-                          ${estimatedEarnings(selectedRoute)}
-                        </div>
+                        <div className="text-xs font-semibold" style={{ color: '#10b981' }}>${estimatedEarnings(selectedRoute)}</div>
                         <div className="text-xs" style={{ color: t.textMuted }}>Earnings</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-xs font-semibold" style={{ color: t.text }}>
-                          ${500}/hr
-                        </div>
+                        <div className="text-xs font-semibold" style={{ color: t.text }}>$500/hr</div>
                         <div className="text-xs" style={{ color: t.textMuted }}>Pay Rate</div>
                       </div>
                     </div>
                   </div>
-
-                  {/* Info box */}
                   <div className="flex gap-2.5 p-3.5 rounded-xl"
                     style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.15)' }}>
                     <Info size={14} style={{ color: '#3b82f6', flexShrink: 0, marginTop: '1px' }} />
                     <div className="text-xs leading-relaxed" style={{ color: '#3b82f6' }}>
-                      <a href="/fsacars" className="text-blue-500 hover:text-blue-400 underline">FSACARS</a> tracks your flight automatically.
-                       Manual PIREPs are also accepted via the My Flights portal.
+                      <a href="/fsacars" className="text-blue-500 hover:text-blue-400 underline">FSACARS</a> auto-tracks your flight. Manual PIREPs also accepted.
                     </div>
                   </div>
-
-                  {/* Departure time */}
                   <div>
-                    <label className="block text-xs font-semibold mb-2" style={{ color: t.textMuted }}>
-                      DEPARTURE DATE & TIME
-                    </label>
-                    <input
-                      type="datetime-local"
-                      value={bookingForm.depTime}
+                    <label className="block text-xs font-semibold mb-2" style={{ color: t.textMuted }}>DEPARTURE DATE & TIME</label>
+                    <input type="datetime-local" value={bookingForm.depTime}
                       onChange={e => setBookingForm({ ...bookingForm, depTime: e.target.value })}
-                      style={inputStyle}
-                    />
+                      style={inputStyle} />
                   </div>
-
-                  {/* Network */}
                   <div>
-                    <label className="block text-xs font-semibold mb-2" style={{ color: t.textMuted }}>
-                      NETWORK
-                    </label>
+                    <label className="block text-xs font-semibold mb-2" style={{ color: t.textMuted }}>NETWORK</label>
                     <div className="grid grid-cols-3 gap-2">
                       {NETWORKS.map(net => (
                         <button key={net}
@@ -852,19 +830,13 @@ export default function Flights() {
                       ))}
                     </div>
                   </div>
-
-                  {/* Error message */}
                   {bookingMsg && (
                     <div className="px-4 py-3 rounded-xl text-xs"
                       style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
                       {bookingMsg}
                     </div>
                   )}
-
-                  {/* Book button */}
-                  <button
-                    onClick={handleBook}
-                    disabled={bookingLoading}
+                  <button onClick={handleBook} disabled={bookingLoading}
                     className="w-full py-3.5 rounded-xl text-sm font-bold text-white transition-all"
                     style={{
                       background: bookingLoading ? 'rgba(192,18,30,0.5)' : 'linear-gradient(135deg, #c0121e, #8b0000)',

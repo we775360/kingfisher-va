@@ -232,9 +232,21 @@ export const createRoute = async (req: FastifyRequest, reply: FastifyReply) => {
       arrName: z.string().min(1),
       distance: z.number().int(),
       duration: z.number().int(),
+      allowedTypes: z.array(z.string()).nullable().optional(),
     })
     const body = schema.parse(req.body)
-    const route = await prisma.route.create({ data: body })
+    const route = await prisma.route.create({
+      data: {
+        flightNumber: body.flightNumber,
+        depIcao: body.depIcao,
+        arrIcao: body.arrIcao,
+        depName: body.depName,
+        arrName: body.arrName,
+        distance: body.distance,
+        duration: body.duration,
+        allowedTypes: body.allowedTypes ?? undefined,
+      },
+    })
     return reply.status(201).send(route)
   } catch (err) {
     if (err instanceof z.ZodError) return reply.status(400).send({ error: 'Invalid input', details: err.issues })
