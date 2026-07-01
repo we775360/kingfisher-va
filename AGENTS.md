@@ -150,9 +150,67 @@ serverpass=
   - "Generate on SimBrief" button → opens SimBrief prefill page with booking data
   - IVAO remark code `RMK IVAOKFR` for flight plan filing
 
-### Remaining
-1. Test FSACARS endpoints with actual FSACARS client
-2. Consider adding a route string field to bookings so SimBrief prefill is even richer
+### 🔲 PENDING — Aircraft Location Tracking & Maintenance System (Session 8)
+
+#### Concept
+Each aircraft in the fleet has a **current location** (ICAO), updated after every completed flight. Pilots pick an aircraft first, then see only routes originating from that aircraft's current location. Aircraft accumulate flight hours and go into maintenance downtime after a threshold.
+
+#### Database Changes (Prisma)
+- **Aircraft model** — add:
+  - `currentLocation` (String, default = hub) — tracks where the plane is
+  - `totalFlightHours` (Float, default 0) — accumulated hours from approved PIREPs
+  - `maintenanceThreshold` (Int, default 50) — hours before maintenance is due (admin-configurable per aircraft)
+  - `maintenanceStatus` (enum: AVAILABLE / IN_MAINTENANCE)
+  - `maintenanceUntil` (DateTime, nullable) — when maintenance ends (6 hours after it started)
+- **Route model** — add a way to restrict which aircraft types can fly each route:
+  - Option A: `allowedTypes` (JSON array of type strings, e.g. ["A320", "A321"])
+  - Option B: new `RouteAircraftType` join table
+- **No data clearing needed** — old aircraft get `currentLocation = hub`, `totalFlightHours = 0`, `maintenanceStatus = AVAILABLE`. Old routes remain valid (can default to allowing all types, or admin assigns types post-migration).
+
+#### Updated PIREP Approval Flow
+When a PIREP is **approved** (both admin panel manual approval AND FSACARS auto-approval):
+1. Update `aircraft.currentLocation = pirep.arrIcao`
+2. Add `pirep.flightTime` to `aircraft.totalFlightHours`
+3. If `totalFlightHours >= maintenanceThreshold`, set:
+   - `maintenanceStatus = IN_MAINTENANCE`
+   - `maintenanceUntil = now + 6 hours`
+4. After `maintenanceUntil` passes, aircraft becomes `AVAILABLE` again (checked on booking fetch or via cron)
+
+#### Booking Flow Rewire (Pilot Side)
+1. Pilot visits **Duty Roster / Flights page**
+2. Step 1: Select an aircraft from fleet list → shows registration, type, hub, **current location**, maintenance status
+3. Step 2: See only routes where `route.depIcao === aircraft.currentLocation` AND aircraft type is allowed
+4. Step 3: If `aircraft.currentLocation !== aircraft.hub`, a **"Return to Hub"** route is always listed as the first option (currentLocation → hub)
+5. Step 4: Book normally (time, network, etc.)
+6. Aircraft in `IN_MAINTENANCE` status is greyed out with maintenance countdown shown
+
+#### Admin Panel Additions (Admin.tsx)
+Under **Fleet** section:
+- Per-aircraft editor: `maintenanceThreshold`, view/edit `currentLocation`, view `totalFlightHours`, manually trigger/resolve maintenance
+- New tab/column showing current location of each aircraft on the fleet list
+Under **Routes** section:
+- For each route, a multi-select to pick which aircraft types can fly it
+- Quick overview: "Routes from [airport]" grouped view
+
+#### Files to Create
+- `api/src/routes/aircraft-location.routes.ts` — endpoints for aircraft location data
+- Maybe a migration script or seed update
+
+#### Files to Modify
+- `api/prisma/schema.prisma` — Aircraft model fields + Route type restrictions
+- `api/src/controllers/admin.controller.ts` — Fleet management (maintenance fields), route type management
+- `api/src/controllers/booking.controller.ts` — Filter routes by aircraft location + allowed types
+- `api/src/controllers/pirep.controller.ts` — Update aircraft location/hours on PIREP creation
+- `api/src/controllers/fsacars.controller.ts` — Update aircraft location/hours on FSACARS pirep
+- `web/src/pages/Flights.tsx` — Complete rewrite: aircraft-first flow
+- `web/src/pages/Admin.tsx` — Fleet editor (maintenance fields), route type selector
+- Plus any other pages listing aircraft/routes
+
+#### Old Data Compatibility
+No need to delete anything. Seed:
+- `currentLocation = hub` for all existing aircraft
+- `totalFlightHours = 0`, `maintenanceThreshold = 50`, `maintenanceStatus = AVAILABLE`
+- Routes get `allowedTypes = null` (interpreted as "all types allowed") until admin updates them
 
 ---
 ## Realistic Flight Operations (ATC System)

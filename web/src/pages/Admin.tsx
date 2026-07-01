@@ -7,7 +7,7 @@ import {
   Check, X, AlertTriangle, Hash, Clock,
   TrendingUp, Navigation, Building2, Sun, Moon,
   Eye, Search, Filter, Calendar,
-  Headphones, Radio, MapPin, Key,
+  Headphones, Radio, MapPin, Key, Wrench, Edit3
 } from 'lucide-react'
 import { useAuthStore } from '../store/auth.store'
 import { useThemeStore } from '../store/theme.store'
@@ -53,6 +53,13 @@ export default function Admin() {
   const [atcStaffForm, setAtcStaffForm] = useState({ email: '', password: '', firstName: '', lastName: '', position: 'TWR', rating: 'S1' })
   const [dailyHubForm, setDailyHubForm] = useState({ depIcao: '', arrIcao: '', date: new Date().toISOString().split('T')[0] })
   const [currentDailyHub, setCurrentDailyHub] = useState<any>(null)
+
+  // Edit modal states
+  const [editAircraft, setEditAircraft] = useState<any>(null)
+  const [editAircraftForm, setEditAircraftForm] = useState({ currentLocation: '', maintenanceThreshold: 50 })
+  const [routeTypeEditor, setRouteTypeEditor] = useState<any>(null)
+  const [routeTypeSelections, setRouteTypeSelections] = useState<string[]>([])
+  const [allAircraftTypes, setAllAircraftTypes] = useState<string[]>([])
 
   // Form states
   const [aircraftForm, setAircraftForm] = useState({ icao: '', name: '', registration: '', type: '', engines: '', pax: '', range: '', cruiseSpeed: '', hub: '' })
@@ -123,6 +130,9 @@ export default function Admin() {
       setHubs(h.data)
       setEvents(e.data)
       setAnnouncements(Array.isArray(an) ? an : [])
+      // Compute unique aircraft types
+      const types = [...new Set(a.data.map((ac: any) => ac.type).filter(Boolean))] as string[]
+      setAllAircraftTypes(types)
     } catch (err) {
       console.error(err)
     } finally {
@@ -801,7 +811,7 @@ export default function Admin() {
                 <table className="w-full">
                   <thead>
                     <tr style={{ borderBottom: `1px solid ${t.border}` }}>
-                      {['Registration', 'Name', 'Type', 'Pax', 'Range', 'Hub', 'Actions'].map(h => (
+                      {['Registration', 'Name', 'Type', 'Pax', 'Range', 'Hub', 'Current Location', 'Flight Hours', 'Maintenance', 'Actions'].map(h => (
                         <th key={h} className="text-left px-5 py-3 text-xs font-semibold"
                           style={{ color: t.textMuted }}>
                           {h}
@@ -810,7 +820,14 @@ export default function Admin() {
                     </tr>
                   </thead>
                   <tbody className="divide-y" style={{ borderColor: t.border }}>
-                    {aircraft.map((a: any) => (
+                    {aircraft.map((a: any) => {
+                      const inMaint = a.maintenanceStatus === 'IN_MAINTENANCE'
+                      const countdown = a.maintenanceUntil ? (() => {
+                        const remaining = new Date(a.maintenanceUntil).getTime() - Date.now()
+                        if (remaining <= 0) return null
+                        return `${Math.floor(remaining / 3600000)}h ${Math.floor((remaining % 3600000) / 60000)}m`
+                      })() : null
+                      return (
                       <tr key={a.id}
                         onMouseEnter={e => e.currentTarget.style.background = t.navHover}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
@@ -835,14 +852,51 @@ export default function Admin() {
                           <span className="text-xs" style={{ color: t.textSub }}>{a.hub || '—'}</span>
                         </td>
                         <td className="px-5 py-3.5">
-                          <button onClick={() => deleteItem(`/admin/aircraft/${a.id}`)}
-                            className="p-1.5 rounded-lg transition-colors"
-                            style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
-                            <Trash2 size={13} />
-                          </button>
+                          <span className="text-xs font-semibold" style={{ color: '#3b82f6' }}>
+                            {a.currentLocation || a.hub || '—'}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className="text-xs" style={{ color: t.textSub }}>
+                            {a.totalFlightHours?.toFixed(1)}h / {a.maintenanceThreshold || 50}h
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          {inMaint ? (
+                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+                              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                              <Wrench size={10} />
+                              {countdown || 'IN MAINT'}
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-semibold"
+                              style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
+                              Available
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-1.5">
+                            <button onClick={() => {
+                              setEditAircraft(a)
+                              setEditAircraftForm({
+                                currentLocation: a.currentLocation || a.hub || '',
+                                maintenanceThreshold: a.maintenanceThreshold || 50,
+                              })
+                            }}
+                              className="p-1.5 rounded-lg transition-colors"
+                              style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6' }}>
+                              <Edit3 size={13} />
+                            </button>
+                            <button onClick={() => deleteItem(`/admin/aircraft/${a.id}`)}
+                              className="p-1.5 rounded-lg transition-colors"
+                              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
                 {aircraft.length === 0 && (
@@ -911,7 +965,7 @@ export default function Admin() {
                 <table className="w-full">
                   <thead>
                     <tr style={{ borderBottom: `1px solid ${t.border}` }}>
-                      {['Flight', 'From', 'To', 'Distance', 'Duration', 'Actions'].map(h => (
+                      {['Flight', 'From', 'To', 'Distance', 'Duration', 'Allowed Types', 'Actions'].map(h => (
                         <th key={h} className="text-left px-5 py-3 text-xs font-semibold"
                           style={{ color: t.textMuted }}>
                           {h}
@@ -919,8 +973,10 @@ export default function Admin() {
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y" style={{ borderColor: t.border }}>
-                    {routes.map((r: any) => (
+                    <tbody className="divide-y" style={{ borderColor: t.border }}>
+                    {routes.map((r: any) => {
+                      const types = r.allowedTypes as string[] | null
+                      return (
                       <tr key={r.id}
                         onMouseEnter={e => e.currentTarget.style.background = t.navHover}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
@@ -944,14 +1000,30 @@ export default function Admin() {
                           <span className="text-xs" style={{ color: t.textSub }}>{r.duration} min</span>
                         </td>
                         <td className="px-5 py-3.5">
-                          <button onClick={() => deleteItem(`/admin/routes/${r.id}`)}
-                            className="p-1.5 rounded-lg"
-                            style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
-                            <Trash2 size={13} />
-                          </button>
+                          <span className="text-xs" style={{ color: t.textSub }}>
+                            {types && types.length > 0 ? types.join(', ') : 'All'}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-1.5">
+                            <button onClick={() => {
+                              const currentTypes = (r.allowedTypes as string[]) || []
+                              setRouteTypeSelections(currentTypes)
+                              setRouteTypeEditor(r)
+                            }}
+                              className="p-1.5 rounded-lg"
+                              style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6' }}>
+                              <Edit3 size={13} />
+                            </button>
+                            <button onClick={() => deleteItem(`/admin/routes/${r.id}`)}
+                              className="p-1.5 rounded-lg"
+                              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
                 {routes.length === 0 && (
@@ -1676,6 +1748,167 @@ export default function Admin() {
         <div className="flex-1 p-6">
           {renderContent()}
         </div>
+
+        {/* ── EDIT AIRCRAFT MODAL ── */}
+        {editAircraft && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+            onClick={e => { if (e.target === e.currentTarget) setEditAircraft(null) }}>
+            <div className="w-full max-w-md rounded-2xl overflow-hidden"
+              style={{ background: isDark ? '#141414' : '#ffffff', border: `1px solid ${t.border}` }}>
+              <div className="flex items-center justify-between px-6 py-4"
+                style={{ borderBottom: `1px solid ${t.border}` }}>
+                <div className="flex items-center gap-3">
+                  <Wrench size={15} style={{ color: '#c0121e' }} />
+                  <span className="text-sm font-semibold" style={{ color: t.text }}>
+                    Edit Aircraft — {editAircraft.registration}
+                  </span>
+                </div>
+                <button onClick={() => setEditAircraft(null)}
+                  className="p-1.5 rounded-xl" style={{ color: t.textMuted }}>
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-xs mb-1.5" style={{ color: t.textMuted }}>Current Location (ICAO)</label>
+                  <input value={editAircraftForm.currentLocation}
+                    onChange={e => setEditAircraftForm({ ...editAircraftForm, currentLocation: e.target.value.toUpperCase() })}
+                    placeholder="VABB"
+                    style={inputStyle} />
+                </div>
+                <div>
+                  <label className="block text-xs mb-1.5" style={{ color: t.textMuted }}>
+                    Maintenance Threshold (hours): {editAircraftForm.maintenanceThreshold}h
+                  </label>
+                  <input type="range" min={10} max={200} step={5}
+                    value={editAircraftForm.maintenanceThreshold}
+                    onChange={e => setEditAircraftForm({ ...editAircraftForm, maintenanceThreshold: parseInt(e.target.value) })}
+                    style={{ width: '100%' }} />
+                </div>
+                {editAircraft.maintenanceStatus === 'IN_MAINTENANCE' && (
+                  <button onClick={async () => {
+                    try {
+                      await api.patch(`/admin/aircraft/${editAircraft.id}`, {
+                        maintenanceStatus: 'AVAILABLE',
+                      })
+                      setEditAircraft(null)
+                      fetchAll()
+                    } catch (err) { console.error(err) }
+                  }}
+                    className="w-full py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                    style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>
+                    Resolve Maintenance (Mark Available)
+                  </button>
+                )}
+                {editAircraft.maintenanceStatus !== 'IN_MAINTENANCE' && (
+                  <button onClick={async () => {
+                    try {
+                      await api.patch(`/admin/aircraft/${editAircraft.id}`, {
+                        maintenanceStatus: 'IN_MAINTENANCE',
+                        maintenanceUntil: new Date(Date.now() + 6 * 3600000).toISOString(),
+                      })
+                      setEditAircraft(null)
+                      fetchAll()
+                    } catch (err) { console.error(err) }
+                  }}
+                    className="w-full py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                    style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}>
+                    Trigger 6h Maintenance
+                  </button>
+                )}
+                <button onClick={async () => {
+                  try {
+                    await api.patch(`/admin/aircraft/${editAircraft.id}`, editAircraftForm)
+                    setEditAircraft(null)
+                    fetchAll()
+                  } catch (err) { console.error(err) }
+                }}
+                  className="w-full py-2.5 rounded-xl text-sm font-semibold text-white"
+                  style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── ROUTE TYPE EDITOR MODAL ── */}
+        {routeTypeEditor && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+            onClick={e => { if (e.target === e.currentTarget) setRouteTypeEditor(null) }}>
+            <div className="w-full max-w-md rounded-2xl overflow-hidden"
+              style={{ background: isDark ? '#141414' : '#ffffff', border: `1px solid ${t.border}` }}>
+              <div className="flex items-center justify-between px-6 py-4"
+                style={{ borderBottom: `1px solid ${t.border}` }}>
+                <div className="flex items-center gap-3">
+                  <Plane size={15} style={{ color: '#c0121e' }} />
+                  <span className="text-sm font-semibold" style={{ color: t.text }}>
+                    Route Aircraft Types — {routeTypeEditor.flightNumber}
+                  </span>
+                </div>
+                <button onClick={() => setRouteTypeEditor(null)}
+                  className="p-1.5 rounded-xl" style={{ color: t.textMuted }}>
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="text-xs" style={{ color: t.textSub }}>
+                  Select which aircraft types can fly this route. Leave empty to allow all types.
+                </div>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {allAircraftTypes.length === 0 ? (
+                    <div className="text-xs py-4 text-center" style={{ color: t.textMuted }}>
+                      No aircraft types found. Add aircraft first.
+                    </div>
+                  ) : (
+                    allAircraftTypes.map(type => (
+                      <label key={type}
+                        className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors"
+                        style={{ background: t.input, border: `1px solid ${t.border}` }}
+                        onMouseEnter={e => e.currentTarget.style.background = t.navHover}
+                        onMouseLeave={e => e.currentTarget.style.background = t.input}>
+                        <input type="checkbox"
+                          checked={routeTypeSelections.includes(type)}
+                          onChange={() => {
+                            setRouteTypeSelections(prev =>
+                              prev.includes(type)
+                                ? prev.filter(t => t !== type)
+                                : [...prev, type]
+                            )
+                          }}
+                          className="w-4 h-4 rounded"
+                          style={{ accentColor: '#c0121e' }} />
+                        <span className="text-sm font-medium" style={{ color: t.text }}>{type}</span>
+                      </label>
+                    ))
+                  )}
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={async () => {
+                    try {
+                      await api.patch(`/admin/routes/${routeTypeEditor.id}/types`, {
+                        allowedTypes: routeTypeSelections.length > 0 ? routeTypeSelections : null,
+                      })
+                      setRouteTypeEditor(null)
+                      fetchAll()
+                    } catch (err) { console.error(err) }
+                  }}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+                    style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
+                    Save
+                  </button>
+                  <button onClick={() => setRouteTypeEditor(null)}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                    style={{ background: t.badge, color: t.textSub }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <footer className="px-6 py-4"

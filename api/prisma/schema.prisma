@@ -13,6 +13,11 @@ enum Role {
   ADMIN
 }
 
+enum MaintenanceStatus {
+  AVAILABLE
+  IN_MAINTENANCE
+}
+
 enum PilotStatus {
   ACTIVE
   INACTIVE
@@ -94,21 +99,26 @@ model Pilot {
 }
 
 model Aircraft {
-  id           String   @id @default(cuid())
-  icao         String
-  name         String
-  registration String   @unique
-  type         String
-  engines      String
-  pax          Int
-  range        Int
-  cruiseSpeed  Int
-  isActive     Boolean  @default(true)
-  hub          String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  bookings     Booking[]
-  pireps       PIREP[]
+  id                  String            @id @default(cuid())
+  icao                String
+  name                String
+  registration        String            @unique
+  type                String
+  engines             String
+  pax                 Int
+  range               Int
+  cruiseSpeed         Int
+  isActive            Boolean           @default(true)
+  hub                 String?
+  currentLocation     String?
+  totalFlightHours    Float             @default(0)
+  maintenanceThreshold Int              @default(50)
+  maintenanceStatus   MaintenanceStatus @default(AVAILABLE)
+  maintenanceUntil    DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  bookings            Booking[]
+  pireps              PIREP[]
 }
 
 model Route {
@@ -121,6 +131,7 @@ model Route {
   distance     Int
   duration     Int
   isActive     Boolean  @default(true)
+  allowedTypes Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   bookings     Booking[]

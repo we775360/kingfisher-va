@@ -3,8 +3,8 @@ import { requireAdmin, requireStaff } from '../middleware/auth.middleware.js'
 import {
   getAllPilots, updatePilotStatus,
   getAllPIREPs, updatePIREPStatus,
-  getAllAircraft, createAircraft, deleteAircraft,
-  getAllRoutes, createRoute, deleteRoute,
+  getAllAircraft, createAircraft, deleteAircraft, updateAircraft,
+  getAllRoutes, createRoute, deleteRoute, updateRouteTypes,
   getAllHubs, createHub, deleteHub,
   createAnnouncement, deleteAnnouncement, getStats
 } from '../controllers/admin.controller.js'
@@ -28,11 +28,13 @@ export const adminRoutes = async (app: FastifyInstance) => {
   // Aircraft
   app.get('/admin/aircraft', { preHandler: requireStaff }, getAllAircraft)
   app.post('/admin/aircraft', { preHandler: requireAdmin }, createAircraft)
+  app.patch('/admin/aircraft/:id', { preHandler: requireAdmin }, updateAircraft)
   app.delete('/admin/aircraft/:id', { preHandler: requireAdmin }, deleteAircraft)
 
   // Routes
   app.get('/admin/routes', { preHandler: requireStaff }, getAllRoutes)
   app.post('/admin/routes', { preHandler: requireAdmin }, createRoute)
+  app.patch('/admin/routes/:id/types', { preHandler: requireAdmin }, updateRouteTypes)
   app.delete('/admin/routes/:id', { preHandler: requireAdmin }, deleteRoute)
 
   // Hubs

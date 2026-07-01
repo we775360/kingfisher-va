@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plane, Navigation, Clock, Search, Filter,
   ChevronRight, X, Calendar, Globe, Radio,
-  DollarSign, Award, Info, Check, ArrowRight
+  DollarSign, Award, Info, Check, ArrowRight,
+  MapPin, Wrench, AlertTriangle
 } from 'lucide-react'
 import { useThemeStore } from '../store/theme.store'
 import { useAuthStore } from '../store/auth.store'
@@ -17,17 +18,18 @@ export default function Flights() {
   const { isAuthenticated } = useAuthStore()
   const navigate = useNavigate()
 
-  const [routes, setRoutes] = useState<any[]>([])
   const [aircraft, setAircraft] = useState<any[]>([])
+  const [selectedAircraft, setSelectedAircraft] = useState<any>(null)
+  const [routes, setRoutes] = useState<any[]>([])
+  const [returnRoute, setReturnRoute] = useState<any>(null)
   const [myBookings, setMyBookings] = useState<any[]>([])
   const [realisticOpsBookings, setRealisticOpsBookings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [routesLoading, setRoutesLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [selectedRoute, setSelectedRoute] = useState<any>(null)
-  const [view, setView] = useState<'browse' | 'mybookings'>('browse')
+  const [view, setView] = useState<'select' | 'routes' | 'mybookings'>('select')
   const [bookingForm, setBookingForm] = useState({
-    aircraftId: '',
-    aircraftSearch: '',
     depTime: '',
     network: 'Offline',
   })
@@ -62,18 +64,16 @@ export default function Flights() {
 
   useEffect(() => {
     if (!isAuthenticated) { navigate('/login'); return }
-    fetchData()
+    fetchAircraft()
   }, [])
 
-  const fetchData = async () => {
+  const fetchAircraft = async () => {
     try {
-      const [r, a, b, rb] = await Promise.all([
-        api.get('/routes'),
+      const [a, b, rb] = await Promise.all([
         api.get('/aircraft'),
         api.get('/bookings/my'),
         api.get('/realistic-flights/my').catch(() => ({ data: [] })),
       ])
-      setRoutes(r.data)
       setAircraft(a.data)
       const merged = [
         ...(b.data || []).map((bk: any) => ({ ...bk, _type: 'scheduled' as const })),
@@ -103,34 +103,61 @@ export default function Flights() {
     }
   }
 
-  const filteredRoutes = routes.filter(r =>
-    `${r.flightNumber} ${r.depIcao} ${r.arrIcao} ${r.depName} ${r.arrName}`
+  const fetchRoutesForAircraft = async (aircraftId: string) => {
+    setRoutesLoading(true)
+    try {
+      const res = await api.get(`/aircraft/${aircraftId}/routes`)
+      setRoutes(res.data.routes)
+      setReturnRoute(res.data.returnRoute)
+    } catch (err) {
+      console.error(err)
+      setRoutes([])
+    } finally {
+      setRoutesLoading(false)
+    }
+  }
+
+  const handleSelectAircraft = async (ac: any) => {
+    if (ac.maintenanceStatus === 'IN_MAINTENANCE') return
+    setSelectedAircraft(ac)
+    setView('routes')
+    await fetchRoutesForAircraft(ac.id)
+  }
+
+  const filteredAircraft = aircraft.filter(a =>
+    `${a.name} ${a.registration} ${a.type} ${a.hub || ''} ${a.currentLocation || ''}`
       .toLowerCase().includes(search.toLowerCase())
   )
 
-  const filteredAircraft = aircraft.filter(a =>
-    `${a.name} ${a.registration}`.toLowerCase().includes(bookingForm.aircraftSearch.toLowerCase())
+  const allDisplayRoutes = [...routes, ...(returnRoute ? [returnRoute] : [])]
+
+  const filteredRoutes = allDisplayRoutes.filter(r =>
+    `${r.flightNumber} ${r.depIcao} ${r.arrIcao} ${r.depName || ''} ${r.arrName || ''}`
+      .toLowerCase().includes(search.toLowerCase())
   )
 
   const estimatedEarnings = (route: any) => {
-    const hours = route.duration / 60
+    const hours = (route.duration || 60) / 60
     return (hours * 500).toFixed(0)
   }
 
   const handleBook = async () => {
-    if (!bookingForm.aircraftId) { setBookingMsg('Please select an aircraft'); return }
     if (!bookingForm.depTime) { setBookingMsg('Please select departure time'); return }
     setBookingLoading(true)
     setBookingMsg('')
     try {
+      let routeId = selectedRoute.id
+      if (selectedRoute.isReturnRoute) {
+        routeId = 'return-to-hub'
+      }
       await api.post('/bookings', {
-        routeId: selectedRoute.id,
-        aircraftId: bookingForm.aircraftId,
+        routeId,
+        aircraftId: selectedAircraft.id,
         depTime: bookingForm.depTime,
         network: bookingForm.network,
       })
       setBookingSuccess(true)
-      fetchData()
+      fetchAircraft()
     } catch (err: any) {
       setBookingMsg(err.response?.data?.error || 'Booking failed')
     } finally {
@@ -147,7 +174,7 @@ export default function Flights() {
       } else {
         await api.patch(`/bookings/${booking.id}/cancel`)
       }
-      fetchData()
+      fetchAircraft()
     } catch (err) { console.error(err) }
   }
 
@@ -159,6 +186,15 @@ export default function Flights() {
       CANCELLED: { bg: 'rgba(107,114,128,0.1)', color: '#6b7280', label: 'Cancelled' },
     }
     return map[status] || map.CANCELLED
+  }
+
+  const getMaintenanceCountdown = (ac: any) => {
+    if (!ac.maintenanceUntil) return null
+    const remaining = new Date(ac.maintenanceUntil).getTime() - Date.now()
+    if (remaining <= 0) return null
+    const hours = Math.floor(remaining / 3600000)
+    const mins = Math.floor((remaining % 3600000) / 60000)
+    return `${hours}h ${mins}m`
   }
 
   if (loading) return (
@@ -192,16 +228,16 @@ export default function Flights() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setView('browse')}
+            <button onClick={() => { setView('select'); setSelectedAircraft(null); setRoutes([]); setSearch('') }}
               className="px-4 py-2 rounded-xl text-sm font-medium transition-colors"
               style={{
-                background: view === 'browse' ? t.navActive : 'transparent',
-                color: view === 'browse' ? '#c0121e' : t.textSub,
-                border: `1px solid ${view === 'browse' ? 'rgba(192,18,30,0.2)' : 'transparent'}`,
+                background: view === 'select' ? t.navActive : 'transparent',
+                color: view === 'select' ? '#c0121e' : t.textSub,
+                border: `1px solid ${view === 'select' ? 'rgba(192,18,30,0.2)' : 'transparent'}`,
               }}>
-              Browse Routes
+              Select Aircraft
             </button>
-            <button onClick={() => setView('mybookings')}
+            <button onClick={() => { setView('mybookings'); setSearch('') }}
               className="px-4 py-2 rounded-xl text-sm font-medium transition-colors relative"
               style={{
                 background: view === 'mybookings' ? t.navActive : 'transparent',
@@ -222,9 +258,18 @@ export default function Flights() {
 
       <div className="max-w-6xl mx-auto px-6 py-6">
 
-        {/* ── BROWSE ROUTES ── */}
-        {view === 'browse' && (
+        {/* ── STEP 1: SELECT AIRCRAFT ── */}
+        {view === 'select' && (
           <div>
+            {/* Info box */}
+            <div className="flex gap-2.5 p-3.5 rounded-xl mb-6"
+              style={{ background: 'rgba(192,18,30,0.06)', border: '1px solid rgba(192,18,30,0.12)' }}>
+              <Info size={14} style={{ color: '#c0121e', flexShrink: 0, marginTop: '1px' }} />
+              <div className="text-xs leading-relaxed" style={{ color: '#c0121e' }}>
+                Select an aircraft first. You'll see only routes available from its current location.
+              </div>
+            </div>
+
             {/* Search */}
             <div className="flex items-center gap-3 mb-6">
               <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-xl"
@@ -233,7 +278,7 @@ export default function Flights() {
                 <input
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Search by flight number, airport or city..."
+                  placeholder="Search by name, registration, type or location..."
                   className="flex-1 bg-transparent outline-none text-sm"
                   style={{ color: t.text }}
                 />
@@ -245,79 +290,256 @@ export default function Flights() {
               </div>
               <div className="px-4 py-3 rounded-xl text-sm"
                 style={{ background: t.card, border: `1px solid ${t.border}`, color: t.textSub }}>
-                {filteredRoutes.length} routes
+                {filteredAircraft.length} aircraft
               </div>
             </div>
 
-            {/* Route cards */}
-            {filteredRoutes.length === 0 ? (
+            {/* Aircraft grid */}
+            {filteredAircraft.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
-                <Navigation size={40} style={{ color: t.textMuted, marginBottom: '12px' }} strokeWidth={1.5} />
-                <div className="text-sm font-medium mb-1" style={{ color: t.textSub }}>No routes found</div>
-                <div className="text-xs" style={{ color: t.textMuted }}>Try a different search or ask admin to add routes</div>
+                <Plane size={40} style={{ color: t.textMuted, marginBottom: '12px' }} strokeWidth={1.5} />
+                <div className="text-sm font-medium mb-1" style={{ color: t.textSub }}>No aircraft found</div>
+                <div className="text-xs" style={{ color: t.textMuted }}>Try a different search</div>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredRoutes.map((route, i) => (
-                  <motion.div key={route.id}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: i * 0.05 }}
-                    onClick={() => { setSelectedRoute(route); setBookingSuccess(false); setBookingMsg(''); setBookingForm({ aircraftId: '', aircraftSearch: '', depTime: '', network: 'Offline' }) }}
-                    className="p-5 rounded-2xl cursor-pointer transition-all duration-200 hover:scale-[1.02]"
-                    style={{ background: t.card, border: `1px solid ${t.border}` }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(192,18,30,0.4)'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = t.border}>
+                {filteredAircraft.map((ac, i) => {
+                  const inMaint = ac.maintenanceStatus === 'IN_MAINTENANCE'
+                  const countdown = getMaintenanceCountdown(ac)
+                  const location = ac.currentLocation || ac.hub || 'Unknown'
+                  return (
+                    <motion.div key={ac.id}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: i * 0.05 }}
+                      onClick={() => !inMaint && handleSelectAircraft(ac)}
+                      className={`p-5 rounded-2xl cursor-pointer transition-all duration-200 ${inMaint ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}`}
+                      style={{ background: t.card, border: `1px solid ${inMaint ? 'rgba(239,68,68,0.2)' : t.border}` }}
+                      onMouseEnter={e => { if (!inMaint) e.currentTarget.style.borderColor = 'rgba(192,18,30,0.4)' }}
+                      onMouseLeave={e => { if (!inMaint) e.currentTarget.style.borderColor = t.border }}>
 
-                    {/* Flight number + airline */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <img src="/logo.png" alt="KFR" className="w-8 h-8 object-contain" />
-                        <span className="text-sm font-bold font-mono" style={{ color: '#c0121e' }}>
-                          {route.flightNumber}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <img src="/logo.png" alt="KFR" className="w-8 h-8 object-contain" />
+                          <div>
+                            <div className="text-sm font-bold" style={{ color: t.text }}>{ac.name}</div>
+                            <div className="text-xs font-mono" style={{ color: '#c0121e' }}>{ac.registration}</div>
+                          </div>
+                        </div>
+                        {inMaint ? (
+                          <div className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold"
+                            style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                            <Wrench size={12} />
+                            {countdown ? `${countdown}` : 'Maintenance'}
+                          </div>
+                        ) : (
+                          <ChevronRight size={16} style={{ color: t.textMuted }} />
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="p-2.5 rounded-xl" style={{ background: t.input }}>
+                          <div className="text-xs mb-0.5" style={{ color: t.textMuted }}>Type</div>
+                          <div className="text-xs font-semibold" style={{ color: t.text }}>{ac.type}</div>
+                        </div>
+                        <div className="p-2.5 rounded-xl" style={{ background: t.input }}>
+                          <div className="text-xs mb-0.5" style={{ color: t.textMuted }}>Hub</div>
+                          <div className="text-xs font-semibold" style={{ color: t.text }}>{ac.hub || '—'}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 p-2.5 rounded-xl"
+                        style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.12)' }}>
+                        <MapPin size={12} style={{ color: '#3b82f6' }} />
+                        <span className="text-xs font-medium" style={{ color: '#3b82f6' }}>
+                          Current Location: <strong>{location}</strong>
                         </span>
                       </div>
-                      <ChevronRight size={16} style={{ color: t.textMuted }} />
-                    </div>
 
-                    {/* Route */}
-                    <div className="flex items-center gap-3 mb-4">
+                      {inMaint && countdown && (
+                        <div className="mt-2 flex items-center gap-1.5 text-xs" style={{ color: '#ef4444' }}>
+                          <AlertTriangle size={11} />
+                          Available in {countdown}
+                        </div>
+                      )}
+                    </motion.div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── STEP 2: SELECT ROUTE ── */}
+        {view === 'routes' && selectedAircraft && (
+          <div>
+            {/* Aircraft info bar */}
+            <div className="flex items-center justify-between p-4 rounded-2xl mb-6"
+              style={{ background: t.card, border: `1px solid ${t.border}` }}>
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
+                  <Plane size={18} style={{ color: 'white' }} />
+                </div>
+                <div>
+                  <div className="text-sm font-bold" style={{ color: t.text }}>
+                    {selectedAircraft.name} · {selectedAircraft.registration}
+                  </div>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="text-xs" style={{ color: t.textSub }}>
+                      <strong>Type:</strong> {selectedAircraft.type}
+                    </span>
+                    <span className="text-xs" style={{ color: t.textSub }}>
+                      <strong>Hub:</strong> {selectedAircraft.hub || '—'}
+                    </span>
+                    <span className="text-xs font-semibold" style={{ color: '#3b82f6' }}>
+                      <MapPin size={10} style={{ display: 'inline', marginRight: 2 }} />
+                      {selectedAircraft.currentLocation || selectedAircraft.hub || 'Unknown'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => { setView('select'); setSelectedAircraft(null); setRoutes([]); setSearch('') }}
+                className="px-3 py-2 rounded-xl text-xs font-medium transition-colors"
+                style={{ background: t.navHover, color: t.textSub }}>
+                Change Aircraft
+              </button>
+            </div>
+
+            {routesLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="w-8 h-8 rounded-full border-2 animate-spin"
+                  style={{ borderColor: '#c0121e', borderTopColor: 'transparent' }} />
+              </div>
+            ) : (
+              <div>
+                {/* Search */}
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-xl"
+                    style={{ background: t.card, border: `1px solid ${t.border}` }}>
+                    <Search size={15} style={{ color: t.textMuted }} />
+                    <input
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                      placeholder="Search routes..."
+                      className="flex-1 bg-transparent outline-none text-sm"
+                      style={{ color: t.text }}
+                    />
+                    {search && (
+                      <button onClick={() => setSearch('')}>
+                        <X size={14} style={{ color: t.textMuted }} />
+                      </button>
+                    )}
+                  </div>
+                  <div className="px-4 py-3 rounded-xl text-sm"
+                    style={{ background: t.card, border: `1px solid ${t.border}`, color: t.textSub }}>
+                    {filteredRoutes.length} routes
+                  </div>
+                </div>
+
+                {/* Return to hub route */}
+                {returnRoute && !search && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    onClick={() => { setSelectedRoute(returnRoute); setBookingSuccess(false); setBookingMsg(''); setBookingForm({ depTime: '', network: 'Offline' }) }}
+                    className="p-5 rounded-2xl cursor-pointer transition-all duration-200 hover:scale-[1.02] mb-4"
+                    style={{ background: t.card, border: '2px solid rgba(245,158,11,0.3)' }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(245,158,11,0.6)'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(245,158,11,0.3)'}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <AlertTriangle size={14} style={{ color: '#f59e0b' }} />
+                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#f59e0b' }}>Return to Hub</span>
+                    </div>
+                    <div className="flex items-center gap-3">
                       <div className="text-center">
-                        <div className="text-2xl font-bold" style={{ color: t.text }}>{route.depIcao}</div>
-                        <div className="text-xs mt-0.5 truncate max-w-[80px]" style={{ color: t.textSub }}>{route.depName}</div>
+                        <div className="text-2xl font-bold" style={{ color: t.text }}>{returnRoute.depIcao}</div>
                       </div>
                       <div className="flex-1 flex flex-col items-center gap-1">
                         <div className="w-full flex items-center gap-1">
                           <div className="flex-1 h-px" style={{ background: t.border }} />
-                          <Plane size={14} style={{ color: '#c0121e' }} />
+                          <Plane size={14} style={{ color: '#f59e0b' }} />
                           <div className="flex-1 h-px" style={{ background: t.border }} />
                         </div>
-                        <div className="text-xs" style={{ color: t.textMuted }}>{route.distance} nm</div>
+                        <div className="text-xs" style={{ color: t.textMuted }}>Return flight</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold" style={{ color: t.text }}>{route.arrIcao}</div>
-                        <div className="text-xs mt-0.5 truncate max-w-[80px]" style={{ color: t.textSub }}>{route.arrName}</div>
-                      </div>
-                    </div>
-
-                    {/* Stats row */}
-                    <div className="flex items-center justify-between pt-3"
-                      style={{ borderTop: `1px solid ${t.border}` }}>
-                      <div className="flex items-center gap-1.5">
-                        <Clock size={12} style={{ color: t.textMuted }} />
-                        <span className="text-xs" style={{ color: t.textSub }}>
-                          {Math.floor(route.duration / 60)}h {route.duration % 60}m
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <DollarSign size={12} style={{ color: '#10b981' }} />
-                        <span className="text-xs font-semibold" style={{ color: '#10b981' }}>
-                          ${estimatedEarnings(route)}
-                        </span>
+                        <div className="text-2xl font-bold" style={{ color: t.text }}>{returnRoute.arrIcao}</div>
                       </div>
                     </div>
                   </motion.div>
-                ))}
+                )}
+
+                {/* Route cards */}
+                {filteredRoutes.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <Navigation size={40} style={{ color: t.textMuted, marginBottom: '12px' }} strokeWidth={1.5} />
+                    <div className="text-sm font-medium mb-1" style={{ color: t.textSub }}>No routes from this location</div>
+                    <div className="text-xs" style={{ color: t.textMuted }}>
+                      No available routes from {selectedAircraft.currentLocation || selectedAircraft.hub}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredRoutes.map((route, i) => (
+                      <motion.div key={route.id || `rth-${i}`}
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: i * 0.05 }}
+                        onClick={() => { setSelectedRoute(route); setBookingSuccess(false); setBookingMsg(''); setBookingForm({ depTime: '', network: 'Offline' }) }}
+                        className="p-5 rounded-2xl cursor-pointer transition-all duration-200 hover:scale-[1.02]"
+                        style={{ background: t.card, border: `1px solid ${route.isReturnRoute ? 'rgba(245,158,11,0.3)' : t.border}` }}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = route.isReturnRoute ? 'rgba(245,158,11,0.6)' : 'rgba(192,18,30,0.4)'}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = route.isReturnRoute ? 'rgba(245,158,11,0.3)' : t.border}>
+
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <img src="/logo.png" alt="KFR" className="w-8 h-8 object-contain" />
+                            <span className="text-sm font-bold font-mono" style={{ color: route.isReturnRoute ? '#f59e0b' : '#c0121e' }}>
+                              {route.flightNumber}
+                            </span>
+                          </div>
+                          <ChevronRight size={16} style={{ color: t.textMuted }} />
+                        </div>
+
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold" style={{ color: t.text }}>{route.depIcao}</div>
+                            <div className="text-xs mt-0.5 truncate max-w-[80px]" style={{ color: t.textSub }}>{route.depName}</div>
+                          </div>
+                          <div className="flex-1 flex flex-col items-center gap-1">
+                            <div className="w-full flex items-center gap-1">
+                              <div className="flex-1 h-px" style={{ background: t.border }} />
+                              <Plane size={14} style={{ color: route.isReturnRoute ? '#f59e0b' : '#c0121e' }} />
+                              <div className="flex-1 h-px" style={{ background: t.border }} />
+                            </div>
+                            <div className="text-xs" style={{ color: t.textMuted }}>{route.distance || 0} nm</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold" style={{ color: t.text }}>{route.arrIcao}</div>
+                            <div className="text-xs mt-0.5 truncate max-w-[80px]" style={{ color: t.textSub }}>{route.arrName}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-3"
+                          style={{ borderTop: `1px solid ${t.border}` }}>
+                          <div className="flex items-center gap-1.5">
+                            <Clock size={12} style={{ color: t.textMuted }} />
+                            <span className="text-xs" style={{ color: t.textSub }}>
+                              {Math.floor((route.duration || 60) / 60)}h {(route.duration || 60) % 60}m
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <DollarSign size={12} style={{ color: '#10b981' }} />
+                            <span className="text-xs font-semibold" style={{ color: '#10b981' }}>
+                              ${estimatedEarnings(route)}
+                            </span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -338,11 +560,11 @@ export default function Flights() {
               <div className="flex flex-col items-center justify-center py-20">
                 <Plane size={40} style={{ color: t.textMuted, marginBottom: '12px' }} strokeWidth={1.5} />
                 <div className="text-sm font-medium mb-1" style={{ color: t.textSub }}>No flights yet</div>
-                <div className="text-xs mb-4" style={{ color: t.textMuted }}>Browse routes and book your first flight!</div>
-                <button onClick={() => setView('browse')}
+                <div className="text-xs mb-4" style={{ color: t.textMuted }}>Select an aircraft and book your first flight!</div>
+                <button onClick={() => setView('select')}
                   className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
                   style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)' }}>
-                  Browse Routes
+                  Select Aircraft
                 </button>
               </div>
             ) : (
@@ -421,22 +643,18 @@ export default function Flights() {
                           <Navigation size={11} /> Details
                         </button>
                         {booking.status === 'UPCOMING' && !isRealisticOps && (
-                          <>
-                            <Link to="/pirep"
-                              className="px-3 py-2 rounded-xl text-xs font-semibold text-white text-center"
-                              style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)', textDecoration: 'none' }}>
-                              File PIREP
-                            </Link>
-                          </>
+                          <Link to="/pirep"
+                            className="px-3 py-2 rounded-xl text-xs font-semibold text-white text-center"
+                            style={{ background: 'linear-gradient(135deg, #c0121e, #8b0000)', textDecoration: 'none' }}>
+                            File PIREP
+                          </Link>
                         )}
                         {booking.status === 'UPCOMING' && (
-                          <>
-                            <button onClick={() => handleCancel(booking)}
-                              className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
-                              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
-                              Cancel
-                            </button>
-                          </>
+                          <button onClick={() => handleCancel(booking)}
+                            className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
+                            style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                            Cancel
+                          </button>
                         )}
                         {booking.status === 'APPROVED' && (
                           <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl"
@@ -459,7 +677,7 @@ export default function Flights() {
 
       {/* ── BOOKING MODAL ── */}
       <AnimatePresence>
-        {selectedRoute && (
+        {selectedRoute && selectedAircraft && view !== 'mybookings' && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -511,7 +729,7 @@ export default function Flights() {
                     {selectedRoute.flightNumber} — {selectedRoute.depIcao} → {selectedRoute.arrIcao}
                   </div>
                   <div className="text-xs mb-6" style={{ color: t.textMuted }}>
-                    Estimated earnings: ${estimatedEarnings(selectedRoute)}
+                    Aircraft: {selectedAircraft.name} · {selectedAircraft.registration}
                   </div>
                   <div className="flex gap-3 justify-center">
                     <button
@@ -536,6 +754,17 @@ export default function Flights() {
               ) : (
                 <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
 
+                  {/* Selected aircraft info */}
+                  <div className="flex items-center gap-3 p-3 rounded-xl"
+                    style={{ background: t.badge, border: `1px solid ${t.border}` }}>
+                    <Plane size={14} style={{ color: '#c0121e' }} />
+                    <div className="text-xs" style={{ color: t.textSub }}>
+                      <span className="font-semibold" style={{ color: t.text }}>{selectedAircraft.name}</span>
+                      {' · '}{selectedAircraft.registration}
+                      {' · '}From <strong>{selectedRoute.depIcao}</strong>
+                    </div>
+                  </div>
+
                   {/* Route details */}
                   <div className="p-4 rounded-xl"
                     style={{ background: t.navActive, border: `1px solid rgba(192,18,30,0.1)` }}>
@@ -550,7 +779,7 @@ export default function Flights() {
                           <Plane size={14} style={{ color: '#c0121e' }} />
                           <div className="w-12 h-px" style={{ background: 'rgba(192,18,30,0.3)' }} />
                         </div>
-                        <div className="text-xs" style={{ color: t.textMuted }}>{selectedRoute.distance} nm</div>
+                        <div className="text-xs" style={{ color: t.textMuted }}>{selectedRoute.distance || 0} nm</div>
                       </div>
                       <div className="text-center">
                         <div className="text-2xl font-bold" style={{ color: t.text }}>{selectedRoute.arrIcao}</div>
@@ -561,7 +790,7 @@ export default function Flights() {
                       style={{ borderTop: `1px solid rgba(192,18,30,0.1)` }}>
                       <div className="text-center">
                         <div className="text-xs font-semibold" style={{ color: t.text }}>
-                          {Math.floor(selectedRoute.duration / 60)}h {selectedRoute.duration % 60}m
+                          {Math.floor((selectedRoute.duration || 60) / 60)}h {(selectedRoute.duration || 60) % 60}m
                         </div>
                         <div className="text-xs" style={{ color: t.textMuted }}>Duration</div>
                       </div>
@@ -588,50 +817,6 @@ export default function Flights() {
                       <a href="/fsacars" className="text-blue-500 hover:text-blue-400 underline">FSACARS</a> tracks your flight automatically.
                        Manual PIREPs are also accepted via the My Flights portal.
                     </div>
-                  </div>
-
-                  {/* Aircraft selector */}
-                  <div>
-                    <label className="block text-xs font-semibold mb-2" style={{ color: t.textMuted }}>
-                      SELECT AIRCRAFT
-                    </label>
-                    <input
-                      value={bookingForm.aircraftSearch}
-                      onChange={e => setBookingForm({ ...bookingForm, aircraftSearch: e.target.value, aircraftId: '' })}
-                      placeholder="Search by name or registration..."
-                      style={inputStyle}
-                    />
-                    {bookingForm.aircraftSearch && !bookingForm.aircraftId && (
-                      <div className="mt-1.5 rounded-xl overflow-hidden"
-                        style={{ border: `1px solid ${t.border}`, background: isDark ? '#1a1a1a' : '#ffffff' }}>
-                        {filteredAircraft.length === 0 ? (
-                          <div className="px-4 py-3 text-xs" style={{ color: t.textMuted }}>No aircraft found</div>
-                        ) : (
-                          filteredAircraft.slice(0, 5).map(a => (
-                            <button key={a.id}
-                              onClick={() => setBookingForm({ ...bookingForm, aircraftId: a.id, aircraftSearch: `${a.name} · ${a.registration}` })}
-                              className="w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors"
-                              style={{ borderBottom: `1px solid ${t.border}` }}
-                              onMouseEnter={e => e.currentTarget.style.background = t.navHover}
-                              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                              <span className="text-sm font-medium" style={{ color: t.text }}>{a.name}</span>
-                              <span className="text-xs font-mono" style={{ color: '#c0121e' }}>{a.registration}</span>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    )}
-                    {bookingForm.aircraftId && (
-                      <div className="mt-1.5 flex items-center justify-between px-3 py-2 rounded-xl"
-                        style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                        <span className="text-xs font-medium" style={{ color: '#10b981' }}>
-                          {bookingForm.aircraftSearch}
-                        </span>
-                        <button onClick={() => setBookingForm({ ...bookingForm, aircraftId: '', aircraftSearch: '' })}>
-                          <X size={13} style={{ color: '#10b981' }} />
-                        </button>
-                      </div>
-                    )}
                   </div>
 
                   {/* Departure time */}

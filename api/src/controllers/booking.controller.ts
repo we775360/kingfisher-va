@@ -19,14 +19,91 @@ export const getRoutes = async (req: FastifyRequest, reply: FastifyReply) => {
   }
 }
 
-// ── GET ALL AIRCRAFT (public for pilots) ──
+// ── GET AIRCRAFT WITH MAINTENANCE STATUS ──
 export const getAircraft = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const aircraft = await prisma.aircraft.findMany({
       where: { isActive: true },
       orderBy: { name: 'asc' },
     })
-    return reply.send(aircraft)
+    // Auto-reset maintenance if time has passed
+    const now = new Date()
+    const updated = await Promise.all(aircraft.map(async (a) => {
+      if (a.maintenanceStatus === 'IN_MAINTENANCE' && a.maintenanceUntil && a.maintenanceUntil <= now) {
+        return prisma.aircraft.update({
+          where: { id: a.id },
+          data: { maintenanceStatus: 'AVAILABLE', maintenanceUntil: null },
+        })
+      }
+      return a
+    }))
+    return reply.send(updated)
+  } catch (err) {
+    console.error(err)
+    return reply.status(500).send({ error: 'Internal server error' })
+  }
+}
+
+// ── GET ROUTES FOR AIRCRAFT (filtered by location + type) ──
+export const getRoutesForAircraft = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { aircraftId } = req.params as { aircraftId: string }
+    const aircraft = await prisma.aircraft.findUnique({ where: { id: aircraftId } })
+    if (!aircraft) return reply.status(404).send({ error: 'Aircraft not found' })
+
+    // Auto-reset maintenance if time passed
+    const now = new Date()
+    if (aircraft.maintenanceStatus === 'IN_MAINTENANCE' && aircraft.maintenanceUntil && aircraft.maintenanceUntil <= now) {
+      await prisma.aircraft.update({
+        where: { id: aircraft.id },
+        data: { maintenanceStatus: 'AVAILABLE', maintenanceUntil: null },
+      })
+      aircraft.maintenanceStatus = 'AVAILABLE'
+      aircraft.maintenanceUntil = null
+    }
+
+    const fromLocation = aircraft.currentLocation || aircraft.hub
+    if (!fromLocation) {
+      return reply.send({ routes: [], aircraft })
+    }
+
+    // Get all routes from current location where allowedTypes includes aircraft type or is null
+    const routes = await prisma.route.findMany({
+      where: {
+        isActive: true,
+        depIcao: fromLocation,
+      },
+      orderBy: { flightNumber: 'asc' },
+    })
+
+    const filteredRoutes = routes.filter(r => {
+      if (!r.allowedTypes) return true
+      const allowed = r.allowedTypes as string[]
+      return allowed.includes(aircraft.type)
+    })
+
+    // Add return-to-hub route if aircraft is not at hub
+    let returnRoute = null
+    if (aircraft.hub && aircraft.currentLocation && aircraft.currentLocation !== aircraft.hub) {
+      const hubRoute = filteredRoutes.find(r => r.arrIcao === aircraft.hub)
+      if (!hubRoute) {
+        returnRoute = {
+          id: 'return-to-hub',
+          flightNumber: 'KFR-RTH',
+          depIcao: aircraft.currentLocation,
+          arrIcao: aircraft.hub,
+          depName: `From ${aircraft.currentLocation}`,
+          arrName: `Return to ${aircraft.hub}`,
+          distance: 0,
+          duration: 60,
+          isActive: true,
+          allowedTypes: null,
+          isReturnRoute: true,
+        }
+      }
+    }
+
+    return reply.send({ routes: filteredRoutes, returnRoute, aircraft })
   } catch (err) {
     console.error(err)
     return reply.status(500).send({ error: 'Internal server error' })
@@ -67,9 +144,39 @@ export const createBooking = async (req: FastifyRequest, reply: FastifyReply) =>
       return reply.status(400).send({ error: 'You already have an upcoming booking. Complete or cancel it first.' })
     }
 
+    // Handle return-to-hub special route
+    let routeId = body.routeId
+    if (routeId === 'return-to-hub') {
+      const aircraft = await prisma.aircraft.findUnique({ where: { id: body.aircraftId } })
+      if (!aircraft || !aircraft.currentLocation || !aircraft.hub) {
+        return reply.status(400).send({ error: 'Cannot create return-to-hub booking: aircraft has no hub or current location' })
+      }
+      // Find or create a temporary return route
+      let rthRoute = await prisma.route.findFirst({
+        where: {
+          depIcao: aircraft.currentLocation,
+          arrIcao: aircraft.hub,
+        },
+      })
+      if (!rthRoute) {
+        rthRoute = await prisma.route.create({
+          data: {
+            flightNumber: `RTH-${aircraft.registration}`,
+            depIcao: aircraft.currentLocation,
+            arrIcao: aircraft.hub,
+            depName: `Return from ${aircraft.currentLocation}`,
+            arrName: `Return to ${aircraft.hub}`,
+            distance: 0,
+            duration: 60,
+          },
+        })
+      }
+      routeId = rthRoute.id
+    }
+
     // Get route for earnings calculation
     const route = await prisma.route.findUnique({
-      where: { id: body.routeId }
+      where: { id: routeId }
     })
 
     if (!route) {
@@ -83,7 +190,7 @@ export const createBooking = async (req: FastifyRequest, reply: FastifyReply) =>
     const booking = await prisma.booking.create({
       data: {
         pilotId: pilot.id,
-        routeId: body.routeId,
+        routeId,
         aircraftId: body.aircraftId,
         depTime: new Date(body.depTime),
         network: body.network,

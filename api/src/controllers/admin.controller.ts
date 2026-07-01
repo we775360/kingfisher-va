@@ -58,6 +58,26 @@ export const getAllPIREPs = async (req: FastifyRequest, reply: FastifyReply) => 
 }
 
 // ── UPDATE PIREP STATUS ──
+async function updateAircraftAfterFlight(aircraftId: string, arrIcao: string, flightTime: number) {
+  const aircraft = await prisma.aircraft.findUnique({ where: { id: aircraftId } })
+  if (!aircraft) return
+
+  const newTotalHours = aircraft.totalFlightHours + flightTime
+  const needsMaintenance = newTotalHours >= (aircraft.maintenanceThreshold || 50)
+
+  await prisma.aircraft.update({
+    where: { id: aircraftId },
+    data: {
+      currentLocation: arrIcao,
+      totalFlightHours: newTotalHours,
+      ...(needsMaintenance ? {
+        maintenanceStatus: 'IN_MAINTENANCE',
+        maintenanceUntil: new Date(Date.now() + 6 * 3600000),
+      } : {}),
+    },
+  })
+}
+
 export const updatePIREPStatus = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const { id } = req.params as { id: string }
@@ -79,6 +99,10 @@ export const updatePIREPStatus = async (req: FastifyRequest, reply: FastifyReply
           walletBalance: { increment: earnings },
         }
       })
+
+      // Update aircraft location and hours
+      await updateAircraftAfterFlight(pirep.aircraftId, pirep.arrIcao, pirep.flightTime)
+
       if (pirep.bookingId) {
         await prisma.booking.update({
           where: { id: pirep.bookingId },
@@ -324,6 +348,61 @@ export const getStats = async (req: FastifyRequest, reply: FastifyReply) => {
     ])
     return reply.send({ totalPilots, totalFlights, totalAircraft, totalRoutes, pendingPireps })
   } catch (err) {
+    console.error(err)
+    return reply.status(500).send({ error: 'Internal server error' })
+  }
+}
+
+// ── UPDATE AIRCRAFT ──
+export const updateAircraft = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { id } = req.params as { id: string }
+    const schema = z.object({
+      icao: z.string().min(1).optional(),
+      name: z.string().min(1).optional(),
+      registration: z.string().min(1).optional(),
+      type: z.string().min(1).optional(),
+      engines: z.string().min(1).optional(),
+      pax: z.number().int().optional(),
+      range: z.number().int().optional(),
+      cruiseSpeed: z.number().int().optional(),
+      hub: z.string().optional(),
+      currentLocation: z.string().optional(),
+      maintenanceThreshold: z.number().int().optional(),
+      maintenanceStatus: z.enum(['AVAILABLE', 'IN_MAINTENANCE']).optional(),
+      isActive: z.boolean().optional(),
+    })
+    const body = schema.parse(req.body)
+    const aircraft = await prisma.aircraft.update({
+      where: { id },
+      data: {
+        ...body,
+        ...(body.maintenanceStatus === 'AVAILABLE' ? { maintenanceUntil: null } : {}),
+      },
+    })
+    return reply.send(aircraft)
+  } catch (err) {
+    if (err instanceof z.ZodError) return reply.status(400).send({ error: 'Invalid input', details: err.issues })
+    console.error(err)
+    return reply.status(500).send({ error: 'Internal server error' })
+  }
+}
+
+// ── UPDATE ROUTE TYPES ──
+export const updateRouteTypes = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { id } = req.params as { id: string }
+    const schema = z.object({
+      allowedTypes: z.array(z.string()).nullable(),
+    })
+    const body = schema.parse(req.body)
+    const route = await prisma.route.update({
+      where: { id },
+      data: { allowedTypes: body.allowedTypes ?? undefined },
+    })
+    return reply.send(route)
+  } catch (err) {
+    if (err instanceof z.ZodError) return reply.status(400).send({ error: 'Invalid input', details: err.issues })
     console.error(err)
     return reply.status(500).send({ error: 'Internal server error' })
   }

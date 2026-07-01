@@ -4,6 +4,7 @@ import prisma from '../utils/prisma.js'
 import {
   getRoutes,
   getAircraft,
+  getRoutesForAircraft,
   createBooking,
   getMyBookings,
   cancelBooking,
@@ -15,6 +16,7 @@ import {
 export const bookingRoutes = async (app: FastifyInstance) => {
   app.get('/routes', { preHandler: authenticate }, getRoutes)
   app.get('/aircraft', { preHandler: authenticate }, getAircraft)
+  app.get('/aircraft/:aircraftId/routes', { preHandler: authenticate }, getRoutesForAircraft)
   app.post('/bookings', { preHandler: authenticate }, createBooking)
   app.get('/bookings/my', { preHandler: authenticate }, getMyBookings)
   app.get('/bookings/:id', { preHandler: authenticate }, getBookingById)

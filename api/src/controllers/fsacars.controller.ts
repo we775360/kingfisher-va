@@ -390,6 +390,23 @@ export const pirep = async (req: FastifyRequest, reply: FastifyReply) => {
     },
   })
 
+  // ── Update aircraft location and hours ──
+  if (aircraft) {
+    const newTotalHours = (aircraft.totalFlightHours || 0) + (blocktime || airtime || 0.1)
+    const needsMaintenance = newTotalHours >= (aircraft.maintenanceThreshold || 50)
+    await prisma.aircraft.update({
+      where: { id: aircraft.id },
+      data: {
+        currentLocation: arrIcao,
+        totalFlightHours: newTotalHours,
+        ...(needsMaintenance ? {
+          maintenanceStatus: 'IN_MAINTENANCE',
+          maintenanceUntil: new Date(Date.now() + 6 * 3600000),
+        } : {}),
+      },
+    })
+  }
+
   // ── Remove from live flights ──
   await prisma.liveFlight.delete({ where: { pilotId: user.pilot.id } }).catch(() => {})
 
