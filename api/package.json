@@ -29,6 +29,7 @@
     "dotenv": "^17.4.2",
     "fastify": "^5.8.5",
     "nodemailer": "^8.0.8",
+    "pdfkit": "^0.19.1",
     "prisma": "^5.22.0",
     "zod": "^4.4.3"
   },
@@ -36,6 +37,7 @@
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "^25.9.1",
     "@types/nodemailer": "^8.0.0",
+    "@types/pdfkit": "^0.17.6",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
     "tsx": "^4.22.3",

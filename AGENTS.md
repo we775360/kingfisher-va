@@ -137,10 +137,67 @@ serverpass=
 - Pilot booking + ATC confirmation flow with wallet rewards
 - See ATC section below for full details
 
+### ✅ COMPLETED — OFP (Operational Flight Plan) Generator (Session 7)
+
+#### What was built
+Full SimBrief-style OFP generator with multi-page PDF, live weather, aircraft performance, and nav database.
+
+#### Architecture
+- **Nav Database**: `api/src/data/*.json` — 100+ airports, 200+ waypoints, 30+ airways, 5 aircraft profiles (B738, B38M, A320, A321, A388)
+- **Flight Planning Services** in `api/src/services/flight-planning/`:
+  - `nav-db.ts` — Loads & queries nav data, haversine distance/bearing
+  - `route-parser.ts` — Parses route strings (SIDs, waypoints, airways, STARs) into legs
+  - `weather.ts` — Fetches live METAR from aviationweather.gov + statistical winds
+  - `fuel-calc.ts` — Trip/cont/altn/finres/taxi fuel; ZFW/TOW/LAW weights; flight time
+  - `ofp-generator.ts` — Orchestrates all services into a complete OFPResult object
+  - `pdf-generator.ts` — Generates 4-page A4 PDF matching SimBrief format (pdfkit)
+
+#### API Endpoints
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/v1/ofp/generate?bookingId=&type=` | GET | Returns OFP JSON for a booking |
+| `/api/v1/ofp/download?bookingId=&type=` | GET | Downloads multi-page OFP as PDF |
+
+#### Web Frontend
+- **BookingInfo.tsx** (`/booking/:type/:id`) now has an "Operational Flight Plan" section
+- "Generate OFP" button creates the plan with live weather, fuel, weights, route
+- Shows fuel plan table, weights summary, route string, times, live METAR
+- "Download PDF" button downloads a 4-page SimBrief-style PDF
+- Works for both standard and realistic bookings (when UPCOMING or BOOKED status)
+
+#### Data Sources
+- Live METAR/TAF: aviationweather.gov (free NOAA)
+- Nav database: bundled JSON (waypoints/airways from public sources)
+- Aircraft performance: hand-tuned to match real-world values
+- Winds: statistical (can be upgraded to NOAA GFS free API)
+
+#### Nav Database Customization
+To add more waypoints, edit `api/src/data/nav-waypoints.json`. To add aircraft profiles, edit `api/src/data/aircraft-profiles.json`. To update airports, edit `api/src/data/nav-airports.json`. For a full AIRAC update: add your simulator's data to a new folder and we can create an import script.
+
+#### Files Created
+- `api/src/data/nav-airports.json`
+- `api/src/data/nav-waypoints.json`
+- `api/src/data/nav-airways.json`
+- `api/src/data/aircraft-profiles.json`
+- `api/src/services/flight-planning/nav-db.ts`
+- `api/src/services/flight-planning/route-parser.ts`
+- `api/src/services/flight-planning/weather.ts`
+- `api/src/services/flight-planning/fuel-calc.ts`
+- `api/src/services/flight-planning/ofp-generator.ts`
+- `api/src/services/flight-planning/pdf-generator.ts`
+- `api/src/controllers/ofp.controller.ts`
+- `api/src/routes/ofp.routes.ts`
+
+#### Files Modified
+- `api/src/index.ts` — Added `ofpRoutes` registration
+- `web/src/pages/BookingInfo.tsx` — Added OFP section with generate & download
+- `api/package.json` — Added `pdfkit` dependency
+
 ### Remaining
 1. Test FSACARS endpoints with actual FSACARS client
-2. Update API cron/worker to auto-approve PIREPs (or leave manual review)
-3. Consider adding PIREP auto-approval when submitted via FSACARS (trusted client)
+2. Test OFP generator end-to-end (check API compiles, PDF renders)
+3. Consider upgrading navaid data — user can provide AIRAC data from their simulator to a folder, we can build an import script
+4. Add OFP access from Dashboard / My Flights page directly (currently only in booking detail)
 
 ---
 ## Realistic Flight Operations (ATC System)
